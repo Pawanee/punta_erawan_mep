@@ -1,30 +1,41 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
+import 'cable_size_page.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  Widget menu(String title, IconData icon) {
-    return Card(
-      child: SizedBox(
-        width: 180,
-        height: 120,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              size: 40,
-              color: Colors.blue,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+  Widget menuCard({
+    required BuildContext context,
+    required String title,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return SizedBox(
+      width: 180,
+      height: 120,
+      child: Card(
+        elevation: 3,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 42,
+                color: Colors.blue,
               ),
-            ),
-          ],
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -42,12 +53,55 @@ class HomePage extends StatelessWidget {
           spacing: 20,
           runSpacing: 20,
           children: [
-            menu("Electrical", Icons.electric_bolt),
-            menu("Plumbing", Icons.water_drop),
-            menu("HVAC", Icons.ac_unit),
-            menu("Fire Protection", Icons.local_fire_department),
-            menu("Load Schedule", Icons.table_chart),
-            menu("BOQ", Icons.calculate),
+
+            menuCard(
+              context: context,
+              title: "Electrical",
+              icon: Icons.electric_bolt,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CableSizePage(),
+                  ),
+                );
+              },
+            ),
+
+            menuCard(
+              context: context,
+              title: "Plumbing",
+              icon: Icons.water_drop,
+              onTap: () {},
+            ),
+
+            menuCard(
+              context: context,
+              title: "HVAC",
+              icon: Icons.ac_unit,
+              onTap: () {},
+            ),
+
+            menuCard(
+              context: context,
+              title: "Fire Protection",
+              icon: Icons.local_fire_department,
+              onTap: () {},
+            ),
+
+            menuCard(
+              context: context,
+              title: "Load Schedule",
+              icon: Icons.table_chart,
+              onTap: () {},
+            ),
+
+            menuCard(
+              context: context,
+              title: "BOQ",
+              icon: Icons.calculate,
+              onTap: () {},
+            ),
           ],
         ),
       ),

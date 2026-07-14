@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+ import 'package:flutter/material.dart';
 
 class CableSizePage extends StatelessWidget {
   const CableSizePage({super.key});
@@ -7,15 +7,42 @@ class CableSizePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Cable Size Calculator"),
+        title: const Text("Cable Size Designer"),
       ),
-      body: const Center(
-        child: Text(
-          "Cable Size Engine V1",
-          style: TextStyle(
-            fontSize: 28,
-            fontWeight: FontWeight.bold,
-          ),
+      body: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+
+            const Text(
+              "Load Current (A)",
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            const TextField(
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(),
+                hintText: "Enter Current",
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            ElevatedButton(
+              onPressed: () {},
+              child: const Text(
+                "Calculate",
+              ),
+            ),
+
+          ],
         ),
       ),
     );
