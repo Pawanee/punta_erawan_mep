@@ -1,8 +1,8 @@
- import 'package:flutter/material.dart';
-import 'electrical_page.dart';
+import 'package:flutter/material.dart';
+import 'cable_size_page.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class ElectricalPage extends StatelessWidget {
+  const ElectricalPage({super.key});
 
   Widget menuCard({
     required BuildContext context,
@@ -23,14 +23,15 @@ class HomePage extends StatelessWidget {
             children: [
               Icon(
                 icon,
-                size: 42,
+                size: 40,
                 color: Colors.blue,
               ),
               const SizedBox(height: 10),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
-                  fontSize: 18,
+                  fontSize: 17,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -53,8 +54,7 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("PUNTA ERAWAN MEP"),
-        centerTitle: true,
+        title: const Text("Electrical"),
       ),
       body: Center(
         child: Wrap(
@@ -63,45 +63,45 @@ class HomePage extends StatelessWidget {
           children: [
             menuCard(
               context: context,
-              title: "Electrical",
-              icon: Icons.electric_bolt,
+              title: "Cable Size",
+              icon: Icons.cable,
               onTap: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => const ElectricalPage(),
+                    builder: (_) => const CableSizePage(),
                   ),
                 );
               },
             ),
             menuCard(
               context: context,
-              title: "Plumbing",
-              icon: Icons.water_drop,
+              title: "Voltage Drop",
+              icon: Icons.bolt,
               onTap: () => comingSoon(context),
             ),
             menuCard(
               context: context,
-              title: "HVAC",
-              icon: Icons.ac_unit,
+              title: "Breaker",
+              icon: Icons.electrical_services,
               onTap: () => comingSoon(context),
             ),
             menuCard(
               context: context,
-              title: "Fire Protection",
-              icon: Icons.local_fire_department,
+              title: "Ground",
+              icon: Icons.settings_input_antenna,
               onTap: () => comingSoon(context),
             ),
             menuCard(
               context: context,
-              title: "Communication",
-              icon: Icons.settings_ethernet,
+              title: "Conduit",
+              icon: Icons.view_stream,
               onTap: () => comingSoon(context),
             ),
             menuCard(
               context: context,
-              title: "BOQ",
-              icon: Icons.calculate,
+              title: "Load Schedule",
+              icon: Icons.table_chart,
               onTap: () => comingSoon(context),
             ),
           ],
