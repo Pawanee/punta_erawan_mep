@@ -6,25 +6,27 @@ class CableEngine {
     String cableSize;
     String breakerSize;
 
-    if (input.loadCurrent <= 20) {
+    final current = input.loadCurrent;
+
+    if (current <= 20) {
       cableSize = "2.5 sq.mm";
       breakerSize = "20 A";
-    } else if (input.loadCurrent <= 25) {
+    } else if (current <= 25) {
       cableSize = "4 sq.mm";
       breakerSize = "32 A";
-    } else if (input.loadCurrent <= 32) {
+    } else if (current <= 32) {
       cableSize = "6 sq.mm";
       breakerSize = "40 A";
-    } else if (input.loadCurrent <= 50) {
+    } else if (current <= 50) {
       cableSize = "10 sq.mm";
       breakerSize = "63 A";
-    } else if (input.loadCurrent <= 63) {
+    } else if (current <= 63) {
       cableSize = "16 sq.mm";
       breakerSize = "80 A";
-    } else if (input.loadCurrent <= 80) {
+    } else if (current <= 80) {
       cableSize = "25 sq.mm";
       breakerSize = "100 A";
-    } else if (input.loadCurrent <= 100) {
+    } else if (current <= 100) {
       cableSize = "35 sq.mm";
       breakerSize = "125 A";
     } else {
@@ -38,7 +40,7 @@ class CableEngine {
       groundSize: "-",
       neutralSize: "-",
       conduitSize: "-",
-      currentCapacity: input.loadCurrent,
+      currentCapacity: current,
       voltageDrop: input.voltageDrop,
       pass: true,
     );
