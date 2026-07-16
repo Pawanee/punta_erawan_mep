@@ -3,8 +3,8 @@ import '../models/cable_result.dart';
 
 class CableEngine {
   CableResult calculate(CableInput input) {
-    String cableSize = "";
-    String breakerSize = "";
+    String cableSize;
+    String breakerSize;
 
     if (input.loadCurrent <= 20) {
       cableSize = "2.5 sq.mm";
