@@ -1,6 +1,6 @@
  import 'package:flutter/material.dart';
-import 'package:mep_project/models/cable_input.dart';
-import 'package:mep_project/services/cable_engine.dart';
+import 'package:mep_project/features/electrical/cable/models/cable_input.dart';
+import 'package:mep_project/features/electrical/cable/services/cable_engine.dart';
 
 class CableSizePage extends StatefulWidget {
   const CableSizePage({super.key});
