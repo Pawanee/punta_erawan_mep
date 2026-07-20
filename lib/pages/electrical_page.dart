@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'cable_size_page.dart';
+import 'package:mep_project/features/electrical/pages/cable_size_page.dart';
 
 class ElectricalPage extends StatelessWidget {
   const ElectricalPage({super.key});
