@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# PUNTA ERAWAN MEP - Local / Temporary Files
+.firebase/
+Temp/
+
+# Local archive files
+*.zip
