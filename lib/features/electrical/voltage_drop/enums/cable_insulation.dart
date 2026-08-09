@@ -1,0 +1,4 @@
+enum CableInsulation {
+  pvc,
+  xlpe,
+}

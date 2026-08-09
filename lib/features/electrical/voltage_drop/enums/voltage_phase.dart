@@ -1,0 +1,4 @@
+enum VoltagePhase {
+  singlePhase,
+  threePhase,
+}

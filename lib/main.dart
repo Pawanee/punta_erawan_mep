@@ -1,5 +1,6 @@
  import 'package:flutter/material.dart';
-import 'pages/home_page.dart';
+
+import '../features/electrical/cable_design/pages/cable_design_page_v2.dart';
 
 void main() {
   runApp(const PuntaApp());
@@ -17,7 +18,9 @@ class PuntaApp extends StatelessWidget {
         colorSchemeSeed: Colors.blue,
         useMaterial3: true,
       ),
-      home: const HomePage(),
+
+      // เปลี่ยนบรรทัดนี้
+      home: const CableDesignPageV2(),
     );
   }
 }

@@ -1,0 +1,57 @@
+[
+  {
+    "circuits": "2",
+    "enclosedFactor": 0.80,
+    "surfaceFactor": 0.85
+  },
+  {
+    "circuits": "3",
+    "enclosedFactor": 0.70,
+    "surfaceFactor": 0.79
+  },
+  {
+    "circuits": "4",
+    "enclosedFactor": 0.65,
+    "surfaceFactor": 0.75
+  },
+  {
+    "circuits": "5",
+    "enclosedFactor": 0.60,
+    "surfaceFactor": 0.73
+  },
+  {
+    "circuits": "6",
+    "enclosedFactor": 0.57,
+    "surfaceFactor": 0.72
+  },
+  {
+    "circuits": "7",
+    "enclosedFactor": 0.54,
+    "surfaceFactor": 0.72
+  },
+  {
+    "circuits": "8",
+    "enclosedFactor": 0.52,
+    "surfaceFactor": 0.71
+  },
+  {
+    "circuits": "9",
+    "enclosedFactor": 0.50,
+    "surfaceFactor": 0.70
+  },
+  {
+    "circuits": "10-12",
+    "enclosedFactor": 0.45,
+    "surfaceFactor": 0.70
+  },
+  {
+    "circuits": "13-16",
+    "enclosedFactor": 0.41,
+    "surfaceFactor": 0.70
+  },
+  {
+    "circuits": "17-20",
+    "enclosedFactor": 0.38,
+    "surfaceFactor": 0.70
+  }
+]

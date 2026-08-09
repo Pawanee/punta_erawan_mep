@@ -1,0 +1,448 @@
+{
+  "table": "5-20",
+  "standard": "วสท.2564",
+  "title": "Ampacity of Copper PVC Insulated Cable",
+  "voltageRating": "0.6/1 kV",
+  "conductorTemperatureC": 70,
+  "ambientTemperatureC": 40,
+  "installation": "เดินในท่อร้อยสายในอากาศ",
+  "rows": [
+    {
+      "sizeSqmm": 1,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 10,
+          "multiCore": 10
+        },
+        "threeLoaded": {
+          "singleCore": 9,
+          "multiCore": 9
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 12,
+          "multiCore": 11
+        },
+        "threeLoaded": {
+          "singleCore": 10,
+          "multiCore": 10
+        }
+      }
+    },
+    {
+      "sizeSqmm": 1.5,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 13,
+          "multiCore": 12
+        },
+        "threeLoaded": {
+          "singleCore": 12,
+          "multiCore": 11
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 15,
+          "multiCore": 14
+        },
+        "threeLoaded": {
+          "singleCore": 13,
+          "multiCore": 13
+        }
+      }
+    },
+    {
+      "sizeSqmm": 2.5,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 17,
+          "multiCore": 16
+        },
+        "threeLoaded": {
+          "singleCore": 16,
+          "multiCore": 15
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 21,
+          "multiCore": 20
+        },
+        "threeLoaded": {
+          "singleCore": 18,
+          "multiCore": 17
+        }
+      }
+    },
+    {
+      "sizeSqmm": 4,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 23,
+          "multiCore": 22
+        },
+        "threeLoaded": {
+          "singleCore": 21,
+          "multiCore": 20
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 28,
+          "multiCore": 26
+        },
+        "threeLoaded": {
+          "singleCore": 24,
+          "multiCore": 23
+        }
+      }
+    },
+    {
+      "sizeSqmm": 6,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 30,
+          "multiCore": 28
+        },
+        "threeLoaded": {
+          "singleCore": 27,
+          "multiCore": 25
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 36,
+          "multiCore": 33
+        },
+        "threeLoaded": {
+          "singleCore": 31,
+          "multiCore": 30
+        }
+      }
+    },
+    {
+      "sizeSqmm": 10,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 40,
+          "multiCore": 37
+        },
+        "threeLoaded": {
+          "singleCore": 37,
+          "multiCore": 34
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 50,
+          "multiCore": 45
+        },
+        "threeLoaded": {
+          "singleCore": 44,
+          "multiCore": 40
+        }
+      }
+    },
+    {
+      "sizeSqmm": 16,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 53,
+          "multiCore": 50
+        },
+        "threeLoaded": {
+          "singleCore": 49,
+          "multiCore": 45
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 66,
+          "multiCore": 60
+        },
+        "threeLoaded": {
+          "singleCore": 59,
+          "multiCore": 54
+        }
+      }
+    },
+    {
+      "sizeSqmm": 25,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 70,
+          "multiCore": 65
+        },
+        "threeLoaded": {
+          "singleCore": 64,
+          "multiCore": 59
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 88,
+          "multiCore": 78
+        },
+        "threeLoaded": {
+          "singleCore": 77,
+          "multiCore": 70
+        }
+      }
+    },
+    {
+      "sizeSqmm": 35,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 86,
+          "multiCore": 80
+        },
+        "threeLoaded": {
+          "singleCore": 77,
+          "multiCore": 72
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 109,
+          "multiCore": 97
+        },
+        "threeLoaded": {
+          "singleCore": 96,
+          "multiCore": 86
+        }
+      }
+    },
+    {
+      "sizeSqmm": 50,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 104,
+          "multiCore": 96
+        },
+        "threeLoaded": {
+          "singleCore": 94,
+          "multiCore": 86
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 131,
+          "multiCore": 116
+        },
+        "threeLoaded": {
+          "singleCore": 117,
+          "multiCore": 103
+        }
+      }
+    },
+    {
+      "sizeSqmm": 70,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 131,
+          "multiCore": 121
+        },
+        "threeLoaded": {
+          "singleCore": 118,
+          "multiCore": 109
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 167,
+          "multiCore": 146
+        },
+        "threeLoaded": {
+          "singleCore": 149,
+          "multiCore": 130
+        }
+      }
+    },
+    {
+      "sizeSqmm": 95,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 158,
+          "multiCore": 145
+        },
+        "threeLoaded": {
+          "singleCore": 143,
+          "multiCore": 131
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 202,
+          "multiCore": 175
+        },
+        "threeLoaded": {
+          "singleCore": 180,
+          "multiCore": 156
+        }
+      }
+    },
+    {
+      "sizeSqmm": 120,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 183,
+          "multiCore": 167
+        },
+        "threeLoaded": {
+          "singleCore": 164,
+          "multiCore": 150
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 234,
+          "multiCore": 202
+        },
+        "threeLoaded": {
+          "singleCore": 208,
+          "multiCore": 179
+        }
+      }
+    },
+    {
+      "sizeSqmm": 150,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 209,
+          "multiCore": 191
+        },
+        "threeLoaded": {
+          "singleCore": 188,
+          "multiCore": 171
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 261,
+          "multiCore": 224
+        },
+        "threeLoaded": {
+          "singleCore": 228,
+          "multiCore": 196
+        }
+      }
+    },
+    {
+      "sizeSqmm": 185,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 238,
+          "multiCore": 216
+        },
+        "threeLoaded": {
+          "singleCore": 213,
+          "multiCore": 194
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 297,
+          "multiCore": 256
+        },
+        "threeLoaded": {
+          "singleCore": 258,
+          "multiCore": 222
+        }
+      }
+    },
+    {
+      "sizeSqmm": 240,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 279,
+          "multiCore": 253
+        },
+        "threeLoaded": {
+          "singleCore": 249,
+          "multiCore": 227
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 348,
+          "multiCore": 299
+        },
+        "threeLoaded": {
+          "singleCore": 301,
+          "multiCore": 258
+        }
+      }
+    },
+    {
+      "sizeSqmm": 300,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": 319,
+          "multiCore": 291
+        },
+        "threeLoaded": {
+          "singleCore": 285,
+          "multiCore": 259
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 398,
+          "multiCore": 343
+        },
+        "threeLoaded": {
+          "singleCore": 343,
+          "multiCore": 295
+        }
+      }
+    },
+    {
+      "sizeSqmm": 400,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": null,
+          "multiCore": null
+        },
+        "threeLoaded": {
+          "singleCore": null,
+          "multiCore": null
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 475,
+          "multiCore": null
+        },
+        "threeLoaded": {
+          "singleCore": 406,
+          "multiCore": null
+        }
+      }
+    },
+    {
+      "sizeSqmm": 500,
+      "group1": {
+        "twoLoaded": {
+          "singleCore": null,
+          "multiCore": null
+        },
+        "threeLoaded": {
+          "singleCore": null,
+          "multiCore": null
+        }
+      },
+      "group2": {
+        "twoLoaded": {
+          "singleCore": 545,
+          "multiCore": null
+        },
+        "threeLoaded": {
+          "singleCore": 464,
+          "multiCore": null
+        }
+      }
+    }
+  ]
+}

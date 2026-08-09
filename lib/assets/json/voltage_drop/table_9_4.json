@@ -1,0 +1,164 @@
+[
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 1.0,
+    "singlePhaseAll": 46,
+    "threePhaseAll": 40
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 1.5,
+    "singlePhaseAll": 31,
+    "threePhaseAll": 27
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 2.5,
+    "singlePhaseAll": 19,
+    "threePhaseAll": 16
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 4,
+    "singlePhaseAll": 12,
+    "threePhaseAll": 10
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 6,
+    "singlePhaseAll": 7.9,
+    "threePhaseAll": 6.8
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 10,
+    "singlePhaseAll": 4.7,
+    "threePhaseAll": 4.0
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 16,
+    "singlePhaseAll": 2.9,
+    "threePhaseAll": 2.5
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 25,
+    "singlePhaseAll": 1.85,
+    "threePhaseAll": 1.6
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 35,
+    "singlePhaseAll": 1.35,
+    "threePhaseAll": 1.15
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 50,
+    "singlePhaseAll": 0.99,
+    "threePhaseAll": 0.86
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 70,
+    "singlePhaseAll": 0.68,
+    "threePhaseAll": 0.6
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 95,
+    "singlePhaseAll": 0.52,
+    "threePhaseAll": 0.44
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 120,
+    "singlePhaseAll": 0.42,
+    "threePhaseAll": 0.36
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 150,
+    "singlePhaseAll": 0.35,
+    "threePhaseAll": 0.31
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 185,
+    "singlePhaseAll": 0.3,
+    "threePhaseAll": 0.25
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 240,
+    "singlePhaseAll": 0.24,
+    "threePhaseAll": 0.22
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 300,
+    "singlePhaseAll": 0.21,
+    "threePhaseAll": 0.18
+  },
+  {
+    "table": "9.4",
+    "insulation": "XLPE",
+    "coreType": "multiCore",
+    "temperatureC": 90,
+    "sizeSqmm": 400,
+    "singlePhaseAll": 0.19,
+    "threePhaseAll": 0.16
+  }
+]

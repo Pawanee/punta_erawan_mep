@@ -1,0 +1,4 @@
+enum VoltageDropCoreType {
+  singleCore,
+  multiCore,
+}
