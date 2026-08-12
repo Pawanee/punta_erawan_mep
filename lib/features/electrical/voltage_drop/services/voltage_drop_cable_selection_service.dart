@@ -131,7 +131,13 @@ class VoltageDropCableSelectionService {
     }
 
     for (int runs = 1; runs <= maxParallelRuns; runs++) {
-      final currentPerRun = requiredCurrent / runs;
+      // Required Current / Run is used ONLY for ampacity checking.
+      final requiredCurrentPerRun = requiredCurrent / runs;
+
+      // Voltage Drop must use the actual load current carried by
+      // each parallel run, not the derated/required current.
+      final actualLoadCurrentPerRun =
+          cableRequest.loadCurrent / runs;
 
       for (final cable in filtered) {
         if (cable.cableSizeSqmm > maxSingleCableSize) {
@@ -141,7 +147,7 @@ class VoltageDropCableSelectionService {
         // ---------------------------------------------------------------
         // เงื่อนไขที่ 1: Ampacity
         // ---------------------------------------------------------------
-        if (cable.ampacity < currentPerRun) {
+        if (cable.ampacity < requiredCurrentPerRun) {
           continue;
         }
 
@@ -156,7 +162,7 @@ class VoltageDropCableSelectionService {
                 : VoltageDropCoreType.multiCore,
             phase: request.phase,
             sizeSqmm: cable.cableSizeSqmm,
-            currentA: currentPerRun,
+            currentA: actualLoadCurrentPerRun,
             lengthM: request.lengthM,
             systemVoltage: request.systemVoltage,
             allowableVoltageDropPercent:

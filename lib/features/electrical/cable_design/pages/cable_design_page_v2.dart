@@ -44,25 +44,23 @@ class CableDesignPageV2 extends StatefulWidget {
 class _CableDesignPageV2State extends State<CableDesignPageV2> {
   final VoltageDropDesignEngine _engine = VoltageDropDesignEngine();
 
-  final TextEditingController _currentController = TextEditingController();
+  final TextEditingController _currentController =
+      TextEditingController();
 
-  final TextEditingController _ambientController = TextEditingController(
-    text: '30',
-  );
+  final TextEditingController _ambientController =
+      TextEditingController(text: '30');
 
-  final TextEditingController _groupingController = TextEditingController(
-    text: '1',
-  );
+  final TextEditingController _groupingController =
+      TextEditingController(text: '1');
 
-  final TextEditingController _voltageDropController = TextEditingController(
-    text: '3',
-  );
+  final TextEditingController _voltageDropController =
+      TextEditingController(text: '3');
 
-  final TextEditingController _lengthController = TextEditingController();
+  final TextEditingController _lengthController =
+      TextEditingController();
 
-  final TextEditingController _systemVoltageController = TextEditingController(
-    text: '400',
-  );
+  final TextEditingController _systemVoltageController =
+      TextEditingController(text: '400');
 
   PhaseSystem _phaseSystem = PhaseSystem.threePhase;
   CableType _cableType = CableType.iec01;
@@ -94,9 +92,8 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
     _groupingController.text = '1';
     _voltageDropController.text = '3';
     _lengthController.clear();
-    _systemVoltageController.text = _phaseSystem.name == 'singlePhase'
-        ? '230'
-        : '400';
+    _systemVoltageController.text =
+        _phaseSystem.name == 'singlePhase' ? '230' : '400';
 
     setState(() {
       _phaseSystem = PhaseSystem.threePhase;
@@ -117,7 +114,9 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   }
 
   bool _isGroup1_2_5(String name) {
-    return name == 'group1' || name == 'group2' || name == 'group5';
+    return name == 'group1' ||
+        name == 'group2' ||
+        name == 'group5';
   }
 
   /// Table 9.1/9.2 = PVC
@@ -128,7 +127,8 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   CableInsulation _resolveInsulation() {
     final cableName = _cableType.name.toLowerCase();
 
-    final insulationName = cableName.contains('xlpe') ? 'xlpe' : 'pvc';
+    final insulationName =
+        cableName.contains('xlpe') ? 'xlpe' : 'pvc';
 
     return CableInsulation.values.firstWhere(
       (e) => e.name.toLowerCase() == insulationName,
@@ -153,25 +153,32 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   }
 
   Future<void> _calculate() async {
-    final loadCurrent = double.tryParse(_currentController.text) ?? 0;
+    final loadCurrent =
+        double.tryParse(_currentController.text) ?? 0;
 
-    final lengthM = double.tryParse(_lengthController.text) ?? 0;
+    final lengthM =
+        double.tryParse(_lengthController.text) ?? 0;
 
-    final systemVoltage = double.tryParse(_systemVoltageController.text) ?? 0;
+    final systemVoltage =
+        double.tryParse(_systemVoltageController.text) ?? 0;
 
     final allowableVoltageDrop =
         double.tryParse(_voltageDropController.text) ?? 0;
 
     if (loadCurrent <= 0) {
       setState(() {
-        _result = VoltageDropDesignResult.error('Load Current ต้องมากกว่า 0 A');
+        _result = VoltageDropDesignResult.error(
+          'Load Current ต้องมากกว่า 0 A',
+        );
       });
       return;
     }
 
     if (lengthM <= 0) {
       setState(() {
-        _result = VoltageDropDesignResult.error('Cable Length ต้องมากกว่า 0 m');
+        _result = VoltageDropDesignResult.error(
+          'Cable Length ต้องมากกว่า 0 m',
+        );
       });
       return;
     }
@@ -210,8 +217,10 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       installationMethod: _installationMethod,
       loadedConductors: _loadedConductors,
       coreType: _coreType,
-      ambientTemperature: double.tryParse(_ambientController.text) ?? 30,
-      groupingCircuits: int.tryParse(_groupingController.text) ?? 1,
+      ambientTemperature:
+          double.tryParse(_ambientController.text) ?? 30,
+      groupingCircuits:
+          int.tryParse(_groupingController.text) ?? 1,
       allowableVoltageDrop: allowableVoltageDrop,
     );
 
@@ -244,7 +253,9 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       if (!mounted) return;
 
       setState(() {
-        _result = VoltageDropDesignResult.error('Voltage Drop UI error: $e');
+        _result = VoltageDropDesignResult.error(
+          'Voltage Drop UI error: $e',
+        );
         _isLoading = false;
       });
     }
@@ -254,140 +265,147 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
     if (value == null) return '-';
     return value.toStringAsFixed(digits);
   }
-Widget _buildDesignSummary() {
-  final result = _result!;
 
-  if (!result.isSuccess) {
-    return const SizedBox.shrink();
-  }
+  Widget _buildDesignSummary() {
+    final result = _result;
 
-  final allowable =
-      double.tryParse(_voltageDropController.text) ?? 0;
+    if (result == null || !result.isSuccess) {
+      return const SizedBox.shrink();
+    }
 
-  final actual = result.voltageDropPercent ?? 0;
+    final allowable =
+        double.tryParse(_voltageDropController.text) ?? 0;
 
-  final margin = allowable - actual;
+    final actual = result.voltageDropPercent ?? 0;
 
-  final isPass = margin >= 0;
+    final margin = allowable - actual;
 
-  return Card(
-    elevation: 4,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionHeader(
-            icon: isPass
-                ? Icons.verified
-                : Icons.warning,
-            title: 'Design Summary',
-            color: isPass
-                ? Colors.green
-                : Colors.orange,
-          ),
+    final isPass = margin >= 0;
 
-          _space(),
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: isPass
-                  ? Colors.green.withValues(alpha: 0.08)
-                  : Colors.orange.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: isPass
-                    ? Colors.green.withValues(alpha: 0.35)
-                    : Colors.orange.withValues(alpha: 0.35),
-              ),
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SectionHeader(
+              icon: isPass ? Icons.verified : Icons.warning,
+              title: 'Design Summary',
+              color: isPass ? Colors.green : Colors.orange,
             ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isPass
-                          ? Icons.check_circle
-                          : Icons.warning,
-                      color: isPass
-                          ? Colors.green
-                          : Colors.orange,
-                      size: 32,
-                    ),
-
-                    const SizedBox(width: 12),
-
-                    Expanded(
-                      child: Text(
-                        isPass
-                            ? 'DESIGN PASS'
-                            : 'CHECK REQUIRED',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: isPass
-                              ? Colors.green
-                              : Colors.orange,
+            _space(),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isPass
+                    ? Colors.green.withValues(alpha: 0.08)
+                    : Colors.orange.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                  color: isPass
+                      ? Colors.green.withValues(alpha: 0.35)
+                      : Colors.orange.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        isPass ? Icons.check_circle : Icons.warning,
+                        color: isPass ? Colors.green : Colors.orange,
+                        size: 32,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          isPass ? 'DESIGN PASS' : 'CHECK REQUIRED',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: isPass ? Colors.green : Colors.orange,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 16),
-
-                const Divider(),
-
-                const SizedBox(height: 8),
-
-                ResultRow(
-                  title: 'Selected Cable',
-                  value:
-                      result.cableArrangement ?? '-',
-                ),
-
-                ResultRow(
-                  title: 'Ampacity / Run',
-                  value:
-                      '${_number(result.ampacityPerRun)} A',
-                ),
-
-                ResultRow(
-                  title: 'Total Ampacity',
-                  value:
-                      '${_number(result.totalAmpacity)} A',
-                ),
-
-                ResultRow(
-                  title: 'Voltage Drop',
-                  value:
-                      '${_number(result.voltageDropPercent)} %',
-                ),
-
-                ResultRow(
-                  title: 'Allowable Voltage Drop',
-                  value:
-                      '${_number(allowable)} %',
-                ),
-
-                ResultRow(
-                  title: 'Voltage Drop Margin',
-                  value:
-                      '${_number(margin)} %',
-                ),
-              ],
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  ResultRow(
+                    title: 'Selected Cable',
+                    value: result.cableArrangement ?? '-',
+                  ),
+                  ResultRow(
+                    title: 'Ampacity / Run',
+                    value: '${_number(result.ampacityPerRun)} A',
+                  ),
+                  ResultRow(
+                    title: 'Total Ampacity',
+                    value: '${_number(result.totalAmpacity)} A',
+                  ),
+                  ResultRow(
+                    title: 'Voltage Drop',
+                    value: '${_number(result.voltageDropPercent)} %',
+                  ),
+                  ResultRow(
+                    title: 'Allowable Voltage Drop',
+                    value: '${_number(allowable)} %',
+                  ),
+                  ResultRow(
+                    title: 'Voltage Drop Margin',
+                    value: '${_number(margin)} %',
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Widget _buildActionButtons() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isCompact = constraints.maxWidth < 480;
+        final calculateButton = FilledButton.icon(
+          onPressed: _isLoading ? null : _calculate,
+          icon: const Icon(Icons.calculate),
+          label: const Text('CALCULATE'),
+        );
+        final resetButton = OutlinedButton.icon(
+          onPressed: _isLoading ? null : _resetForm,
+          icon: const Icon(Icons.refresh),
+          label: const Text('RESET'),
+        );
+
+        if (isCompact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              calculateButton,
+              const SizedBox(height: 12),
+              resetButton,
+            ],
+          );
+        }
+
+        return Row(
+          children: [
+            Expanded(child: calculateButton),
+            const SizedBox(width: 16),
+            Expanded(child: resetButton),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -402,11 +420,18 @@ Widget _buildDesignSummary() {
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 900),
-          child: ListView(
-            padding: const EdgeInsets.all(20),
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          final isCompact = constraints.maxWidth < 600;
+
+          return Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 900),
+              child: ListView(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isCompact ? 16 : 28,
+                  vertical: isCompact ? 16 : 24,
+                ),
             children: [
               const CableHeader(),
               const SizedBox(height: 20),
@@ -447,7 +472,7 @@ Widget _buildDesignSummary() {
                       _space(),
 
                       DropdownButtonFormField<PhaseSystem>(
-                        initialValue: _phaseSystem,
+                        value: _phaseSystem,
                         decoration: const InputDecoration(
                           labelText: 'Phase System',
                           border: OutlineInputBorder(),
@@ -467,7 +492,9 @@ Widget _buildDesignSummary() {
                           setState(() {
                             _phaseSystem = value;
                             _systemVoltageController.text =
-                                value.name == 'singlePhase' ? '230' : '400';
+                                value.name == 'singlePhase'
+                                    ? '230'
+                                    : '400';
                           });
                         },
                       ),
@@ -475,7 +502,7 @@ Widget _buildDesignSummary() {
                       _space(),
 
                       DropdownButtonFormField<CableType>(
-                        initialValue: _cableType,
+                        value: _cableType,
                         decoration: const InputDecoration(
                           labelText: 'Cable Type',
                           border: OutlineInputBorder(),
@@ -501,7 +528,7 @@ Widget _buildDesignSummary() {
                       _space(),
 
                       DropdownButtonFormField<InstallationMethod>(
-                        initialValue: _installationMethod,
+                        value: _installationMethod,
                         decoration: const InputDecoration(
                           labelText: 'Installation Method',
                           border: OutlineInputBorder(),
@@ -531,7 +558,7 @@ Widget _buildDesignSummary() {
                       _space(),
 
                       DropdownButtonFormField<CoreType>(
-                        initialValue: _coreType,
+                        value: _coreType,
                         decoration: const InputDecoration(
                           labelText: 'Core Type',
                           border: OutlineInputBorder(),
@@ -562,7 +589,7 @@ Widget _buildDesignSummary() {
                         _space(),
 
                         DropdownButtonFormField<CableArrangement>(
-                          initialValue: _arrangement,
+                          value: _arrangement,
                           decoration: const InputDecoration(
                             labelText: 'Cable Arrangement',
                             border: OutlineInputBorder(),
@@ -587,16 +614,25 @@ Widget _buildDesignSummary() {
                       _space(),
 
                       DropdownButtonFormField<int>(
-                        initialValue: _loadedConductors,
+                        value: _loadedConductors,
                         decoration: const InputDecoration(
                           labelText: 'Loaded Conductors',
                           border: OutlineInputBorder(),
                           prefixIcon: Icon(Icons.linear_scale),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 1, child: Text('1')),
-                          DropdownMenuItem(value: 2, child: Text('2')),
-                          DropdownMenuItem(value: 3, child: Text('3')),
+                          DropdownMenuItem(
+                            value: 1,
+                            child: Text('1'),
+                          ),
+                          DropdownMenuItem(
+                            value: 2,
+                            child: Text('2'),
+                          ),
+                          DropdownMenuItem(
+                            value: 3,
+                            child: Text('3'),
+                          ),
                         ],
                         onChanged: (value) {
                           if (value == null) return;
@@ -611,7 +647,8 @@ Widget _buildDesignSummary() {
 
                       TextField(
                         controller: _ambientController,
-                        keyboardType: const TextInputType.numberWithOptions(
+                        keyboardType:
+                            const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
@@ -637,7 +674,8 @@ Widget _buildDesignSummary() {
 
                       TextField(
                         controller: _lengthController,
-                        keyboardType: const TextInputType.numberWithOptions(
+                        keyboardType:
+                            const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
@@ -651,7 +689,8 @@ Widget _buildDesignSummary() {
 
                       TextField(
                         controller: _systemVoltageController,
-                        keyboardType: const TextInputType.numberWithOptions(
+                        keyboardType:
+                            const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
@@ -665,7 +704,8 @@ Widget _buildDesignSummary() {
 
                       TextField(
                         controller: _voltageDropController,
-                        keyboardType: const TextInputType.numberWithOptions(
+                        keyboardType:
+                            const TextInputType.numberWithOptions(
                           decimal: true,
                         ),
                         decoration: const InputDecoration(
@@ -677,30 +717,7 @@ Widget _buildDesignSummary() {
 
                       _space(),
 
-                      Row(
-                        children: [
-                          Expanded(
-                            child: FilledButton.icon(
-                              onPressed: _isLoading ? null : _calculate,
-                              icon: const Icon(Icons.calculate),
-                              label: const Text(
-                                'CALCULATE',
-                                maxLines: 1,
-                                overflow: TextOverflow.fade,
-                                softWrap: false,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: _isLoading ? null : _resetForm,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('RESET'),
-                            ),
-                          ),
-                        ],
-                      ),
+                      _buildActionButtons(),
                     ],
                   ),
                 ),
@@ -711,23 +728,26 @@ Widget _buildDesignSummary() {
               // ----------------------------------------------------------------
               if (_isLoading) ...[
                 const SizedBox(height: 24),
-                const Center(child: CircularProgressIndicator()),
+                const Center(
+                  child: CircularProgressIndicator(),
+                ),
               ],
 
               if (_result != null) ...[
-  const SizedBox(height: 24),
+                const SizedBox(height: 24),
 
-  if (_result!.isSuccess) ...[
-    _buildDesignSummary(),
-    const SizedBox(height: 16),
-  ],
+                if (_result!.isSuccess) ...[
+                  _buildDesignSummary(),
+                  const SizedBox(height: 24),
+                ],
 
-  Card(
+                Card(
                   elevation: 4,
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment:
+                          CrossAxisAlignment.start,
                       children: [
                         SectionHeader(
                           icon: _result!.isSuccess
@@ -736,12 +756,17 @@ Widget _buildDesignSummary() {
                           title: _result!.isSuccess
                               ? 'Calculation Result'
                               : 'Calculation Failed',
-                          color: _result!.isSuccess ? Colors.green : Colors.red,
+                          color: _result!.isSuccess
+                              ? Colors.green
+                              : Colors.red,
                         ),
 
                         _space(),
 
-                        ResultRow(title: 'Status', value: _result!.message),
+                        ResultRow(
+                          title: 'Status',
+                          value: _result!.message,
+                        ),
 
                         if (_result!.isSuccess) ...[
                           const Divider(height: 28),
@@ -758,17 +783,21 @@ Widget _buildDesignSummary() {
 
                           ResultRow(
                             title: 'Load Current',
-                            value: '${_number(_result!.loadCurrent)} A',
+                            value:
+                                '${_number(_result!.loadCurrent)} A',
                           ),
 
                           ResultRow(
                             title: 'Grouping Factor',
-                            value: _number(_result!.groupingFactor),
+                            value: _number(
+                              _result!.groupingFactor,
+                            ),
                           ),
 
                           ResultRow(
                             title: 'Required Current',
-                            value: '${_number(_result!.requiredCurrent)} A',
+                            value:
+                                '${_number(_result!.requiredCurrent)} A',
                           ),
 
                           const Divider(height: 28),
@@ -791,27 +820,32 @@ Widget _buildDesignSummary() {
 
                           ResultRow(
                             title: 'Parallel Runs',
-                            value: '${_result!.runs ?? '-'}',
+                            value:
+                                '${_result!.runs ?? '-'}',
                           ),
 
                           ResultRow(
-                            title: 'Current / Run',
-                            value: '${_number(_result!.currentPerRun)} A',
+                            title: 'Actual Load Current / Run',
+                            value:
+                                '${_number(_result!.currentPerRun)} A',
                           ),
 
                           ResultRow(
                             title: 'Ampacity / Run',
-                            value: '${_number(_result!.ampacityPerRun)} A',
+                            value:
+                                '${_number(_result!.ampacityPerRun)} A',
                           ),
 
                           ResultRow(
                             title: 'Total Ampacity',
-                            value: '${_number(_result!.totalAmpacity)} A',
+                            value:
+                                '${_number(_result!.totalAmpacity)} A',
                           ),
 
                           ResultRow(
                             title: 'Cable Arrangement',
-                            value: _result!.cableArrangement ?? '-',
+                            value:
+                                _result!.cableArrangement ?? '-',
                           ),
 
                           const Divider(height: 28),
@@ -828,22 +862,26 @@ Widget _buildDesignSummary() {
 
                           ResultRow(
                             title: 'Cable Length',
-                            value: '${_number(_result!.cableLengthM)} m',
+                            value:
+                                '${_number(_result!.cableLengthM)} m',
                           ),
 
                           ResultRow(
                             title: 'mV/A/m',
-                            value: _number(_result!.mvPerAperM),
+                            value:
+                                _number(_result!.mvPerAperM),
                           ),
 
                           ResultRow(
                             title: 'Voltage Drop',
-                            value: '${_number(_result!.voltageDropV)} V',
+                            value:
+                                '${_number(_result!.voltageDropV)} V',
                           ),
 
                           ResultRow(
                             title: 'Voltage Drop %',
-                            value: '${_number(_result!.voltageDropPercent)} %',
+                            value:
+                                '${_number(_result!.voltageDropPercent)} %',
                           ),
 
                           const Divider(height: 28),
@@ -860,15 +898,15 @@ Widget _buildDesignSummary() {
 
                           ResultRow(
                             title: 'Ampacity Reference',
-                            value: _result!.ampacityReference ?? '-',
+                            value:
+                                _result!.ampacityReference ?? '-',
                           ),
 
                           ResultRow(
-  title: 'Voltage Drop Reference',
-  value: _result!.voltageDropReference == null
-      ? '-'
-      : 'Table ${_result!.voltageDropReference}',
-),
+                            title: 'Voltage Drop Reference',
+                            value:
+                                _result!.voltageDropReference ?? '-',
+                          ),
                         ],
                       ],
                     ),
@@ -880,6 +918,8 @@ Widget _buildDesignSummary() {
             ],
           ),
         ),
+          );
+        },
       ),
     );
   }

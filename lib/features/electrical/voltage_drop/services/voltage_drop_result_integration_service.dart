@@ -99,8 +99,10 @@ final voltageDropReference =
       );
     }
 
+    // Actual current flowing in each parallel run.
+    // Required Current remains separate and is used for ampacity design.
     final currentPerRun =
-        requiredCurrent / runs;
+        loadCurrent / runs;
 
     final totalAmpacity =
         ampacityPerRun * runs;

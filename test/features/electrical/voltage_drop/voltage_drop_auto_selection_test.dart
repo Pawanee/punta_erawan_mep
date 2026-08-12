@@ -108,7 +108,7 @@ void main() {
       expect(result.runs, 1);
       expect(result.requiredCurrent, closeTo(222.222222, 0.000001));
       expect(result.groupingFactor, 0.45);
-      expect(result.voltageDropPercent, closeTo(1.5, 0.000001));
+      expect(result.voltageDropPercent, closeTo(0.675, 0.000001));
     });
 
     test('returns error when no cable can satisfy both conditions', () async {
