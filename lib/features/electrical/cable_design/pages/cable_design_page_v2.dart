@@ -14,6 +14,8 @@ import '../../voltage_drop/models/voltage_drop_design_result.dart';
 import '../../voltage_drop/services/voltage_drop_design_engine.dart';
 
 import '../models/cable_design_request.dart';
+import '../policies/approved_cable_type_context_policy.dart';
+import '../policies/cable_context_policy.dart';
 import '../widgets/cable_header.dart';
 import '../widgets/result_row.dart';
 import '../widgets/section_header.dart';
@@ -43,6 +45,13 @@ class CableDesignPageV2 extends StatefulWidget {
 
 class _CableDesignPageV2State extends State<CableDesignPageV2> {
   final VoltageDropDesignEngine _engine = VoltageDropDesignEngine();
+
+  /// Approved CableType -> CableContext engineering policy.
+  ///
+  /// The same policy used by VoltageDropCableDesignEngine is used here
+  /// so the voltage-drop reference follows the approved cable context.
+  final CableContextPolicy _cableContextPolicy =
+      const ApprovedCableTypeContextPolicy();
 
   final TextEditingController _currentController =
       TextEditingController();
@@ -119,21 +128,16 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
         name == 'group5';
   }
 
-  /// Table 9.1/9.2 = PVC
-  /// Table 9.3/9.4 = XLPE
+  /// Resolves insulation from the approved CableType -> CableContext policy.
   ///
-  /// CableType ที่มีคำว่า xlpe จะใช้ XLPE
-  /// ที่เหลือใช้ PVC ตามชุดสายที่ใช้อยู่ใน Cable Design
+  /// This keeps the UI aligned with the same engineering policy used by
+  /// VoltageDropCableDesignEngine.
+  ///
+  /// Approved examples:
+  /// - PVC cable types -> PVC -> Table 9.1 / 9.2
+  /// - IEC 60502-1 -> XLPE -> Table 9.3 / 9.4
   CableInsulation _resolveInsulation() {
-    final cableName = _cableType.name.toLowerCase();
-
-    final insulationName =
-        cableName.contains('xlpe') ? 'xlpe' : 'pvc';
-
-    return CableInsulation.values.firstWhere(
-      (e) => e.name.toLowerCase() == insulationName,
-      orElse: () => CableInsulation.values.first,
-    );
+    return _cableContextPolicy.resolve(_cableType).insulation;
   }
 
   VoltagePhase _resolveVoltagePhase() {

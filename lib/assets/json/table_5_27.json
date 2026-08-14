@@ -1,0 +1,31 @@
+{
+  "reference": "Table 5-27",
+  "title": "ขนาดกระแสของสายไฟฟ้าตัวนำทองแดงหุ้มฉนวน XLPE มี/ไม่มีเปลือก",
+  "systemVoltageU0U": "0.6/1 kV",
+  "conductorTemperatureC": 90,
+  "ambientTemperatureC": 40,
+  "installationCondition": "เดินร้อยในท่อในอากาศ",
+  "cableCodeScope": "IEC 60502-1 และสายที่มีคุณสมบัติพิเศษต่าง ๆ เช่น สายทนไฟ สายไรฮาโลเจน สายควันน้อย เป็นต้น",
+  "maximumRatedVoltageDcKv": 1.5,
+  "rows": [
+    {"sizeSqmm": 1, "group1": {"twoLoaded": {"singleCore": 13, "multiCore": 13}, "threeLoaded": {"singleCore": 12, "multiCore": 12}}, "group2": {"twoLoaded": {"singleCore": 15, "multiCore": 15}, "threeLoaded": {"singleCore": 14, "multiCore": 14}}},
+    {"sizeSqmm": 1.5, "group1": {"twoLoaded": {"singleCore": 17, "multiCore": 17}, "threeLoaded": {"singleCore": 15, "multiCore": 15}}, "group2": {"twoLoaded": {"singleCore": 21, "multiCore": 20}, "threeLoaded": {"singleCore": 18, "multiCore": 18}}},
+    {"sizeSqmm": 2.5, "group1": {"twoLoaded": {"singleCore": 24, "multiCore": 23}, "threeLoaded": {"singleCore": 21, "multiCore": 20}}, "group2": {"twoLoaded": {"singleCore": 28, "multiCore": 27}, "threeLoaded": {"singleCore": 25, "multiCore": 24}}},
+    {"sizeSqmm": 4, "group1": {"twoLoaded": {"singleCore": 32, "multiCore": 30}, "threeLoaded": {"singleCore": 28, "multiCore": 27}}, "group2": {"twoLoaded": {"singleCore": 38, "multiCore": 36}, "threeLoaded": {"singleCore": 34, "multiCore": 32}}},
+    {"sizeSqmm": 6, "group1": {"twoLoaded": {"singleCore": 41, "multiCore": 38}, "threeLoaded": {"singleCore": 36, "multiCore": 35}}, "group2": {"twoLoaded": {"singleCore": 49, "multiCore": 46}, "threeLoaded": {"singleCore": 44, "multiCore": 40}}},
+    {"sizeSqmm": 10, "group1": {"twoLoaded": {"singleCore": 56, "multiCore": 52}, "threeLoaded": {"singleCore": 49, "multiCore": 46}}, "group2": {"twoLoaded": {"singleCore": 68, "multiCore": 63}, "threeLoaded": {"singleCore": 60, "multiCore": 55}}},
+    {"sizeSqmm": 16, "group1": {"twoLoaded": {"singleCore": 74, "multiCore": 69}, "threeLoaded": {"singleCore": 66, "multiCore": 62}}, "group2": {"twoLoaded": {"singleCore": 91, "multiCore": 83}, "threeLoaded": {"singleCore": 80, "multiCore": 73}}},
+    {"sizeSqmm": 25, "group1": {"twoLoaded": {"singleCore": 96, "multiCore": 90}, "threeLoaded": {"singleCore": 86, "multiCore": 81}}, "group2": {"twoLoaded": {"singleCore": 121, "multiCore": 108}, "threeLoaded": {"singleCore": 106, "multiCore": 96}}},
+    {"sizeSqmm": 35, "group1": {"twoLoaded": {"singleCore": 119, "multiCore": 110}, "threeLoaded": {"singleCore": 106, "multiCore": 99}}, "group2": {"twoLoaded": {"singleCore": 149, "multiCore": 133}, "threeLoaded": {"singleCore": 131, "multiCore": 116}}},
+    {"sizeSqmm": 50, "group1": {"twoLoaded": {"singleCore": 144, "multiCore": 132}, "threeLoaded": {"singleCore": 128, "multiCore": 118}}, "group2": {"twoLoaded": {"singleCore": 180, "multiCore": 159}, "threeLoaded": {"singleCore": 159, "multiCore": 140}}},
+    {"sizeSqmm": 70, "group1": {"twoLoaded": {"singleCore": 182, "multiCore": 167}, "threeLoaded": {"singleCore": 163, "multiCore": 149}}, "group2": {"twoLoaded": {"singleCore": 230, "multiCore": 201}, "threeLoaded": {"singleCore": 202, "multiCore": 177}}},
+    {"sizeSqmm": 95, "group1": {"twoLoaded": {"singleCore": 219, "multiCore": 200}, "threeLoaded": {"singleCore": 197, "multiCore": 179}}, "group2": {"twoLoaded": {"singleCore": 278, "multiCore": 241}, "threeLoaded": {"singleCore": 245, "multiCore": 212}}},
+    {"sizeSqmm": 120, "group1": {"twoLoaded": {"singleCore": 253, "multiCore": 230}, "threeLoaded": {"singleCore": 227, "multiCore": 207}}, "group2": {"twoLoaded": {"singleCore": 322, "multiCore": 278}, "threeLoaded": {"singleCore": 284, "multiCore": 244}}},
+    {"sizeSqmm": 150, "group1": {"twoLoaded": {"singleCore": 289, "multiCore": 264}, "threeLoaded": {"singleCore": 259, "multiCore": 236}}, "group2": {"twoLoaded": {"singleCore": 358, "multiCore": 304}, "threeLoaded": {"singleCore": 311, "multiCore": 273}}},
+    {"sizeSqmm": 185, "group1": {"twoLoaded": {"singleCore": 329, "multiCore": 299}, "threeLoaded": {"singleCore": 295, "multiCore": 268}}, "group2": {"twoLoaded": {"singleCore": 409, "multiCore": 349}, "threeLoaded": {"singleCore": 349, "multiCore": 309}}},
+    {"sizeSqmm": 240, "group1": {"twoLoaded": {"singleCore": 386, "multiCore": 351}, "threeLoaded": {"singleCore": 346, "multiCore": 315}}, "group2": {"twoLoaded": {"singleCore": 480, "multiCore": 418}, "threeLoaded": {"singleCore": 410, "multiCore": 362}}},
+    {"sizeSqmm": 300, "group1": {"twoLoaded": {"singleCore": 442, "multiCore": 402}, "threeLoaded": {"singleCore": 396, "multiCore": 360}}, "group2": {"twoLoaded": {"singleCore": 549, "multiCore": 484}, "threeLoaded": {"singleCore": 468, "multiCore": 414}}},
+    {"sizeSqmm": 400, "group1": {"twoLoaded": {"singleCore": null, "multiCore": null}, "threeLoaded": {"singleCore": null, "multiCore": null}}, "group2": {"twoLoaded": {"singleCore": 622, "multiCore": null}, "threeLoaded": {"singleCore": 531, "multiCore": null}}},
+    {"sizeSqmm": 500, "group1": {"twoLoaded": {"singleCore": null, "multiCore": null}, "threeLoaded": {"singleCore": null, "multiCore": null}}, "group2": {"twoLoaded": {"singleCore": 713, "multiCore": null}, "threeLoaded": {"singleCore": 606, "multiCore": null}}}
+  ]
+}

@@ -31,6 +31,9 @@ class VoltageDropResultIntegrationService {
     final ampacityPerRun = selectionResult.ampacity;
     final requiredCurrent = selectionResult.requiredCurrent;
     final groupingFactor = selectionResult.groupingFactor;
+    final temperatureFactor = selectionResult.temperatureFactor;
+    final baseAmpacityPerRun = selectionResult.baseAmpacityPerRun;
+    final correctedAmpacityPerRun = selectionResult.correctedAmpacityPerRun;
     final cableSize = selectionResult.cableSizeSqmm;
     final voltageDropV = selectionResult.voltageDropV;
     final voltageDropPercent = selectionResult.voltageDropPercent;
@@ -110,6 +113,15 @@ final voltageDropReference =
     return VoltageDropDesignResult.success(
       loadCurrent: loadCurrent,
       groupingFactor: groupingFactor,
+      temperatureFactor: temperatureFactor,
+      baseAmpacityPerRun: baseAmpacityPerRun,
+      correctedAmpacityPerRun: correctedAmpacityPerRun,
+      cableType: selectionResult.cableType,
+      conductorTemperatureClass: selectionResult.conductorTemperatureClass,
+      ambientTemperatureC: selectionResult.ambientTemperatureC,
+      groupingCircuits: selectionResult.groupingCircuits,
+      groupingReference: selectionResult.groupingReference,
+      temperatureReference: selectionResult.temperatureReference,
       requiredCurrent: requiredCurrent,
       runs: runs,
       currentPerRun: currentPerRun,

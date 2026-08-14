@@ -1,6 +1,8 @@
 import '../../cable_design/enums/core_type.dart';
 import '../../cable_design/models/cable_table_row.dart';
-import '../../cable_design/services/grouping_factor_service.dart';
+import '../../cable_design/models/table_5_43_temperature_factor.dart';
+import '../../cable_design/services/ampacity_correction_service.dart';
+import '../../cable_design/enums/conductor_temperature_class.dart';
 import '../enums/voltage_drop_core_type.dart';
 import '../models/voltage_drop_cable_selection_request.dart';
 import '../models/voltage_drop_cable_selection_result.dart';
@@ -30,20 +32,20 @@ import 'voltage_drop_calculation_service.dart';
 /// ============================================================================
 class VoltageDropCableSelectionService {
   VoltageDropCableSelectionService({
-    GroupingFactorService? groupingFactorService,
     VoltageDropRepository? voltageDropRepository,
     VoltageDropCalculationService? voltageDropCalculationService,
-  })  : groupingFactorService =
-            groupingFactorService ?? GroupingFactorService(),
-        voltageDropRepository =
+    AmpacityCorrectionService? ampacityCorrectionService,
+  })  : voltageDropRepository =
             voltageDropRepository ?? const VoltageDropRepository(),
         voltageDropCalculationService =
             voltageDropCalculationService ??
-                const VoltageDropCalculationService();
+                const VoltageDropCalculationService(),
+        ampacityCorrectionService =
+            ampacityCorrectionService ?? const AmpacityCorrectionService();
 
-  final GroupingFactorService groupingFactorService;
   final VoltageDropRepository voltageDropRepository;
   final VoltageDropCalculationService voltageDropCalculationService;
+  final AmpacityCorrectionService ampacityCorrectionService;
 
   static const double maxSingleCableSize = 240.0;
   static const int maxParallelRuns = 20;
@@ -51,6 +53,9 @@ class VoltageDropCableSelectionService {
   Future<VoltageDropCableSelectionResult> select({
     required VoltageDropCableSelectionRequest request,
     required List<CableTableRow> candidates,
+    required double groupingFactor,
+    required double temperatureFactor,
+    required ConductorTemperatureClass conductorTemperatureClass,
   }) async {
     final cableRequest = request.cableRequest;
 
@@ -103,19 +108,15 @@ class VoltageDropCableSelectionService {
       (a, b) => a.cableSizeSqmm.compareTo(b.cableSizeSqmm),
     );
 
-    final groupingFactor = await groupingFactorService.getFactor(
-      circuits: cableRequest.groupingCircuits,
-      enclosed: cableRequest.installationMethod.name == 'group1',
-    );
-
     if (groupingFactor <= 0) {
       return VoltageDropCableSelectionResult.error(
         'Grouping Factor ไม่ถูกต้อง',
       );
     }
 
-    final requiredCurrent =
-        cableRequest.loadCurrent / groupingFactor;
+    // Retained for existing result compatibility. Selection itself evaluates
+    // corrected ampacity per run against actual current per run below.
+    final requiredCurrent = cableRequest.loadCurrent / groupingFactor;
 
     final tableRows = await voltageDropRepository.loadTable(
       insulation: request.insulation,
@@ -131,13 +132,7 @@ class VoltageDropCableSelectionService {
     }
 
     for (int runs = 1; runs <= maxParallelRuns; runs++) {
-      // Required Current / Run is used ONLY for ampacity checking.
-      final requiredCurrentPerRun = requiredCurrent / runs;
-
-      // Voltage Drop must use the actual load current carried by
-      // each parallel run, not the derated/required current.
-      final actualLoadCurrentPerRun =
-          cableRequest.loadCurrent / runs;
+      final currentPerRun = cableRequest.loadCurrent / runs;
 
       for (final cable in filtered) {
         if (cable.cableSizeSqmm > maxSingleCableSize) {
@@ -147,7 +142,14 @@ class VoltageDropCableSelectionService {
         // ---------------------------------------------------------------
         // เงื่อนไขที่ 1: Ampacity
         // ---------------------------------------------------------------
-        if (cable.ampacity < requiredCurrentPerRun) {
+        final correctedAmpacityPerRun = ampacityCorrectionService.calculate(
+          baseAmpacity: cable.ampacity,
+          groupingFactor: groupingFactor,
+          temperatureFactor: temperatureFactor,
+        );
+
+        if (correctedAmpacityPerRun == null ||
+            correctedAmpacityPerRun < currentPerRun) {
           continue;
         }
 
@@ -162,7 +164,7 @@ class VoltageDropCableSelectionService {
                 : VoltageDropCoreType.multiCore,
             phase: request.phase,
             sizeSqmm: cable.cableSizeSqmm,
-            currentA: actualLoadCurrentPerRun,
+            currentA: currentPerRun,
             lengthM: request.lengthM,
             systemVoltage: request.systemVoltage,
             allowableVoltageDropPercent:
@@ -197,6 +199,15 @@ class VoltageDropCableSelectionService {
   voltageDropReference: vdResult.table!,
 
   groupingFactor: groupingFactor,
+  temperatureFactor: temperatureFactor,
+  baseAmpacityPerRun: cable.ampacity,
+  correctedAmpacityPerRun: correctedAmpacityPerRun,
+  cableType: cableRequest.cableType,
+  conductorTemperatureClass: conductorTemperatureClass,
+  ambientTemperatureC: cableRequest.ambientTemperature,
+  groupingCircuits: cableRequest.groupingCircuits,
+  groupingReference: 'Table 5-8',
+  temperatureReference: Table543TemperatureFactor.reference,
   requiredCurrent: requiredCurrent,
   voltageDropV: vdResult.voltageDropV!,
   voltageDropPercent: vdResult.voltageDropPercent!,

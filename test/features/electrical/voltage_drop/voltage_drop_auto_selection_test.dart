@@ -43,7 +43,7 @@ void main() {
   }
 
   group('PART 6 - Auto Cable Selection', () {
-    test('250 A / 100 m selects 2 x 95 sq.mm', () async {
+    test('250 A / 100 m selects 1 x 240 sq.mm', () async {
       final result = await engine.design(
         request(
           current: 250,
@@ -53,13 +53,17 @@ void main() {
       );
 
       expect(result.isSuccess, isTrue);
-      expect(result.cableSizeSqmm, 95);
-      expect(result.runs, 2);
-      expect(result.cableArrangement, '2 × 95 sq.mm');
-      expect(result.ampacity, 143);
+      expect(result.cableSizeSqmm, 240);
+      expect(result.runs, 1);
+      expect(result.cableArrangement, '1 × 240 sq.mm');
+      expect(result.ampacity, 249);
       expect(result.requiredCurrent, 250);
-      expect(result.voltageDropV, closeTo(6.0, 0.000001));
-      expect(result.voltageDropPercent, closeTo(1.5, 0.000001));
+      expect(result.baseAmpacityPerRun, closeTo(249, 0.000001));
+      expect(result.groupingFactor, closeTo(1.0, 0.000001));
+      expect(result.temperatureFactor, closeTo(1.15, 0.000001));
+      expect(result.correctedAmpacityPerRun, closeTo(286.35, 0.000001));
+      expect(result.voltageDropV, closeTo(6.75, 0.000001));
+      expect(result.voltageDropPercent, closeTo(1.6875, 0.000001));
     });
 
     test('250 A / 300 m increases cable to 2 x 185 sq.mm', () async {
@@ -80,7 +84,7 @@ void main() {
       expect(result.voltageDropPercent, closeTo(2.90625, 0.000001));
     });
 
-    test('100 A / 100 m / 10 grouped circuits selects 1 x 240 sq.mm', () async {
+    test('100 A / 100 m / 10 grouped circuits selects 1 x 185 sq.mm', () async {
       final req = VoltageDropCableSelectionRequest(
         cableRequest: CableDesignRequest(
           loadCurrent: 100,
@@ -104,11 +108,14 @@ void main() {
       final result = await engine.design(req);
 
       expect(result.isSuccess, isTrue);
-      expect(result.cableSizeSqmm, 240);
+      expect(result.cableSizeSqmm, 185);
       expect(result.runs, 1);
       expect(result.requiredCurrent, closeTo(222.222222, 0.000001));
-      expect(result.groupingFactor, 0.45);
-      expect(result.voltageDropPercent, closeTo(0.675, 0.000001));
+      expect(result.baseAmpacityPerRun, closeTo(213, 0.000001));
+      expect(result.groupingFactor, closeTo(0.45, 0.000001));
+      expect(result.temperatureFactor, closeTo(1.15, 0.000001));
+      expect(result.correctedAmpacityPerRun, closeTo(110.2275, 0.000001));
+      expect(result.voltageDropPercent, closeTo(0.775, 0.000001));
     });
 
     test('returns error when no cable can satisfy both conditions', () async {

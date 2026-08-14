@@ -1,4 +1,7 @@
- /// ============================================================================
+import '../../cable_design/enums/cable_type.dart';
+import '../../cable_design/enums/conductor_temperature_class.dart';
+
+/// ============================================================================
 /// VOLTAGE DROP CABLE SELECTION RESULT
 ///
 /// PART 3 / PART 6 / PART 9.4
@@ -29,6 +32,15 @@ class VoltageDropCableSelectionResult {
     this.voltageDropReference,
 
     this.groupingFactor,
+    this.temperatureFactor,
+    this.baseAmpacityPerRun,
+    this.correctedAmpacityPerRun,
+    this.cableType,
+    this.conductorTemperatureClass,
+    this.ambientTemperatureC,
+    this.groupingCircuits,
+    this.groupingReference,
+    this.temperatureReference,
     this.requiredCurrent,
     this.voltageDropV,
     this.voltageDropPercent,
@@ -60,6 +72,22 @@ class VoltageDropCableSelectionResult {
   /// Grouping Factor
   final double? groupingFactor;
 
+  /// Table 5-43 ambient-temperature correction factor.
+  final double? temperatureFactor;
+
+  /// Published ampacity from Table 5-20 or Table 5-27 for one run.
+  final double? baseAmpacityPerRun;
+
+  /// Base ampacity after grouping and temperature corrections for one run.
+  final double? correctedAmpacityPerRun;
+
+  final CableType? cableType;
+  final ConductorTemperatureClass? conductorTemperatureClass;
+  final double? ambientTemperatureC;
+  final int? groupingCircuits;
+  final String? groupingReference;
+  final String? temperatureReference;
+
   /// Required Current
   final double? requiredCurrent;
 
@@ -88,6 +116,15 @@ class VoltageDropCableSelectionResult {
     String? voltageDropReference,
 
     required double groupingFactor,
+    double? temperatureFactor,
+    double? baseAmpacityPerRun,
+    double? correctedAmpacityPerRun,
+    CableType? cableType,
+    ConductorTemperatureClass? conductorTemperatureClass,
+    double? ambientTemperatureC,
+    int? groupingCircuits,
+    String? groupingReference,
+    String? temperatureReference,
     required double requiredCurrent,
     required double voltageDropV,
     required double voltageDropPercent,
@@ -111,6 +148,15 @@ class VoltageDropCableSelectionResult {
       voltageDropReference: voltageDropReference,
 
       groupingFactor: groupingFactor,
+      temperatureFactor: temperatureFactor,
+      baseAmpacityPerRun: baseAmpacityPerRun,
+      correctedAmpacityPerRun: correctedAmpacityPerRun,
+      cableType: cableType,
+      conductorTemperatureClass: conductorTemperatureClass,
+      ambientTemperatureC: ambientTemperatureC,
+      groupingCircuits: groupingCircuits,
+      groupingReference: groupingReference,
+      temperatureReference: temperatureReference,
       requiredCurrent: requiredCurrent,
       voltageDropV: voltageDropV,
       voltageDropPercent: voltageDropPercent,
