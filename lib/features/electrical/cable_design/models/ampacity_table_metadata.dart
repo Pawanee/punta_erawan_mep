@@ -20,6 +20,7 @@ class AmpacityTableMetadata {
     required this.conductorTemperatureClasses,
     required this.referenceAmbientTemperatureC,
     required this.installationGroups,
+    required this.installationGroupNumbers,
     required this.applicableCableTypes,
     required this.schemaType,
     required this.correctionTableReferences,
@@ -34,6 +35,12 @@ class AmpacityTableMetadata {
   final List<ConductorTemperatureClass> conductorTemperatureClasses;
   final int referenceAmbientTemperatureC;
   final List<InstallationMethod> installationGroups;
+
+  /// Installation-group numbers published by the reference table.
+  ///
+  /// This is intentionally distinct from the active UI selection enum: a
+  /// registered table may describe a group not yet available in runtime input.
+  final List<int> installationGroupNumbers;
   final List<CableType> applicableCableTypes;
   final AmpacityTableSchema schemaType;
   final List<String> correctionTableReferences;

@@ -1,0 +1,41 @@
+{
+  "tableId": "5-21",
+  "conductorMaterial": "copper",
+  "referenceAmbientTemperatureC": 40,
+  "installation": "surfaceMountedOnWallInAir",
+  "installationGroup": 3,
+  "ratedVoltage": "<=0.6/1kV",
+  "correctionTableReferences": ["Table 5-43"],
+  "columns": [
+    {"id":"C1","shape":"flat","coreType":"multiCore","insulation":"pvc","conductorTemperatureClass":"pvc70","loadedConductors":2,"systemApplicability":"ac","applicableCableTypeCodes":["VAF","VAF-G"]},
+    {"id":"C2","shape":"round","coreType":"singleCore","insulation":"pvc","conductorTemperatureClass":"pvc70","loadedConductors":2,"systemApplicability":"acDc","applicableCableTypeCodes":["NYY","IEC 60502-1"]},
+    {"id":"C3","shape":"round","coreType":"singleCore","insulation":"pvc","conductorTemperatureClass":"pvc70","loadedConductors":3,"systemApplicability":"ac","applicableCableTypeCodes":["NYY","IEC 60502-1"]},
+    {"id":"C4","shape":"round","coreType":"singleCore","insulation":"xlpe","conductorTemperatureClass":"xlpeEpr90","loadedConductors":2,"systemApplicability":"acDc","applicableCableTypeCodes":["IEC 60502-1"]},
+    {"id":"C5","shape":"round","coreType":"singleCore","insulation":"xlpe","conductorTemperatureClass":"xlpeEpr90","loadedConductors":3,"systemApplicability":"ac","applicableCableTypeCodes":["IEC 60502-1"]},
+    {"id":"C6","shape":"round","coreType":"multiCore","insulation":"pvc","conductorTemperatureClass":"pvc70","loadedConductors":2,"systemApplicability":"acDc","applicableCableTypeCodes":["NYY","NYY-G","VCT","VCT-G","60227 IEC 10","IEC 60502-1"]},
+    {"id":"C7","shape":"round","coreType":"multiCore","insulation":"pvc","conductorTemperatureClass":"pvc70","loadedConductors":3,"systemApplicability":"ac","applicableCableTypeCodes":["NYY","NYY-G","VCT","VCT-G","60227 IEC 10","IEC 60502-1"]},
+    {"id":"C8","shape":"round","coreType":"multiCore","insulation":"xlpe","conductorTemperatureClass":"xlpeEpr90","loadedConductors":2,"systemApplicability":"acDc","applicableCableTypeCodes":["IEC 60502-1"]},
+    {"id":"C9","shape":"round","coreType":"multiCore","insulation":"xlpe","conductorTemperatureClass":"xlpeEpr90","loadedConductors":3,"systemApplicability":"ac","applicableCableTypeCodes":["IEC 60502-1"]}
+  ],
+  "rows": [
+    {"sizeSqmm":1,"ampacity":{"C1":14,"C2":13,"C3":12,"C4":17,"C5":16,"C6":13,"C7":12,"C8":17,"C9":15}},
+    {"sizeSqmm":1.5,"ampacity":{"C1":17,"C2":17,"C3":16,"C4":23,"C5":21,"C6":17,"C7":15,"C8":22,"C9":20}},
+    {"sizeSqmm":2.5,"ampacity":{"C1":23,"C2":23,"C3":22,"C4":31,"C5":29,"C6":23,"C7":21,"C8":30,"C9":27}},
+    {"sizeSqmm":4,"ampacity":{"C1":32,"C2":32,"C3":29,"C4":42,"C5":37,"C6":31,"C7":28,"C8":41,"C9":36}},
+    {"sizeSqmm":6,"ampacity":{"C1":41,"C2":41,"C3":37,"C4":54,"C5":49,"C6":40,"C7":36,"C8":53,"C9":47}},
+    {"sizeSqmm":10,"ampacity":{"C1":56,"C2":57,"C3":51,"C4":74,"C5":67,"C6":55,"C7":50,"C8":73,"C9":65}},
+    {"sizeSqmm":16,"ampacity":{"C1":74,"C2":76,"C3":69,"C4":99,"C5":90,"C6":74,"C7":66,"C8":97,"C9":87}},
+    {"sizeSqmm":25,"ampacity":{"C1":null,"C2":99,"C3":90,"C4":130,"C5":118,"C6":97,"C7":84,"C8":126,"C9":108}},
+    {"sizeSqmm":35,"ampacity":{"C1":null,"C2":123,"C3":112,"C4":160,"C5":147,"C6":120,"C7":104,"C8":156,"C9":134}},
+    {"sizeSqmm":50,"ampacity":{"C1":null,"C2":158,"C3":145,"C4":207,"C5":190,"C6":146,"C7":125,"C8":190,"C9":163}},
+    {"sizeSqmm":70,"ampacity":{"C1":null,"C2":204,"C3":186,"C4":267,"C5":244,"C6":185,"C7":160,"C8":245,"C9":208}},
+    {"sizeSqmm":95,"ampacity":{"C1":null,"C2":247,"C3":227,"C4":323,"C5":297,"C6":224,"C7":194,"C8":298,"C9":253}},
+    {"sizeSqmm":120,"ampacity":{"C1":null,"C2":287,"C3":264,"C4":375,"C5":345,"C6":260,"C7":225,"C8":348,"C9":293}},
+    {"sizeSqmm":150,"ampacity":{"C1":null,"C2":331,"C3":304,"C4":433,"C5":397,"C6":299,"C7":260,"C8":401,"C9":338}},
+    {"sizeSqmm":185,"ampacity":{"C1":null,"C2":379,"C3":348,"C4":496,"C5":455,"C6":341,"C7":297,"C8":460,"C9":386}},
+    {"sizeSqmm":240,"ampacity":{"C1":null,"C2":448,"C3":411,"C4":586,"C5":537,"C6":401,"C7":351,"C8":545,"C9":455}},
+    {"sizeSqmm":300,"ampacity":{"C1":null,"C2":517,"C3":474,"C4":676,"C5":620,"C6":461,"C7":404,"C8":630,"C9":524}},
+    {"sizeSqmm":400,"ampacity":{"C1":null,"C2":604,"C3":552,"C4":790,"C5":722,"C6":null,"C7":null,"C8":null,"C9":null}},
+    {"sizeSqmm":500,"ampacity":{"C1":null,"C2":689,"C3":629,"C4":900,"C5":823,"C6":null,"C7":null,"C8":null,"C9":null}}
+  ]
+}

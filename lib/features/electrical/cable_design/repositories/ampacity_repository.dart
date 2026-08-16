@@ -25,13 +25,10 @@ class AmpacityRepository {
     Table527Repository? table527Repository,
     Table527CandidateAdapter? table527Adapter,
     AmpacityTableRegistry? tableRegistry,
-  })  : _table520Repository =
-            table520Repository ?? Table520Repository(),
-        _table527Repository =
-            table527Repository ?? Table527Repository(),
-        _table527Adapter =
-            table527Adapter ?? const Table527CandidateAdapter(),
-        _tableRegistry = tableRegistry ?? const AmpacityTableRegistry();
+  }) : _table520Repository = table520Repository ?? Table520Repository(),
+       _table527Repository = table527Repository ?? Table527Repository(),
+       _table527Adapter = table527Adapter ?? const Table527CandidateAdapter(),
+       _tableRegistry = tableRegistry ?? const AmpacityTableRegistry();
 
   final Table520Repository _table520Repository;
   final Table527Repository _table527Repository;
@@ -50,10 +47,15 @@ class AmpacityRepository {
     final List<CableTableRow> rows;
     switch (table) {
       case AmpacityTable.table520:
-        rows = await _table520Repository.loadTable(
-          cableType: cableType,
-        );
+        rows = await _table520Repository.loadTable(cableType: cableType);
         break;
+
+      case AmpacityTable.table521:
+        throw UnsupportedError(
+          'Table 5-21 requires table-specific cable shape and system '
+          'applicability context; it is not available through '
+          'AmpacityRepository.loadTable.',
+        );
 
       case AmpacityTable.table527:
         rows = _table527Adapter.adapt(

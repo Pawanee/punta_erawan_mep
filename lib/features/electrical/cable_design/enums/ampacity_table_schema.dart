@@ -4,7 +4,7 @@
 /// one table schema into another.
 enum AmpacityTableSchema {
   groupCoreLoadedConductors,
-  surfaceMounted,
+  surfaceMountedCable,
   underground,
   cableTray,
   flexibleCable,
