@@ -33,6 +33,15 @@ class CableTableRow {
   /// ตารางอ้างอิง
   final String reference;
 
+  /// Stable identifier of the published ampacity source table.
+  final String? sourceTableId;
+
+  /// Display name of the published ampacity source table.
+  final String? sourceTableDisplayName;
+
+  /// Published, uncorrected ampacity for this candidate.
+  double get baseAmpacity => ampacity;
+
   const CableTableRow({
     required this.cableType,
     required this.installationMethod,
@@ -42,6 +51,8 @@ class CableTableRow {
     required this.ampacity,
     required this.remark,
     required this.reference,
+    this.sourceTableId,
+    this.sourceTableDisplayName,
   });
 
   /// ==========================================================================
@@ -78,6 +89,8 @@ class CableTableRow {
       ampacity: (json['ampacity'] as num).toDouble(),
       remark: json['remark'] ?? '',
       reference: json['reference'] ?? 'Table 5-20',
+      sourceTableId: json['sourceTableId'],
+      sourceTableDisplayName: json['sourceTableDisplayName'],
     );
   }
 
@@ -91,6 +104,8 @@ class CableTableRow {
       'ampacity': ampacity,
       'remark': remark,
       'reference': reference,
+      'sourceTableId': sourceTableId,
+      'sourceTableDisplayName': sourceTableDisplayName,
     };
   }
 
@@ -103,6 +118,8 @@ class CableTableRow {
     double? ampacity,
     String? remark,
     String? reference,
+    String? sourceTableId,
+    String? sourceTableDisplayName,
   }) {
     return CableTableRow(
       cableType: cableType ?? this.cableType,
@@ -116,6 +133,9 @@ class CableTableRow {
       ampacity: ampacity ?? this.ampacity,
       remark: remark ?? this.remark,
       reference: reference ?? this.reference,
+      sourceTableId: sourceTableId ?? this.sourceTableId,
+      sourceTableDisplayName:
+          sourceTableDisplayName ?? this.sourceTableDisplayName,
     );
   }
 
@@ -131,6 +151,8 @@ CableTableRow(
   ampacity: $ampacity,
   remark: $remark,
   reference: $reference,
+  sourceTableId: $sourceTableId,
+  sourceTableDisplayName: $sourceTableDisplayName,
 )
 ''';
   }

@@ -1,5 +1,7 @@
 import '../../cable_design/enums/cable_type.dart';
 import '../../cable_design/enums/conductor_temperature_class.dart';
+import '../../cable_design/enums/core_type.dart';
+import '../../cable_design/enums/installation_method.dart';
 
 /// ============================================================================
 /// VOLTAGE DROP CABLE SELECTION RESULT
@@ -35,6 +37,11 @@ class VoltageDropCableSelectionResult {
     this.temperatureFactor,
     this.baseAmpacityPerRun,
     this.correctedAmpacityPerRun,
+    this.sourceTableId,
+    this.sourceTableDisplayName,
+    this.installationMethod,
+    this.loadedConductors,
+    this.coreType,
     this.cableType,
     this.conductorTemperatureClass,
     this.ambientTemperatureC,
@@ -80,6 +87,14 @@ class VoltageDropCableSelectionResult {
 
   /// Base ampacity after grouping and temperature corrections for one run.
   final double? correctedAmpacityPerRun;
+  final String? sourceTableId;
+  final String? sourceTableDisplayName;
+  final InstallationMethod? installationMethod;
+  final int? loadedConductors;
+  final CoreType? coreType;
+
+  /// Alias for the published ampacity of the selected candidate.
+  double? get baseAmpacity => baseAmpacityPerRun ?? ampacity;
 
   final CableType? cableType;
   final ConductorTemperatureClass? conductorTemperatureClass;
@@ -119,6 +134,11 @@ class VoltageDropCableSelectionResult {
     double? temperatureFactor,
     double? baseAmpacityPerRun,
     double? correctedAmpacityPerRun,
+    String? sourceTableId,
+    String? sourceTableDisplayName,
+    InstallationMethod? installationMethod,
+    int? loadedConductors,
+    CoreType? coreType,
     CableType? cableType,
     ConductorTemperatureClass? conductorTemperatureClass,
     double? ambientTemperatureC,
@@ -151,6 +171,11 @@ class VoltageDropCableSelectionResult {
       temperatureFactor: temperatureFactor,
       baseAmpacityPerRun: baseAmpacityPerRun,
       correctedAmpacityPerRun: correctedAmpacityPerRun,
+      sourceTableId: sourceTableId,
+      sourceTableDisplayName: sourceTableDisplayName,
+      installationMethod: installationMethod,
+      loadedConductors: loadedConductors,
+      coreType: coreType,
       cableType: cableType,
       conductorTemperatureClass: conductorTemperatureClass,
       ambientTemperatureC: ambientTemperatureC,

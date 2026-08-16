@@ -54,6 +54,12 @@ void main() {
 
     expect(result.isSuccess, isTrue);
     expect(result.ampacityReference, 'Table 5-20');
+    expect(result.sourceTableId, '5-20');
+    expect(result.sourceTableDisplayName, 'Table 5-20');
+    expect(result.baseAmpacity, result.baseAmpacityPerRun);
+    expect(result.loadedConductors, 3);
+    expect(result.coreType, CoreType.singleCore);
+    expect(result.installationMethod, InstallationMethod.group1);
     expect(result.conductorTemperatureClass, ConductorTemperatureClass.pvc70);
     expect(result.groupingFactor, 1.0);
     expect(result.temperatureFactor, 1.0);
@@ -69,6 +75,12 @@ void main() {
 
     expect(result.isSuccess, isTrue);
     expect(result.ampacityReference, 'Table 5-27');
+    expect(result.sourceTableId, '5-27');
+    expect(result.sourceTableDisplayName, 'Table 5-27');
+    expect(result.baseAmpacity, result.baseAmpacityPerRun);
+    expect(result.loadedConductors, 3);
+    expect(result.coreType, CoreType.singleCore);
+    expect(result.installationMethod, InstallationMethod.group1);
     expect(
       result.conductorTemperatureClass,
       ConductorTemperatureClass.xlpeEpr90,
