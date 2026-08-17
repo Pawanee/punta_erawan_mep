@@ -1,0 +1,14 @@
+{
+  "tableId": "5-47",
+  "displayName": "Table 5-47",
+  "references": ["Table 5-47"],
+  "groups": [
+    {"group":1,"coreTypes":["singleCore","multiCore"],"outerSheath":"any","environments":["thermallyInsulatedCeiling","fireResistantWall"],"supports":["wiringEnclosure"],"notes":["Metallic or non-metallic wiring enclosure/raceway inside a thermally insulated ceiling or fire-resistant wall."]},
+    {"group":2,"coreTypes":["singleCore","multiCore"],"outerSheath":"any","environments":["surfaceMountedWallOrCeiling","embeddedInConcreteWall"],"supports":["wiringEnclosure"],"notes":["Metallic or non-metallic wiring enclosure surface mounted on a wall or ceiling, or embedded in a concrete wall or similar construction."]},
+    {"group":3,"coreTypes":["singleCore","multiCore"],"outerSheath":"required","environments":["surfaceMountedWallOrCeiling"],"supports":["surfaceMount"],"notes":["Surface mounted on wall or ceiling without similar enclosing covering."]},
+    {"group":4,"coreTypes":["singleCore"],"outerSheath":"any","environments":["air"],"supports":["insulators"],"minimumCableDiameterSpacing":true,"notes":["Spacing to wall and between cables must not be less than the cable diameter."]},
+    {"group":5,"coreTypes":["singleCore","multiCore"],"outerSheath":"required","environments":["underground"],"supports":["conduit"],"notes":["Installed in metallic or non-metallic conduit underground."]},
+    {"group":6,"coreTypes":["singleCore","multiCore"],"outerSheath":"required","environments":["directBuried"],"supports":["directBurial"],"notes":["Direct buried."]},
+    {"group":7,"coreTypes":["singleCore","multiCore"],"outerSheath":"required","environments":["air"],"supports":["solidBottomCableTray","ventilatedCableTray","cableLadder"],"minimumVentilationOpeningPercent":30,"notes":["For ventilated cable tray, ventilation opening area must be at least 30 percent of total tray surface area."]}
+  ]
+}
