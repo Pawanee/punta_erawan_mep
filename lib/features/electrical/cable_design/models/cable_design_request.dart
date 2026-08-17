@@ -2,6 +2,9 @@
 import '../enums/core_type.dart';
 import '../enums/installation_method.dart';
 import '../enums/phase_system.dart';
+import 'cable_routing_identity.dart';
+import 'engineering_installation_input.dart';
+import 'supplemental_cable_properties_input.dart';
 
 /// ============================================================================
 /// PUNTA ERAWAN MEP
@@ -45,6 +48,17 @@ class CableDesignRequest {
   /// ค่าแรงดันตกที่ยอมรับได้ (%)
   final double allowableVoltageDrop;
 
+  /// Optional physical installation facts for future table-first routing.
+  /// A null value is intentionally unresolved; it is not a Group 1/2 default.
+  final EngineeringInstallationInput? engineeringInstallation;
+
+  /// Optional intrinsic facts used only when approved profile data is silent.
+  final SupplementalCablePropertiesInput? supplementalCableProperties;
+
+  /// Optional identity for future routing-only cable types (for example VAF).
+  /// It is kept separate from the active UI CableType enum.
+  final CableRoutingIdentity? routingCableIdentity;
+
   const CableDesignRequest({
     required this.loadCurrent,
     required this.phaseSystem,
@@ -55,6 +69,9 @@ class CableDesignRequest {
     this.ambientTemperature = 30.0,
     this.groupingCircuits = 1,
     this.allowableVoltageDrop = 3.0,
+    this.engineeringInstallation,
+    this.supplementalCableProperties,
+    this.routingCableIdentity,
   });
 
   CableDesignRequest copyWith({
@@ -67,6 +84,9 @@ class CableDesignRequest {
     double? ambientTemperature,
     int? groupingCircuits,
     double? allowableVoltageDrop,
+    EngineeringInstallationInput? engineeringInstallation,
+    SupplementalCablePropertiesInput? supplementalCableProperties,
+    CableRoutingIdentity? routingCableIdentity,
   }) {
     return CableDesignRequest(
       loadCurrent: loadCurrent ?? this.loadCurrent,
@@ -83,6 +103,11 @@ class CableDesignRequest {
           groupingCircuits ?? this.groupingCircuits,
       allowableVoltageDrop:
           allowableVoltageDrop ?? this.allowableVoltageDrop,
+      engineeringInstallation:
+          engineeringInstallation ?? this.engineeringInstallation,
+      supplementalCableProperties:
+          supplementalCableProperties ?? this.supplementalCableProperties,
+      routingCableIdentity: routingCableIdentity ?? this.routingCableIdentity,
     );
   }
 
