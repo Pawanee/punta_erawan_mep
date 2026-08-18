@@ -2,6 +2,7 @@
 import '../enums/core_type.dart';
 import '../enums/installation_method.dart';
 import '../enums/phase_system.dart';
+import '../enums/cable_design_routing_mode.dart';
 import 'cable_routing_identity.dart';
 import 'engineering_installation_input.dart';
 import 'supplemental_cable_properties_input.dart';
@@ -58,6 +59,7 @@ class CableDesignRequest {
   /// Optional identity for future routing-only cable types (for example VAF).
   /// It is kept separate from the active UI CableType enum.
   final CableRoutingIdentity? routingCableIdentity;
+  final CableDesignRoutingMode routingMode;
 
   const CableDesignRequest({
     required this.loadCurrent,
@@ -72,6 +74,7 @@ class CableDesignRequest {
     this.engineeringInstallation,
     this.supplementalCableProperties,
     this.routingCableIdentity,
+    this.routingMode = CableDesignRoutingMode.legacy,
   });
 
   CableDesignRequest copyWith({
@@ -87,6 +90,7 @@ class CableDesignRequest {
     EngineeringInstallationInput? engineeringInstallation,
     SupplementalCablePropertiesInput? supplementalCableProperties,
     CableRoutingIdentity? routingCableIdentity,
+    CableDesignRoutingMode? routingMode,
   }) {
     return CableDesignRequest(
       loadCurrent: loadCurrent ?? this.loadCurrent,
@@ -108,6 +112,7 @@ class CableDesignRequest {
       supplementalCableProperties:
           supplementalCableProperties ?? this.supplementalCableProperties,
       routingCableIdentity: routingCableIdentity ?? this.routingCableIdentity,
+      routingMode: routingMode ?? this.routingMode,
     );
   }
 
