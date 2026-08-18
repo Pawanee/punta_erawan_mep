@@ -74,10 +74,10 @@ void main() {
         tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value,
         isFalse,
       );
-      expect(find.textContaining('Voltage-drop details'), findsNothing);
+      expect(find.byKey(const Key('v2-vd-phase')), findsNothing);
       await tester.tap(find.text('Verify voltage drop'));
       await tester.pump();
-      expect(find.textContaining('Voltage-drop details'), findsOneWidget);
+      expect(find.byKey(const Key('v2-vd-phase')), findsWidgets);
       expect(find.text('Table 9.1'), findsNothing);
     },
   );

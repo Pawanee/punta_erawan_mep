@@ -3,12 +3,19 @@ import 'package:flutter/material.dart';
 import '../../enums/core_type.dart';
 import '../../enums/phase_system.dart';
 import '../../models/cable_routing_identity.dart';
+import '../../../voltage_drop/enums/cable_arrangement.dart';
+import '../../../voltage_drop/enums/cable_insulation.dart';
+import '../../../voltage_drop/enums/voltage_drop_installation_group.dart';
+import '../../../voltage_drop/enums/voltage_phase.dart';
+import '../enums/cable_design_v2_input_mapping_status.dart';
 import '../enums/cable_design_workflow.dart';
 import '../enums/installation_environment.dart';
 import '../enums/installation_support.dart';
 import '../models/cable_design_v2_input_state.dart';
+import '../models/cable_design_v2_input_mapping_result.dart';
 import '../models/cable_design_v2_presentation_state.dart';
 import '../models/cable_design_workflow_activation.dart';
+import '../services/cable_design_v2_input_mapper.dart';
 
 /// Isolated shell for the future Advanced Cable Design workflow.
 ///
@@ -27,9 +34,11 @@ class CableDesignV2Page extends StatefulWidget {
 }
 
 class _CableDesignV2PageState extends State<CableDesignV2Page> {
+  static const _inputMapper = CableDesignV2InputMapper();
   CableDesignV2InputState _inputState = const CableDesignV2InputState();
-  CableDesignV2PresentationState _presentationState =
+  final CableDesignV2PresentationState _presentationState =
       const CableDesignV2PresentationState.initial();
+  CableDesignV2InputMappingResult? _mappingResult;
 
   void _replaceInputState({
     double? loadCurrent,
@@ -41,6 +50,14 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
     Set<InstallationEnvironment>? environments,
     Set<InstallationSupport>? supports,
     bool? verifyVoltageDrop,
+    VoltagePhase? voltageDropPhase,
+    CableInsulation? voltageDropInsulation,
+    CoreType? voltageDropCoreType,
+    VoltageDropInstallationGroup? voltageDropInstallationGroup,
+    CableArrangement? voltageDropArrangement,
+    double? circuitLengthM,
+    double? systemVoltage,
+    double? allowableVoltageDropPercent,
   }) {
     setState(() {
       _inputState = CableDesignV2InputState(
@@ -58,16 +75,28 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ventilationOpeningPercent: _inputState.ventilationOpeningPercent,
         supplementalCableProperties: _inputState.supplementalCableProperties,
         verifyVoltageDrop: verifyVoltageDrop ?? _inputState.verifyVoltageDrop,
-        voltageDropPhase: _inputState.voltageDropPhase,
-        voltageDropInsulation: _inputState.voltageDropInsulation,
-        voltageDropCoreType: _inputState.voltageDropCoreType,
-        voltageDropInstallationGroup: _inputState.voltageDropInstallationGroup,
-        voltageDropArrangement: _inputState.voltageDropArrangement,
-        circuitLengthM: _inputState.circuitLengthM,
-        systemVoltage: _inputState.systemVoltage,
-        allowableVoltageDropPercent: _inputState.allowableVoltageDropPercent,
+        voltageDropPhase: voltageDropPhase ?? _inputState.voltageDropPhase,
+        voltageDropInsulation:
+            voltageDropInsulation ?? _inputState.voltageDropInsulation,
+        voltageDropCoreType:
+            voltageDropCoreType ?? _inputState.voltageDropCoreType,
+        voltageDropInstallationGroup:
+            voltageDropInstallationGroup ??
+            _inputState.voltageDropInstallationGroup,
+        voltageDropArrangement:
+            voltageDropArrangement ?? _inputState.voltageDropArrangement,
+        circuitLengthM: circuitLengthM ?? _inputState.circuitLengthM,
+        systemVoltage: systemVoltage ?? _inputState.systemVoltage,
+        allowableVoltageDropPercent:
+            allowableVoltageDropPercent ??
+            _inputState.allowableVoltageDropPercent,
       );
+      _mappingResult = null;
     });
+  }
+
+  void _checkInputs() {
+    setState(() => _mappingResult = _inputMapper.map(_inputState));
   }
 
   @override
@@ -217,11 +246,9 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                     _replaceInputState(verifyVoltageDrop: value),
               ),
               if (_inputState.verifyVoltageDrop)
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Voltage-drop details will be entered explicitly in a future step.',
-                  ),
+                _VoltageDropInputs(
+                  state: _inputState,
+                  onChanged: _replaceInputState,
                 ),
             ],
           ),
@@ -233,6 +260,13 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
             children: [
               const Text('Calculation connection pending.'),
               const SizedBox(height: 8),
+              OutlinedButton(
+                key: const Key('v2-check-inputs'),
+                onPressed: _checkInputs,
+                child: const Text('Check inputs'),
+              ),
+              if (_mappingResult != null)
+                _InputReadiness(result: _mappingResult!),
               ElevatedButton(
                 key: const Key('v2-calculate'),
                 onPressed: null,
@@ -246,6 +280,143 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ),
       ],
     ),
+  );
+}
+
+class _InputReadiness extends StatelessWidget {
+  const _InputReadiness({required this.result});
+  final CableDesignV2InputMappingResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = switch (result.status) {
+      CableDesignV2InputMappingStatus.ready => 'Inputs ready for calculation',
+      CableDesignV2InputMappingStatus.insufficient => 'Inputs are incomplete',
+      CableDesignV2InputMappingStatus.invalid => 'Inputs are invalid',
+    };
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(text),
+          if (result.reason != null) Text(result.reason!),
+          if (result.missingFields.isNotEmpty)
+            Text('Missing: ${result.missingFields.join(', ')}'),
+        ],
+      ),
+    );
+  }
+}
+
+class _VoltageDropInputs extends StatelessWidget {
+  const _VoltageDropInputs({required this.state, required this.onChanged});
+  final CableDesignV2InputState state;
+  final void Function({
+    VoltagePhase? voltageDropPhase,
+    CableInsulation? voltageDropInsulation,
+    CoreType? voltageDropCoreType,
+    VoltageDropInstallationGroup? voltageDropInstallationGroup,
+    CableArrangement? voltageDropArrangement,
+    double? circuitLengthM,
+    double? systemVoltage,
+    double? allowableVoltageDropPercent,
+  })
+  onChanged;
+
+  bool get _arrangementRequired =>
+      state.voltageDropCoreType == CoreType.singleCore &&
+      state.voltageDropInstallationGroup != null &&
+      !state.voltageDropInstallationGroup!.isGroup1_2_5;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      DropdownButtonFormField<VoltagePhase>(
+        key: const Key('v2-vd-phase'),
+        value: state.voltageDropPhase,
+        decoration: const InputDecoration(labelText: 'VD phase / system'),
+        items: VoltagePhase.values
+            .map(
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.name)),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(voltageDropPhase: value),
+      ),
+      DropdownButtonFormField<CableInsulation>(
+        key: const Key('v2-vd-insulation'),
+        value: state.voltageDropInsulation,
+        decoration: const InputDecoration(labelText: 'VD insulation'),
+        items: CableInsulation.values
+            .map(
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.name)),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(voltageDropInsulation: value),
+      ),
+      DropdownButtonFormField<CoreType>(
+        key: const Key('v2-vd-core-type'),
+        value: state.voltageDropCoreType,
+        decoration: const InputDecoration(labelText: 'VD core type'),
+        items: CoreType.values
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text(value.displayName),
+              ),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(voltageDropCoreType: value),
+      ),
+      DropdownButtonFormField<VoltageDropInstallationGroup>(
+        key: const Key('v2-vd-installation-group'),
+        value: state.voltageDropInstallationGroup,
+        decoration: const InputDecoration(labelText: 'VD installation group'),
+        items: VoltageDropInstallationGroup.values
+            .map(
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.name)),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(voltageDropInstallationGroup: value),
+      ),
+      if (_arrangementRequired)
+        DropdownButtonFormField<CableArrangement>(
+          key: const Key('v2-vd-arrangement'),
+          value: state.voltageDropArrangement,
+          decoration: const InputDecoration(labelText: 'VD arrangement'),
+          items: CableArrangement.values
+              .map(
+                (value) =>
+                    DropdownMenuItem(value: value, child: Text(value.name)),
+              )
+              .toList(),
+          onChanged: (value) => onChanged(voltageDropArrangement: value),
+        ),
+      TextFormField(
+        key: const Key('v2-vd-length'),
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: 'Circuit length (m)'),
+        onChanged: (value) => onChanged(circuitLengthM: double.tryParse(value)),
+      ),
+      TextFormField(
+        key: const Key('v2-vd-system-voltage'),
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(labelText: 'System voltage (V)'),
+        onChanged: (value) => onChanged(systemVoltage: double.tryParse(value)),
+      ),
+      TextFormField(
+        key: const Key('v2-vd-allowable'),
+        keyboardType: TextInputType.number,
+        decoration: const InputDecoration(
+          labelText: 'Allowable voltage drop (%)',
+        ),
+        onChanged: (value) =>
+            onChanged(allowableVoltageDropPercent: double.tryParse(value)),
+      ),
+    ],
   );
 }
 
