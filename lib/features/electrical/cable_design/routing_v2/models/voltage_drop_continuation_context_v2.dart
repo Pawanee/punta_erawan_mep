@@ -8,20 +8,22 @@ import '../../../voltage_drop/enums/voltage_phase.dart';
 /// This contract is not inferred from any ampacity table or source column.
 class VoltageDropContinuationContextV2 {
   const VoltageDropContinuationContextV2({
-    required this.installationGroup,
-    required this.arrangement,
-    required this.insulation,
-    required this.coreType,
-    required this.phase,
-    required this.systemVoltage,
-    required this.lengthM,
+    this.installationGroup,
+    this.arrangement,
+    this.insulation,
+    this.coreType,
+    this.phase,
+    this.systemVoltage,
+    this.lengthM,
+    this.allowableVoltageDropPercent,
   });
 
-  final VoltageDropInstallationGroup installationGroup;
+  final VoltageDropInstallationGroup? installationGroup;
   final CableArrangement? arrangement;
-  final CableInsulation insulation;
-  final CoreType coreType;
-  final VoltagePhase phase;
-  final double systemVoltage;
-  final double lengthM;
+  final CableInsulation? insulation;
+  final CoreType? coreType;
+  final VoltagePhase? phase;
+  final double? systemVoltage;
+  final double? lengthM;
+  final double? allowableVoltageDropPercent;
 }
