@@ -1,8 +1,10 @@
 import '../../services/ampacity_correction_service.dart';
 import '../enums/ampacity_selection_status_v2.dart';
+import '../enums/resolved_correction_state_v2.dart';
 import '../models/ampacity_selection_request_v2.dart';
 import '../models/ampacity_selection_result_v2.dart';
 import '../models/ampacity_selected_candidate_v2.dart';
+import '../models/resolved_correction_application_v2.dart';
 
 /// Generic, table-agnostic ampacity selection core.
 /// Candidates must already be source-filtered and source-ordered.
@@ -47,15 +49,40 @@ class AmpacitySelectionCoreV2 {
           candidate,
           runs,
         );
-        final grouping = correction.groupingFactor;
-        final temperature = correction.temperatureFactor;
-        if (grouping == null || temperature == null) continue;
+        final groupingApplication =
+            correction.groupingApplication ??
+            (correction.groupingFactor == null
+                ? const ResolvedCorrectionApplicationV2.unresolved(
+                    'Grouping correction is unresolved.',
+                  )
+                : ResolvedCorrectionApplicationV2.applied(
+                    correction.groupingFactor!,
+                    correction.groupingReference,
+                  ));
+        final temperatureApplication =
+            correction.temperatureApplication ??
+            (correction.temperatureFactor == null
+                ? const ResolvedCorrectionApplicationV2.unresolved(
+                    'Temperature correction is unresolved.',
+                  )
+                : ResolvedCorrectionApplicationV2.applied(
+                    correction.temperatureFactor!,
+                    correction.temperatureReference,
+                  ));
+        if (groupingApplication.state == ResolvedCorrectionStateV2.unresolved ||
+            temperatureApplication.state ==
+                ResolvedCorrectionStateV2.unresolved)
+          continue;
         sawResolvedCorrection = true;
-        final corrected = _correctionService.calculate(
-          baseAmpacity: candidate.baseAmpacity,
-          groupingFactor: grouping,
-          temperatureFactor: temperature,
-        );
+        var corrected = candidate.baseAmpacity;
+        if (groupingApplication.state == ResolvedCorrectionStateV2.applied) {
+          corrected *= groupingApplication.factor!;
+        }
+        if (temperatureApplication.state == ResolvedCorrectionStateV2.applied) {
+          corrected *= temperatureApplication.factor!;
+        }
+        final grouping = groupingApplication.factor;
+        final temperature = temperatureApplication.factor;
         if (corrected == null || corrected < currentPerRun) continue;
         return AmpacitySelectionResultV2(
           status: AmpacitySelectionStatusV2.resolved,
@@ -66,6 +93,8 @@ class AmpacitySelectionCoreV2 {
             groupingFactor: grouping,
             temperatureFactor: temperature,
             correctedAmpacityPerRun: corrected,
+            groupingApplication: groupingApplication,
+            temperatureApplication: temperatureApplication,
           ),
           reason: request.voltageDropContext == null
               ? 'Ampacity resolved; voltage drop not verified.'
