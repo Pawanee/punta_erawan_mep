@@ -12,6 +12,7 @@ import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.d
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_environment.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_request.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/combined_cable_design_result_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/cable_design_execution_gateway.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/combined_cable_design_orchestrator_v2.dart';
@@ -41,7 +42,7 @@ class _RoutingV2Spy extends CombinedCableDesignOrchestratorV2 {
 
   @override
   Future<CombinedCableDesignResultV2> design(
-    CableDesignRequest request, {
+    CableDesignRequestV2 request, {
     VoltageDropContinuationContextV2? voltageDropContext,
   }) async {
     invoked = true;
@@ -67,6 +68,23 @@ void main() {
     allowableVoltageDropPercent: 3,
     installationGroup: VoltageDropInstallationGroup.group1,
   );
+  CableDesignRequestV2 v2Request({
+    CableDesignRoutingMode routingMode = CableDesignRoutingMode.routingV2,
+    SupplementalCablePropertiesInput? supplemental,
+  }) => CableDesignRequestV2(
+    loadCurrent: 10,
+    phaseSystem: PhaseSystem.singlePhase,
+    loadedConductors: 2,
+    coreType: CoreType.multiCore,
+    ambientTemperature: 40,
+    routingMode: routingMode,
+    identity: CableRoutingIdentity.vaf,
+    engineeringInstallation: const EngineeringInstallationInput(
+      environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+      supports: {InstallationSupport.surfaceMount},
+    ),
+    supplementalCableProperties: supplemental,
+  );
   test('valid legacy execution delegates the supplied request', () async {
     final spy = _LegacySpy();
     final request = make();
@@ -90,14 +108,7 @@ void main() {
           CableDesignExecutionRequest(
             routingMode: CableDesignRoutingMode.legacy,
             legacyRequest: make(),
-            routingV2CableRequest: const CableDesignRequest(
-              loadCurrent: 1,
-              phaseSystem: PhaseSystem.singlePhase,
-              cableType: CableType.iec01,
-              installationMethod: InstallationMethod.group1,
-              loadedConductors: 2,
-              coreType: CoreType.singleCore,
-            ),
+            routingV2CableRequest: v2Request(),
             routingV2VoltageDropContext:
                 const VoltageDropContinuationContextV2(),
           ),
@@ -126,20 +137,7 @@ void main() {
       CableDesignExecutionRequest(
         routingMode: CableDesignRoutingMode.routingV2,
         legacyRequest: make(),
-        routingV2CableRequest: const CableDesignRequest(
-          loadCurrent: 10,
-          phaseSystem: PhaseSystem.singlePhase,
-          cableType: CableType.iec01,
-          installationMethod: InstallationMethod.group1,
-          loadedConductors: 2,
-          coreType: CoreType.multiCore,
-          routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
-          engineeringInstallation: EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-          ),
-        ),
+        routingV2CableRequest: v2Request(),
       ),
     );
     expect(result.routingV2Result, isNotNull);
@@ -151,21 +149,7 @@ void main() {
     final result = await CableDesignExecutionGateway(legacy: spy).execute(
       CableDesignExecutionRequest(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingV2CableRequest: const CableDesignRequest(
-          loadCurrent: 10,
-          phaseSystem: PhaseSystem.singlePhase,
-          cableType: CableType.iec01,
-          installationMethod: InstallationMethod.group1,
-          loadedConductors: 2,
-          coreType: CoreType.multiCore,
-          ambientTemperature: 40,
-          routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
-          engineeringInstallation: EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-          ),
-        ),
+        routingV2CableRequest: v2Request(),
       ),
     );
     final ampacity = result.routingV2Result!.ampacityResult;
@@ -184,21 +168,7 @@ void main() {
     final result = await CableDesignExecutionGateway(legacy: spy).execute(
       CableDesignExecutionRequest(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingV2CableRequest: const CableDesignRequest(
-          loadCurrent: 10,
-          phaseSystem: PhaseSystem.singlePhase,
-          cableType: CableType.iec01,
-          installationMethod: InstallationMethod.group1,
-          loadedConductors: 2,
-          coreType: CoreType.multiCore,
-          ambientTemperature: 40,
-          routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
-          engineeringInstallation: EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-          ),
-        ),
+        routingV2CableRequest: v2Request(),
       ),
     );
     expect(result.legacyResult, isNull);
@@ -219,20 +189,8 @@ void main() {
     final result = await CableDesignExecutionGateway(legacy: spy).execute(
       CableDesignExecutionRequest(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingV2CableRequest: const CableDesignRequest(
-          loadCurrent: 10,
-          phaseSystem: PhaseSystem.singlePhase,
-          cableType: CableType.iec01,
-          installationMethod: InstallationMethod.group1,
-          loadedConductors: 2,
-          coreType: CoreType.multiCore,
-          routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
-          engineeringInstallation: EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-          ),
-          supplementalCableProperties: SupplementalCablePropertiesInput(
+        routingV2CableRequest: v2Request(
+          supplemental: const SupplementalCablePropertiesInput(
             cableShape: CableShape.round,
           ),
         ),
@@ -250,21 +208,7 @@ void main() {
     final result = await CableDesignExecutionGateway(legacy: spy).execute(
       CableDesignExecutionRequest(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingV2CableRequest: const CableDesignRequest(
-          loadCurrent: 10,
-          phaseSystem: PhaseSystem.singlePhase,
-          cableType: CableType.iec01,
-          installationMethod: InstallationMethod.group1,
-          loadedConductors: 2,
-          coreType: CoreType.multiCore,
-          ambientTemperature: 40,
-          routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
-          engineeringInstallation: EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-          ),
-        ),
+        routingV2CableRequest: v2Request(),
         routingV2VoltageDropContext: const VoltageDropContinuationContextV2(
           installationGroup: VoltageDropInstallationGroup.group1,
           insulation: CableInsulation.pvc,
@@ -337,13 +281,7 @@ void main() {
         ).execute(
           CableDesignExecutionRequest(
             routingMode: CableDesignRoutingMode.routingV2,
-            routingV2CableRequest: const CableDesignRequest(
-              loadCurrent: 10,
-              phaseSystem: PhaseSystem.singlePhase,
-              cableType: CableType.iec01,
-              installationMethod: InstallationMethod.group1,
-              loadedConductors: 2,
-              coreType: CoreType.multiCore,
+            routingV2CableRequest: v2Request(
               routingMode: CableDesignRoutingMode.legacy,
             ),
           ),

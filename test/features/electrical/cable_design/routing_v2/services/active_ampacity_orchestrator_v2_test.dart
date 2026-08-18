@@ -2,12 +2,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/ampacity_table.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_design_routing_mode.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.dart';
-import 'package:mep_project/features/electrical/cable_design/enums/cable_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/conductor_temperature_class.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
-import 'package:mep_project/features/electrical/cable_design/enums/installation_method.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/phase_system.dart';
-import 'package:mep_project/features/electrical/cable_design/models/cable_design_request.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
 import 'package:mep_project/features/electrical/cable_design/models/engineering_installation_input.dart';
 import 'package:mep_project/features/electrical/cable_design/models/supplemental_cable_properties_input.dart';
@@ -18,6 +15,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/vo
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/resolved_correction_state_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_candidate_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_correction_context_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/resolved_correction_application_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/active_ampacity_orchestrator_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/correction_resolver_v2.dart';
@@ -29,26 +27,23 @@ void main() {
 
   final orchestrator = ActiveAmpacityOrchestratorV2();
 
-  CableDesignRequest request({
+  CableDesignRequestV2 request({
     CableDesignRoutingMode routingMode = CableDesignRoutingMode.legacy,
-    CableType cableType = CableType.iec01,
-    CableRoutingIdentity? routingCableIdentity,
+    CableRoutingIdentity? identity,
     CoreType coreType = CoreType.multiCore,
     double loadCurrent = 10,
     double ambientTemperature = 40,
     EngineeringInstallationInput? installation,
     SupplementalCablePropertiesInput? supplemental,
-  }) => CableDesignRequest(
+  }) => CableDesignRequestV2(
     loadCurrent: loadCurrent,
     phaseSystem: PhaseSystem.singlePhase,
-    cableType: cableType,
-    installationMethod: InstallationMethod.group1,
     loadedConductors: 2,
     coreType: coreType,
     routingMode: routingMode,
     ambientTemperature: ambientTemperature,
     engineeringInstallation: installation,
-    routingCableIdentity: routingCableIdentity,
+    identity: identity,
     supplementalCableProperties: supplemental,
   );
 
@@ -83,10 +78,7 @@ void main() {
 
   test('legacy mode remains ineligible even with engineering input', () async {
     final result = await orchestrator.prepare(
-      request(
-        routingCableIdentity: CableRoutingIdentity.vaf,
-        installation: surfaceWall,
-      ),
+      request(identity: CableRoutingIdentity.vaf, installation: surfaceWall),
     );
 
     expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
@@ -97,7 +89,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
       ),
     );
@@ -133,12 +125,29 @@ void main() {
   });
 
   test(
+    'routing v2 selects VAF-G from explicit identity and installation',
+    () async {
+      final result = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.vafG,
+          installation: surfaceWall,
+        ),
+      );
+
+      expect(result.status, AmpacityRoutingStatus.resolved);
+      expect(result.selected!.candidate.sourceTableId, '5-21');
+      expect(result.selected!.candidate.sourceColumnId, 'C1');
+    },
+  );
+
+  test(
     'prepared C1 candidates retain source traceability without legacy values',
     () async {
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
+          identity: CableRoutingIdentity.vaf,
           installation: surfaceWall,
         ),
       );
@@ -168,7 +177,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
         ambientTemperature: 45,
       ),
@@ -201,7 +210,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
         supplemental: const SupplementalCablePropertiesInput(
           cableShape: CableShape.round,
@@ -219,7 +228,7 @@ void main() {
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
+          identity: CableRoutingIdentity.vaf,
         ),
       );
 
@@ -233,7 +242,7 @@ void main() {
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
-          routingCableIdentity: CableRoutingIdentity.vaf,
+          identity: CableRoutingIdentity.vaf,
           installation: surfaceWall,
           ambientTemperature: -1,
         ),
@@ -256,7 +265,7 @@ void main() {
           ).prepare(
             request(
               routingMode: CableDesignRoutingMode.routingV2,
-              routingCableIdentity: CableRoutingIdentity.vaf,
+              identity: CableRoutingIdentity.vaf,
               installation: surfaceWall,
             ),
           );
@@ -273,7 +282,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
         loadCurrent: 500,
       ),
@@ -292,7 +301,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
         loadCurrent: 100000,
       ),
@@ -311,7 +320,7 @@ void main() {
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
-          cableType: CableType.iec605021,
+          identity: CableRoutingIdentity.iec605021,
           coreType: CoreType.singleCore,
           installation: const EngineeringInstallationInput(
             environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
@@ -332,6 +341,7 @@ void main() {
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec01,
           coreType: CoreType.singleCore,
           installation: const EngineeringInstallationInput(
             environments: {InstallationEnvironment.thermallyInsulatedCeiling},
@@ -355,7 +365,7 @@ void main() {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         installation: surfaceWall,
       ),
     );

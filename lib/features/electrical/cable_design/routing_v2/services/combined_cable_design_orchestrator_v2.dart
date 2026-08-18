@@ -1,8 +1,8 @@
-import '../../models/cable_design_request.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/combined_cable_design_status_v2.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
 import '../models/combined_cable_design_result_v2.dart';
+import '../models/cable_design_request_v2.dart';
 import '../models/voltage_drop_continuation_context_v2.dart';
 import '../models/voltage_drop_verification_result_v2.dart';
 import 'active_ampacity_orchestrator_v2.dart';
@@ -17,7 +17,7 @@ class CombinedCableDesignOrchestratorV2 {
   final ActiveAmpacityOrchestratorV2 _ampacity;
   final VoltageDropContinuationServiceV2 _voltageDrop;
   Future<CombinedCableDesignResultV2> design(
-    CableDesignRequest request, {
+    CableDesignRequestV2 request, {
     VoltageDropContinuationContextV2? voltageDropContext,
   }) async {
     final a = await _ampacity.prepare(request);

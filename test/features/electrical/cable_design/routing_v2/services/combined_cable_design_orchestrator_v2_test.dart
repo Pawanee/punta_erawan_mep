@@ -1,11 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_design_routing_mode.dart';
-import 'package:mep_project/features/electrical/cable_design/enums/cable_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
-import 'package:mep_project/features/electrical/cable_design/enums/installation_method.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/phase_system.dart';
-import 'package:mep_project/features/electrical/cable_design/models/cable_design_request.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
 import 'package:mep_project/features/electrical/cable_design/models/engineering_installation_input.dart';
 import 'package:mep_project/features/electrical/cable_design/models/supplemental_cable_properties_input.dart';
@@ -15,6 +12,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/in
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ampacity_routing_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/voltage_drop_continuation_context_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_arrangement.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_insulation.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/voltage_drop_installation_group.dart';
@@ -24,16 +22,14 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/services
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final service = CombinedCableDesignOrchestratorV2();
-  CableDesignRequest request({bool context = true, double load = 10}) =>
-      CableDesignRequest(
+  CableDesignRequestV2 request({bool context = true, double load = 10}) =>
+      CableDesignRequestV2(
         loadCurrent: load,
         phaseSystem: PhaseSystem.singlePhase,
-        cableType: CableType.iec01,
-        installationMethod: InstallationMethod.group1,
         loadedConductors: 2,
         coreType: CoreType.multiCore,
         routingMode: CableDesignRoutingMode.routingV2,
-        routingCableIdentity: CableRoutingIdentity.vaf,
+        identity: CableRoutingIdentity.vaf,
         engineeringInstallation: context
             ? const EngineeringInstallationInput(
                 environments: {

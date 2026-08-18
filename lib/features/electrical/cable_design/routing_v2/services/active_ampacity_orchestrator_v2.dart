@@ -1,6 +1,5 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/ampacity_table.dart';
-import '../../models/cable_design_request.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/ampacity_selection_status_v2.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
@@ -8,6 +7,7 @@ import '../models/ampacity_design_result_v2.dart';
 import '../models/ampacity_candidate_v2.dart';
 import '../models/ampacity_correction_context_v2.dart';
 import '../models/ampacity_selection_request_v2.dart';
+import '../models/cable_design_request_v2.dart';
 import '../services/ampacity_candidate_v2_adapter.dart';
 import '../services/ampacity_correction_plan_resolver_v2.dart';
 import '../services/ampacity_routing_context_builder.dart';
@@ -46,7 +46,7 @@ class ActiveAmpacityOrchestratorV2 {
   final AmpacityCorrectionPlanResolverV2 _correctionPlans;
   final CorrectionApplicationResolverV2 _correctionApplications;
   final CorrectionResolverV2? _correctionResolver;
-  Future<AmpacityDesignResultV2> prepare(CableDesignRequest request) async {
+  Future<AmpacityDesignResultV2> prepare(CableDesignRequestV2 request) async {
     if (request.routingMode != CableDesignRoutingMode.routingV2)
       return _result(
         AmpacityRoutingStatus.unsupported,

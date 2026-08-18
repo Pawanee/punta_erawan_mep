@@ -1,7 +1,6 @@
-import '../../enums/cable_type.dart';
 import '../../enums/phase_system.dart';
-import '../../models/cable_design_request.dart';
 import '../../models/cable_routing_identity.dart';
+import '../models/cable_design_request_v2.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/cable_profile_type.dart';
 import '../enums/routing_electrical_system.dart';
@@ -22,7 +21,7 @@ class ProductionRoutingRequestAdapter {
   final CableTypeProfileRepository _cableProfiles;
 
   Future<ProductionRoutingAdaptationResult> adapt(
-    CableDesignRequest productionRequest,
+    CableDesignRequestV2 productionRequest,
   ) async {
     final installation = productionRequest.engineeringInstallation;
     if (installation == null) {
@@ -40,10 +39,16 @@ class ProductionRoutingRequestAdapter {
     if (installation.supports == null || installation.supports!.isEmpty) {
       missing.add('engineeringInstallation.supports');
     }
-    final profileType = _profileTypeFor(
-      productionRequest.routingCableIdentity ??
-          _identityForCableType(productionRequest.cableType),
-    );
+    final identity = productionRequest.identity;
+    if (identity == null) {
+      missing.add('identity');
+      return ProductionRoutingAdaptationResult(
+        status: AmpacityRoutingStatus.insufficient,
+        request: null,
+        missingFields: List.unmodifiable(missing),
+      );
+    }
+    final profileType = _profileTypeFor(identity);
     final profile = await _cableProfiles.profileFor(profileType);
     final hasOuterSheath =
         installation.hasOuterSheath ?? profile.hasOuterSheath;
@@ -84,11 +89,6 @@ class ProductionRoutingRequestAdapter {
       missingFields: const [],
     );
   }
-
-  CableRoutingIdentity _identityForCableType(CableType cableType) =>
-      CableRoutingIdentity.values.singleWhere(
-        (identity) => identity.code == cableType.code,
-      );
 
   CableProfileType _profileTypeFor(CableRoutingIdentity cableType) =>
       CableProfileType.values.singleWhere(

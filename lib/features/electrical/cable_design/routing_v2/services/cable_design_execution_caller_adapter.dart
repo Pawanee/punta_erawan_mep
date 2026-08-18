@@ -51,8 +51,8 @@ class CableDesignExecutionCallerAdapter {
     }
 
     final missing = <String>[];
-    if (v2.routingCableIdentity == null) {
-      missing.add('routingV2CableRequest.routingCableIdentity');
+    if (v2.identity == null) {
+      missing.add('routingV2CableRequest.identity');
     }
     final installation = v2.engineeringInstallation;
     if (installation == null) {

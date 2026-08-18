@@ -11,6 +11,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ca
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_environment.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_input.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/voltage_drop_continuation_context_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/cable_design_execution_caller_adapter.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_insulation.dart';
@@ -39,7 +40,7 @@ void main() {
         installationGroup: VoltageDropInstallationGroup.group1,
       );
 
-  CableDesignRequest v2Request({
+  CableDesignRequestV2 v2Request({
     CableRoutingIdentity? identity = CableRoutingIdentity.vaf,
     EngineeringInstallationInput? installation =
         const EngineeringInstallationInput(
@@ -47,16 +48,14 @@ void main() {
           supports: {InstallationSupport.surfaceMount},
         ),
     CableDesignRoutingMode routingMode = CableDesignRoutingMode.routingV2,
-  }) => CableDesignRequest(
+  }) => CableDesignRequestV2(
     loadCurrent: 10,
     phaseSystem: PhaseSystem.singlePhase,
-    cableType: CableType.iec01,
-    installationMethod: InstallationMethod.group1,
     loadedConductors: 2,
     coreType: CoreType.multiCore,
     ambientTemperature: 40,
     routingMode: routingMode,
-    routingCableIdentity: identity,
+    identity: identity,
     engineeringInstallation: installation,
   );
 
@@ -100,7 +99,7 @@ void main() {
     expect(result.request!.routingMode, CableDesignRoutingMode.routingV2);
     expect(result.request!.routingV2CableRequest, same(v2));
     expect(
-      result.request!.routingV2CableRequest!.routingCableIdentity,
+      result.request!.routingV2CableRequest!.identity,
       CableRoutingIdentity.vaf,
     );
     expect(
@@ -120,7 +119,7 @@ void main() {
 
     expect(result.isReady, isTrue);
     expect(
-      result.request!.routingV2CableRequest!.routingCableIdentity,
+      result.request!.routingV2CableRequest!.identity,
       CableRoutingIdentity.vafG,
     );
   });
@@ -138,10 +137,7 @@ void main() {
       CableDesignExecutionCallerAdaptationStatus.insufficient,
     );
     expect(result.request, isNull);
-    expect(
-      result.missingFields,
-      contains('routingV2CableRequest.routingCableIdentity'),
-    );
+    expect(result.missingFields, contains('routingV2CableRequest.identity'));
   });
 
   test('missing physical installation remains insufficient', () {

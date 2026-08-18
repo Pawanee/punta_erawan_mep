@@ -15,6 +15,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/vo
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_input.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_request.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_result.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/cable_design_execution_controller_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/cable_design_execution_gateway.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_insulation.dart';
@@ -58,7 +59,7 @@ void main() {
         installationGroup: VoltageDropInstallationGroup.group1,
       );
 
-  CableDesignRequest v2Request({
+  CableDesignRequestV2 v2Request({
     CableRoutingIdentity? identity = CableRoutingIdentity.vaf,
     EngineeringInstallationInput? installation =
         const EngineeringInstallationInput(
@@ -66,16 +67,14 @@ void main() {
           supports: {InstallationSupport.surfaceMount},
         ),
     CableDesignRoutingMode routingMode = CableDesignRoutingMode.routingV2,
-  }) => CableDesignRequest(
+  }) => CableDesignRequestV2(
     loadCurrent: 10,
     phaseSystem: PhaseSystem.singlePhase,
-    cableType: CableType.iec01,
-    installationMethod: InstallationMethod.group1,
     loadedConductors: 2,
     coreType: CoreType.multiCore,
     ambientTemperature: 40,
     routingMode: routingMode,
-    routingCableIdentity: identity,
+    identity: identity,
     engineeringInstallation: installation,
   );
 
