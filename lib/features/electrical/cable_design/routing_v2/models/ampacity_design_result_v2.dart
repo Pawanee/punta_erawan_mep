@@ -19,6 +19,6 @@ class AmpacityDesignResultV2 {
   final VoltageDropVerificationStatusV2 voltageDropStatus;
   final AmpacityRoutingResult? routingResult;
 
-  /// Prepared source-faithful candidates only; selection remains pending.
+  /// Prepared source-faithful candidates retained for result traceability.
   final List<AmpacityCandidateV2> candidates;
 }

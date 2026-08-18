@@ -5,4 +5,5 @@ enum AmpacityRoutingStatus {
   ambiguous,
   unsupported,
   noMatch,
+  noCandidate,
 }
