@@ -90,7 +90,7 @@ void main() {
   });
 
   testWidgets(
-    'complete VAF ampacity-only inputs are ready but do not calculate',
+    'complete VAF ampacity-only inputs are ready for explicit calculation',
     (tester) async {
       await pumpPage(tester);
       await enterCompleteAmpacityInputs(tester, product: 'VAF');
@@ -103,7 +103,7 @@ void main() {
         tester
             .widget<ElevatedButton>(find.byKey(const Key('v2-calculate')).first)
             .onPressed,
-        isNull,
+        isNotNull,
       );
     },
   );

@@ -8,26 +8,40 @@ import '../../../voltage_drop/enums/cable_insulation.dart';
 import '../../../voltage_drop/enums/voltage_drop_installation_group.dart';
 import '../../../voltage_drop/enums/voltage_phase.dart';
 import '../enums/cable_design_v2_input_mapping_status.dart';
+import '../enums/cable_design_v2_presentation_status.dart';
+import '../../enums/cable_design_routing_mode.dart';
 import '../enums/cable_design_workflow.dart';
 import '../enums/installation_environment.dart';
 import '../enums/installation_support.dart';
 import '../models/cable_design_v2_input_state.dart';
 import '../models/cable_design_v2_input_mapping_result.dart';
 import '../models/cable_design_v2_presentation_state.dart';
+import '../models/cable_design_execution_caller_input.dart';
 import '../models/cable_design_workflow_activation.dart';
 import '../services/cable_design_v2_input_mapper.dart';
+import '../services/cable_design_execution_controller_v2.dart';
+import '../services/cable_design_v2_result_presenter.dart';
 
 /// Isolated shell for the future Advanced Cable Design workflow.
 ///
-/// This widget owns only explicit V2 UI state. It does not execute a design.
+/// This widget executes only an explicitly ready V2 request through the
+/// branch-safe controller and renders its already-computed presentation state.
 class CableDesignV2Page extends StatefulWidget {
-  CableDesignV2Page({super.key, required this.activation})
-    : assert(
-        activation.workflow == CableDesignWorkflow.advancedCableDesign,
-        'CableDesignV2Page requires explicit Advanced Cable Design activation.',
-      );
+  CableDesignV2Page({
+    super.key,
+    required this.activation,
+    CableDesignExecutionControllerV2? controller,
+    CableDesignV2ResultPresenter? presenter,
+  }) : assert(
+         activation.workflow == CableDesignWorkflow.advancedCableDesign,
+         'CableDesignV2Page requires explicit Advanced Cable Design activation.',
+       ),
+       controller = controller ?? CableDesignExecutionControllerV2(),
+       presenter = presenter ?? const CableDesignV2ResultPresenter();
 
   final CableDesignWorkflowActivation activation;
+  final CableDesignExecutionControllerV2 controller;
+  final CableDesignV2ResultPresenter presenter;
 
   @override
   State<CableDesignV2Page> createState() => _CableDesignV2PageState();
@@ -36,9 +50,14 @@ class CableDesignV2Page extends StatefulWidget {
 class _CableDesignV2PageState extends State<CableDesignV2Page> {
   static const _inputMapper = CableDesignV2InputMapper();
   CableDesignV2InputState _inputState = const CableDesignV2InputState();
-  final CableDesignV2PresentationState _presentationState =
+  CableDesignV2PresentationState _presentationState =
       const CableDesignV2PresentationState.initial();
   CableDesignV2InputMappingResult? _mappingResult;
+  _ExecutionState _executionState = _ExecutionState.idle;
+
+  bool get _canCalculate =>
+      _mappingResult?.status == CableDesignV2InputMappingStatus.ready &&
+      _executionState != _ExecutionState.running;
 
   void _replaceInputState({
     double? loadCurrent,
@@ -58,15 +77,21 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
     double? circuitLengthM,
     double? systemVoltage,
     double? allowableVoltageDropPercent,
+    bool updateLoadCurrent = false,
+    bool updateAmbientTemperature = false,
+    bool updateCircuitLengthM = false,
+    bool updateSystemVoltage = false,
+    bool updateAllowableVoltageDropPercent = false,
   }) {
     setState(() {
       _inputState = CableDesignV2InputState(
-        loadCurrent: loadCurrent ?? _inputState.loadCurrent,
+        loadCurrent: updateLoadCurrent ? loadCurrent : _inputState.loadCurrent,
         phaseSystem: phaseSystem ?? _inputState.phaseSystem,
         loadedConductors: loadedConductors ?? _inputState.loadedConductors,
         coreType: coreType ?? _inputState.coreType,
-        ambientTemperature:
-            ambientTemperature ?? _inputState.ambientTemperature,
+        ambientTemperature: updateAmbientTemperature
+            ? ambientTemperature
+            : _inputState.ambientTemperature,
         identity: identity ?? _inputState.identity,
         environments: environments ?? _inputState.environments,
         supports: supports ?? _inputState.supports,
@@ -85,18 +110,87 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
             _inputState.voltageDropInstallationGroup,
         voltageDropArrangement:
             voltageDropArrangement ?? _inputState.voltageDropArrangement,
-        circuitLengthM: circuitLengthM ?? _inputState.circuitLengthM,
-        systemVoltage: systemVoltage ?? _inputState.systemVoltage,
-        allowableVoltageDropPercent:
-            allowableVoltageDropPercent ??
-            _inputState.allowableVoltageDropPercent,
+        circuitLengthM: updateCircuitLengthM
+            ? circuitLengthM
+            : _inputState.circuitLengthM,
+        systemVoltage: updateSystemVoltage
+            ? systemVoltage
+            : _inputState.systemVoltage,
+        allowableVoltageDropPercent: updateAllowableVoltageDropPercent
+            ? allowableVoltageDropPercent
+            : _inputState.allowableVoltageDropPercent,
       );
       _mappingResult = null;
+      _presentationState = const CableDesignV2PresentationState.initial();
+      _executionState = _ExecutionState.idle;
     });
   }
 
   void _checkInputs() {
     setState(() => _mappingResult = _inputMapper.map(_inputState));
+  }
+
+  void _replaceVoltageDropState({
+    VoltagePhase? voltageDropPhase,
+    CableInsulation? voltageDropInsulation,
+    CoreType? voltageDropCoreType,
+    VoltageDropInstallationGroup? voltageDropInstallationGroup,
+    CableArrangement? voltageDropArrangement,
+    double? circuitLengthM,
+    double? systemVoltage,
+    double? allowableVoltageDropPercent,
+    bool? updateCircuitLengthM,
+    bool? updateSystemVoltage,
+    bool? updateAllowableVoltageDropPercent,
+  }) {
+    _replaceInputState(
+      voltageDropPhase: voltageDropPhase,
+      voltageDropInsulation: voltageDropInsulation,
+      voltageDropCoreType: voltageDropCoreType,
+      voltageDropInstallationGroup: voltageDropInstallationGroup,
+      voltageDropArrangement: voltageDropArrangement,
+      circuitLengthM: circuitLengthM,
+      systemVoltage: systemVoltage,
+      allowableVoltageDropPercent: allowableVoltageDropPercent,
+      updateCircuitLengthM: updateCircuitLengthM ?? false,
+      updateSystemVoltage: updateSystemVoltage ?? false,
+      updateAllowableVoltageDropPercent:
+          updateAllowableVoltageDropPercent ?? false,
+    );
+  }
+
+  Future<void> _calculate() async {
+    final mapped = _mappingResult;
+    if (mapped?.status != CableDesignV2InputMappingStatus.ready ||
+        mapped?.ampacityRequest == null ||
+        _executionState == _ExecutionState.running) {
+      return;
+    }
+    setState(() => _executionState = _ExecutionState.running);
+    try {
+      final controllerResult = await widget.controller.execute(
+        CableDesignExecutionCallerInput(
+          routingMode: CableDesignRoutingMode.routingV2,
+          routingV2CableRequest: mapped!.ampacityRequest,
+          routingV2VoltageDropContext: mapped.voltageDropContext,
+        ),
+      );
+      if (!mounted) return;
+      setState(() {
+        _presentationState = widget.presenter.present(controllerResult);
+        _executionState = _ExecutionState.completed;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _presentationState = const CableDesignV2PresentationState(
+          status: CableDesignV2PresentationStatus.invalidInput,
+          headline: 'Cable design could not be completed',
+          message: 'The calculation could not be completed. Review the inputs.',
+        );
+        _executionState = _ExecutionState.completed;
+      });
+    }
   }
 
   @override
@@ -115,8 +209,10 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 decoration: const InputDecoration(
                   labelText: 'Load current (A)',
                 ),
-                onChanged: (value) =>
-                    _replaceInputState(loadCurrent: double.tryParse(value)),
+                onChanged: (value) => _replaceInputState(
+                  loadCurrent: double.tryParse(value),
+                  updateLoadCurrent: true,
+                ),
               ),
               DropdownButtonFormField<PhaseSystem>(
                 key: const Key('v2-phase-system'),
@@ -167,6 +263,7 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 ),
                 onChanged: (value) => _replaceInputState(
                   ambientTemperature: double.tryParse(value),
+                  updateAmbientTemperature: true,
                 ),
               ),
             ],
@@ -248,7 +345,7 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
               if (_inputState.verifyVoltageDrop)
                 _VoltageDropInputs(
                   state: _inputState,
-                  onChanged: _replaceInputState,
+                  onChanged: _replaceVoltageDropState,
                 ),
             ],
           ),
@@ -269,17 +366,54 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 _InputReadiness(result: _mappingResult!),
               ElevatedButton(
                 key: const Key('v2-calculate'),
-                onPressed: null,
-                child: const Text('Calculate'),
+                onPressed: _canCalculate ? _calculate : null,
+                child: Text(
+                  _executionState == _ExecutionState.running
+                      ? 'Calculating...'
+                      : 'Calculate',
+                ),
               ),
+              if (_executionState == _ExecutionState.running)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: LinearProgressIndicator(),
+                ),
               const SizedBox(height: 8),
-              Text('Result: ${_presentationState.headline}'),
-              Text(_presentationState.message),
+              _ResultSummary(state: _presentationState),
             ],
           ),
         ),
       ],
     ),
+  );
+}
+
+enum _ExecutionState { idle, running, completed }
+
+class _ResultSummary extends StatelessWidget {
+  const _ResultSummary({required this.state});
+  final CableDesignV2PresentationState state;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text('Result: ${state.headline}'),
+      Text(state.message),
+      if (state.selectedDesign case final selected?) ...[
+        const SizedBox(height: 8),
+        const Text('Design'),
+        Text('Cable: ${selected.cableIdentityDisplay ?? 'Not specified'}'),
+        Text('Selected cable size: ${selected.cableSizeSqmm} sq.mm'),
+        Text('Runs: ${selected.runs}'),
+        Text('Current / run: ${selected.currentPerRun} A'),
+        Text('Corrected ampacity: ${selected.correctedAmpacityPerRun} A'),
+      ],
+      if (state.ampacitySummary != null)
+        Text('Ampacity status: ${state.ampacitySummary!.status.name}'),
+      if (state.voltageDropSummary != null)
+        Text('Voltage drop status: ${state.voltageDropSummary!.status.name}'),
+    ],
   );
 }
 
@@ -321,6 +455,9 @@ class _VoltageDropInputs extends StatelessWidget {
     double? circuitLengthM,
     double? systemVoltage,
     double? allowableVoltageDropPercent,
+    bool? updateCircuitLengthM,
+    bool? updateSystemVoltage,
+    bool? updateAllowableVoltageDropPercent,
   })
   onChanged;
 
@@ -399,13 +536,19 @@ class _VoltageDropInputs extends StatelessWidget {
         key: const Key('v2-vd-length'),
         keyboardType: TextInputType.number,
         decoration: const InputDecoration(labelText: 'Circuit length (m)'),
-        onChanged: (value) => onChanged(circuitLengthM: double.tryParse(value)),
+        onChanged: (value) => onChanged(
+          circuitLengthM: double.tryParse(value),
+          updateCircuitLengthM: true,
+        ),
       ),
       TextFormField(
         key: const Key('v2-vd-system-voltage'),
         keyboardType: TextInputType.number,
         decoration: const InputDecoration(labelText: 'System voltage (V)'),
-        onChanged: (value) => onChanged(systemVoltage: double.tryParse(value)),
+        onChanged: (value) => onChanged(
+          systemVoltage: double.tryParse(value),
+          updateSystemVoltage: true,
+        ),
       ),
       TextFormField(
         key: const Key('v2-vd-allowable'),
@@ -413,8 +556,10 @@ class _VoltageDropInputs extends StatelessWidget {
         decoration: const InputDecoration(
           labelText: 'Allowable voltage drop (%)',
         ),
-        onChanged: (value) =>
-            onChanged(allowableVoltageDropPercent: double.tryParse(value)),
+        onChanged: (value) => onChanged(
+          allowableVoltageDropPercent: double.tryParse(value),
+          updateAllowableVoltageDropPercent: true,
+        ),
       ),
     ],
   );
