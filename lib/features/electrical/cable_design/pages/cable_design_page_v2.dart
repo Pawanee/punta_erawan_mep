@@ -16,6 +16,9 @@ import '../../voltage_drop/services/voltage_drop_design_engine.dart';
 import '../models/cable_design_request.dart';
 import '../policies/approved_cable_type_context_policy.dart';
 import '../policies/cable_context_policy.dart';
+import '../routing_v2/enums/cable_design_workflow.dart';
+import '../routing_v2/models/cable_design_workflow_activation.dart';
+import '../routing_v2/pages/cable_design_v2_page.dart';
 import '../widgets/cable_header.dart';
 import '../widgets/result_row.dart';
 import '../widgets/section_header.dart';
@@ -423,6 +426,22 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
           'PUNTA ERAWAN MEP',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
+        actions: [
+          TextButton(
+            key: const Key('advanced-cable-design-entry'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => CableDesignV2Page(
+                  activation: const CableDesignWorkflowActivation(
+                    workflow: CableDesignWorkflow.advancedCableDesign,
+                  ),
+                ),
+              ),
+            ),
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            child: const Text('Advanced Cable Design'),
+          ),
+        ],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
