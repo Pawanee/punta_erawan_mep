@@ -297,6 +297,40 @@ void main() {
     expect(result.selected!.groupingFactor, isNull);
   });
 
+  test('VAF 100 A selects the minimum real two-run C1 design', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.vaf,
+        installation: surfaceWall,
+        loadCurrent: 100,
+      ),
+    );
+
+    final selected = result.selected!;
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(
+      result.candidates.every((candidate) => candidate.baseAmpacity < 100),
+      isTrue,
+    );
+    expect(selected.candidate.sourceTableId, '5-21');
+    expect(selected.candidate.sourceColumnId, 'C1');
+    expect(selected.candidate.sizeSqmm, 10);
+    expect(selected.candidate.baseAmpacity, 56);
+    expect(selected.runs, 2);
+    expect(selected.currentPerRun, 50);
+    expect(selected.correctedAmpacityPerRun, 56);
+    expect(
+      selected.temperatureApplication.state,
+      ResolvedCorrectionStateV2.notRequired,
+    );
+    expect(selected.groupingFactor, isNull);
+    expect(
+      selected.groupingApplication.state,
+      ResolvedCorrectionStateV2.notRequired,
+    );
+  });
+
   test('exhausted Table 5-21 candidates map to noCandidate', () async {
     final result = await orchestrator.prepare(
       request(

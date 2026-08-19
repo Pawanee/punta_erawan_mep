@@ -125,12 +125,13 @@ void main() {
   Future<void> enterReadyAmpacityInputs(
     WidgetTester tester, {
     required String product,
+    String loadCurrent = '10',
   }) async {
     await tester.drag(find.byType(ListView), const Offset(0, 1600));
     await tester.pumpAndSettle();
     await tester.enterText(
       find.byKey(const Key('v2-load-current')).first,
-      '10',
+      loadCurrent,
     );
     await selectDropdown(tester, const Key('v2-phase-system'), '1Ø');
     await selectDropdown(tester, const Key('v2-loaded-conductors'), '2');
@@ -269,6 +270,78 @@ void main() {
     expect(find.text('Installation source: Table 5-47'), findsOneWidget);
     expect(find.text('Routing cable identity: VAF-G'), findsOneWidget);
     expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+  });
+
+  testWidgets('VAF 100 A displays the backend-selected two-run design', (
+    tester,
+  ) async {
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await enterReadyAmpacityInputs(tester, product: 'VAF', loadCurrent: '100');
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(controller.calls, 1);
+    expect(find.text('Cable product / standard: VAF'), findsOneWidget);
+    expect(find.text('Selected cable size: 10 sq.mm'), findsOneWidget);
+    expect(find.text('Number of runs: 2'), findsOneWidget);
+    expect(find.text('Current per run: 50 A'), findsOneWidget);
+    expect(find.text('Base ampacity: 56 A'), findsOneWidget);
+    expect(find.text('Corrected ampacity: 56 A'), findsOneWidget);
+    expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+    expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Source column: C1'), findsOneWidget);
+  });
+
+  testWidgets('two-run VAF VD failure preserves the selected ampacity design', (
+    tester,
+  ) async {
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await enterReadyAmpacityInputs(tester, product: 'VAF', loadCurrent: '100');
+    await enterReadyVoltageDropInputs(tester, length: '1000', allowable: '.01');
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(controller.calls, 1);
+    expect(find.text('Selected cable size: 10 sq.mm'), findsOneWidget);
+    expect(find.text('Number of runs: 2'), findsOneWidget);
+    expect(find.text('Current per run: 50 A'), findsOneWidget);
+    expect(find.text('Voltage drop: FAILED'), findsOneWidget);
+    expect(find.textContaining('Voltage drop margin: -'), findsOneWidget);
+  });
+
+  testWidgets('two-run VAF VD verification uses the selected current per run', (
+    tester,
+  ) async {
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await enterReadyAmpacityInputs(tester, product: 'VAF', loadCurrent: '100');
+    await enterReadyVoltageDropInputs(tester, length: '10', allowable: '99');
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(controller.calls, 1);
+    expect(find.text('Selected cable size: 10 sq.mm'), findsOneWidget);
+    expect(find.text('Number of runs: 2'), findsOneWidget);
+    expect(find.text('Current per run: 50 A'), findsOneWidget);
+    expect(find.text('Voltage drop: VERIFIED'), findsOneWidget);
+    expect(find.text('mV/A/m: 4.4'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Voltage-drop table: Table 9.2'), findsOneWidget);
   });
 
   testWidgets('an input edit after readiness invalidates the execution gate', (

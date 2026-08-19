@@ -269,4 +269,65 @@ void main() {
       expect(r.ampacityResult.selected!.runs, 1);
     },
   );
+
+  test(
+    'two-run VAF design passes explicit VD without changing ampacity',
+    () async {
+      final r = await service.design(
+        request(load: 100),
+        voltageDropContext: const VoltageDropContinuationContextV2(
+          installationGroup: VoltageDropInstallationGroup.group1,
+          insulation: CableInsulation.pvc,
+          coreType: CoreType.multiCore,
+          phase: VoltagePhase.singlePhase,
+          systemVoltage: 230,
+          lengthM: 10,
+          allowableVoltageDropPercent: 99,
+        ),
+      );
+
+      final selected = r.ampacityResult.selected!;
+      expect(r.status, CombinedCableDesignStatusV2.resolved);
+      expect(selected.candidate.sizeSqmm, 10);
+      expect(selected.runs, 2);
+      expect(selected.currentPerRun, 50);
+      expect(selected.groupingFactor, isNull);
+      expect(r.voltageDropResult.tableId, '9.2');
+      expect(r.voltageDropResult.mvPerAperM, isNotNull);
+      expect(
+        r.voltageDropResult.voltageDropV,
+        closeTo(
+          r.voltageDropResult.mvPerAperM! * selected.currentPerRun * 10 / 1000,
+          0.000001,
+        ),
+      );
+    },
+  );
+
+  test(
+    'failed VD retains the real two-run VAF selection without retry',
+    () async {
+      final r = await service.design(
+        request(load: 100),
+        voltageDropContext: const VoltageDropContinuationContextV2(
+          installationGroup: VoltageDropInstallationGroup.group1,
+          insulation: CableInsulation.pvc,
+          coreType: CoreType.multiCore,
+          phase: VoltagePhase.singlePhase,
+          systemVoltage: 230,
+          lengthM: 1000,
+          allowableVoltageDropPercent: .01,
+        ),
+      );
+
+      final selected = r.ampacityResult.selected!;
+      expect(r.status, CombinedCableDesignStatusV2.voltageDropFailed);
+      expect(r.ampacityResult.status, AmpacityRoutingStatus.resolved);
+      expect(selected.candidate.sizeSqmm, 10);
+      expect(selected.runs, 2);
+      expect(selected.currentPerRun, 50);
+      expect(r.voltageDropResult.marginPercent, lessThan(0));
+      expect(r.voltageDropResult.allowableVoltageDropPercent, .01);
+    },
+  );
 }
