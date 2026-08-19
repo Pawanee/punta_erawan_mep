@@ -109,6 +109,19 @@ void main() {
         scrollable: find.byType(Scrollable).first,
       );
 
+  Future<void> openReferences(WidgetTester tester) async {
+    final details = find.text('Reference / Calculation Details');
+    await tester.scrollUntilVisible(
+      details,
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.ensureVisible(details);
+    await tester.pump();
+    await tester.tap(details);
+    await tester.pumpAndSettle();
+  }
+
   Future<void> enterReadyAmpacityInputs(
     WidgetTester tester, {
     required String product,
@@ -228,6 +241,12 @@ void main() {
       expect(find.text('Cable product / standard: VAF'), findsOneWidget);
       expect(find.textContaining('Selected cable size:'), findsOneWidget);
       expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+      await openReferences(tester);
+      expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+      expect(find.text('Routing cable identity: VAF'), findsOneWidget);
+      expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+      expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+      expect(find.text('Source column: C1'), findsOneWidget);
     },
   );
 
@@ -246,6 +265,10 @@ void main() {
     expect(controller.calls, 1);
     expect(find.text('Cable product / standard: VAF-G'), findsOneWidget);
     expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+    expect(find.text('Routing cable identity: VAF-G'), findsOneWidget);
+    expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
   });
 
   testWidgets('an input edit after readiness invalidates the execution gate', (

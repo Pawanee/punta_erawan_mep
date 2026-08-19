@@ -15,6 +15,7 @@ import '../enums/cable_design_workflow.dart';
 import '../enums/installation_environment.dart';
 import '../enums/installation_support.dart';
 import '../enums/resolved_correction_state_v2.dart';
+import '../enums/routing_property_source.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
 import '../models/cable_design_v2_input_state.dart';
 import '../models/cable_design_v2_input_mapping_result.dart';
@@ -402,6 +403,8 @@ class _ResultSummary extends StatelessWidget {
     final selected = state.selectedDesign;
     final ampacity = state.ampacitySummary;
     final voltageDrop = state.voltageDropSummary;
+    final installationReference = state.installationReference;
+    final cableProfile = state.cableProfile;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -485,18 +488,32 @@ class _ResultSummary extends StatelessWidget {
             ),
           ),
         ],
-        if (_hasTraceability(ampacity, voltageDrop)) ...[
+        if (_hasTraceability(
+          installationReference,
+          cableProfile,
+          ampacity,
+          voltageDrop,
+        )) ...[
           const SizedBox(height: 16),
-          _TraceabilityDetails(ampacity: ampacity, voltageDrop: voltageDrop),
+          _TraceabilityDetails(
+            installationReference: installationReference,
+            cableProfile: cableProfile,
+            ampacity: ampacity,
+            voltageDrop: voltageDrop,
+          ),
         ],
       ],
     );
   }
 
   static bool _hasTraceability(
+    CableDesignV2InstallationReferencePresentation? installationReference,
+    CableDesignV2CableProfilePresentation? cableProfile,
     CableDesignV2AmpacityPresentation? ampacity,
     CableDesignV2VoltageDropPresentation? voltageDrop,
   ) =>
+      installationReference != null ||
+      cableProfile != null ||
       ampacity?.installationGroupNumber != null ||
       ampacity?.sourceTableId != null ||
       ampacity?.sourceColumnId != null ||
@@ -548,9 +565,13 @@ class _ResultSummary extends StatelessWidget {
 
 class _TraceabilityDetails extends StatelessWidget {
   const _TraceabilityDetails({
+    required this.installationReference,
+    required this.cableProfile,
     required this.ampacity,
     required this.voltageDrop,
   });
+  final CableDesignV2InstallationReferencePresentation? installationReference;
+  final CableDesignV2CableProfilePresentation? cableProfile;
   final CableDesignV2AmpacityPresentation? ampacity;
   final CableDesignV2VoltageDropPresentation? voltageDrop;
 
@@ -559,11 +580,64 @@ class _TraceabilityDetails extends StatelessWidget {
     title: const Text('Reference / Calculation Details'),
     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
     children: [
+      if (installationReference != null)
+        _InstallationReferences(reference: installationReference!),
+      if (cableProfile != null) _CableProfileReferences(profile: cableProfile!),
       if (ampacity != null) _AmpacityReferences(ampacity: ampacity!),
       if (voltageDrop != null)
         _VoltageDropReferences(voltageDrop: voltageDrop!),
     ],
   );
+}
+
+class _InstallationReferences extends StatelessWidget {
+  const _InstallationReferences({required this.reference});
+  final CableDesignV2InstallationReferencePresentation reference;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text('INSTALLATION REFERENCE'),
+      Text('Installation source: ${reference.sourceReference}'),
+      Text('Resolved installation group: Group ${reference.groupNumber}'),
+      for (final characteristic in reference.characteristics)
+        Text('Source characteristic: $characteristic'),
+      const SizedBox(height: 8),
+    ],
+  );
+}
+
+class _CableProfileReferences extends StatelessWidget {
+  const _CableProfileReferences({required this.profile});
+  final CableDesignV2CableProfilePresentation profile;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const Text('CABLE PROFILE'),
+      Text('Routing cable identity: ${profile.identity}'),
+      for (final reference in profile.sourceReferences)
+        Text('Profile reference: $reference'),
+      for (final property in profile.properties)
+        Text(
+          '${property.label}: ${property.value} '
+          '(${_propertySourceLabel(property.source)})',
+        ),
+      const SizedBox(height: 8),
+    ],
+  );
+
+  static String _propertySourceLabel(RoutingPropertySource source) =>
+      switch (source) {
+        RoutingPropertySource.cableProfile =>
+          'Approved cable profile / master source',
+        RoutingPropertySource.supplementalInput =>
+          'Explicit supplemental input',
+        RoutingPropertySource.installationReference =>
+          'Table 5-47 installation resolution',
+      };
 }
 
 class _AmpacityReferences extends StatelessWidget {

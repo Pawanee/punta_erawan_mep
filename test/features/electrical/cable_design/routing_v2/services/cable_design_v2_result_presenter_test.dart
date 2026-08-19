@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_design_routing_mode.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.dart';
+import 'package:mep_project/features/electrical/cable_design/enums/conductor_temperature_class.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/phase_system.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
@@ -14,6 +15,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/co
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_environment.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/resolved_correction_state_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/routing_property_source.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_input.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_adaptation_result.dart';
@@ -40,6 +42,7 @@ void main() {
   CableDesignRequestV2 request({
     double loadCurrent = 10,
     double ambientTemperature = 40,
+    CableRoutingIdentity identity = CableRoutingIdentity.vaf,
     SupplementalCablePropertiesInput? supplemental,
   }) => CableDesignRequestV2(
     loadCurrent: loadCurrent,
@@ -48,7 +51,7 @@ void main() {
     coreType: CoreType.multiCore,
     ambientTemperature: ambientTemperature,
     routingMode: CableDesignRoutingMode.routingV2,
-    identity: CableRoutingIdentity.vaf,
+    identity: identity,
     engineeringInstallation: const EngineeringInstallationInput(
       environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
       supports: {InstallationSupport.surfaceMount},
@@ -135,6 +138,71 @@ void main() {
       VoltageDropVerificationStatusV2.notVerified,
     );
   });
+
+  test('retains VAF Table 5-48 and Table 5-47 provenance', () async {
+    final state = await present();
+
+    expect(state.installationReference!.sourceReference, 'Table 5-47');
+    expect(state.installationReference!.groupNumber, 3);
+    expect(state.installationReference!.characteristics, isNotEmpty);
+    expect(state.cableProfile!.identity, 'VAF');
+    expect(state.cableProfile!.sourceReferences, contains('Table 5-48'));
+    expect(
+      state.cableProfile!.properties
+          .where((property) => property.label == 'Shape')
+          .single
+          .source,
+      RoutingPropertySource.cableProfile,
+    );
+  });
+
+  test('retains equivalent VAF-G approved profile provenance', () async {
+    final state = await present(
+      requestV2: request(identity: CableRoutingIdentity.vafG),
+    );
+
+    expect(state.cableProfile!.identity, 'VAF-G');
+    expect(state.cableProfile!.sourceReferences, contains('Table 5-48'));
+    expect(state.installationReference!.sourceReference, 'Table 5-47');
+    expect(state.installationReference!.groupNumber, 3);
+  });
+
+  test(
+    'distinguishes supplemental properties from profile-derived facts',
+    () async {
+      final state = await present(
+        requestV2: request(
+          identity: CableRoutingIdentity.iec10,
+          supplemental: const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+          ),
+        ),
+      );
+
+      final properties = state.cableProfile!.properties;
+      expect(state.cableProfile!.identity, '60227 IEC 10');
+      expect(
+        properties
+            .where((property) => property.label == 'Core type')
+            .single
+            .source,
+        RoutingPropertySource.cableProfile,
+      );
+      expect(
+        properties.where((property) => property.label == 'Shape').single.source,
+        RoutingPropertySource.supplementalInput,
+      );
+      expect(
+        properties
+            .where((property) => property.label == 'Insulation')
+            .single
+            .source,
+        RoutingPropertySource.supplementalInput,
+      );
+    },
+  );
 
   test('presents verified VD separately from ampacity traceability', () async {
     final state = await present(voltageDropContext: context());
@@ -246,13 +314,19 @@ void main() {
         voltageDropContext: context(),
       );
       final applied = at45.ampacitySummary!.corrections.first;
-    final notRequired = at40.ampacitySummary!.corrections.last;
-    expect(applied.state, ResolvedCorrectionStateV2.applied);
-    expect(applied.factor, 0.91);
-    expect(applied.sourceReference, 'Table 5-43');
-    expect(at45.voltageDropSummary!.sourceTableId, '9.2');
-    expect(at45.ampacitySummary!.correctionReferences, contains('Table 5-43'));
-    expect(at45.ampacitySummary!.correctionReferences, isNot(contains('9.2')));
+      final notRequired = at40.ampacitySummary!.corrections.last;
+      expect(applied.state, ResolvedCorrectionStateV2.applied);
+      expect(applied.factor, 0.91);
+      expect(applied.sourceReference, 'Table 5-43');
+      expect(at45.voltageDropSummary!.sourceTableId, '9.2');
+      expect(
+        at45.ampacitySummary!.correctionReferences,
+        contains('Table 5-43'),
+      );
+      expect(
+        at45.ampacitySummary!.correctionReferences,
+        isNot(contains('9.2')),
+      );
       expect(notRequired.state, ResolvedCorrectionStateV2.notRequired);
       expect(notRequired.factor, isNull);
     },

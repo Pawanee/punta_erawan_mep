@@ -1,7 +1,9 @@
 import '../enums/cable_design_execution_controller_status_v2.dart';
 import '../enums/cable_design_v2_presentation_status.dart';
 import '../enums/combined_cable_design_status_v2.dart';
+import '../enums/routing_property_source.dart';
 import '../models/ampacity_design_result_v2.dart';
+import '../models/ampacity_routing_result.dart';
 import '../models/ampacity_selected_candidate_v2.dart';
 import '../models/cable_design_execution_controller_result_v2.dart';
 import '../models/cable_design_v2_presentation_state.dart';
@@ -52,6 +54,7 @@ class CableDesignV2ResultPresenter {
     final selected = _selected(controller, combined.ampacityResult.selected);
     final ampacity = _ampacity(combined.ampacityResult);
     final voltageDrop = _voltageDrop(combined.voltageDropResult, context);
+    final routing = combined.ampacityResult.routingResult;
     final copy = _statusCopy(combined.status, combined.ampacityResult.reason);
     return CableDesignV2PresentationState(
       status: copy.status,
@@ -60,6 +63,8 @@ class CableDesignV2ResultPresenter {
       selectedDesign: selected,
       ampacitySummary: ampacity,
       voltageDropSummary: voltageDrop,
+      installationReference: _installationReference(routing),
+      cableProfile: _cableProfile(routing),
     );
   }
 
@@ -109,6 +114,78 @@ class CableDesignV2ResultPresenter {
       reason: result.reason,
     );
   }
+
+  CableDesignV2InstallationReferencePresentation? _installationReference(
+    AmpacityRoutingResult? routing,
+  ) {
+    final reference = routing?.installationResolution.reference;
+    if (reference == null) return null;
+    return CableDesignV2InstallationReferencePresentation(
+      groupNumber: reference.group,
+      sourceReference: reference.sourceReference,
+      characteristics: List.unmodifiable(reference.notes),
+    );
+  }
+
+  CableDesignV2CableProfilePresentation? _cableProfile(
+    AmpacityRoutingResult? routing,
+  ) {
+    if (routing == null) return null;
+    final context = routing.context;
+    final profile = routing.cableProfile;
+    final propertyCandidates = <CableDesignV2PropertyPresentation?>[
+      if (context?.cableShape case final value?)
+        _property(
+          label: 'Shape',
+          value: value.name,
+          source: context!.propertySources['cableShape'],
+        ),
+      if (context?.coreType case final value?)
+        _property(
+          label: 'Core type',
+          value: value.displayName,
+          source: context!.propertySources['coreType'],
+        ),
+      if (context?.insulation case final value?)
+        _property(
+          label: 'Insulation',
+          value: value.name,
+          source: context!.propertySources['insulation'],
+        ),
+      if (context?.conductorTemperatureClass case final value?)
+        _property(
+          label: 'Conductor temperature class',
+          value: '${value.material} ${value.temperatureC}°C',
+          source: context!.propertySources['conductorTemperatureClass'],
+        ),
+      if (context?.hasOuterSheath case final value?)
+        _property(
+          label: 'Outer sheath',
+          value: value ? 'Present' : 'Not present',
+          source: context!.propertySources['hasOuterSheath'],
+        ),
+    ];
+    final properties = propertyCandidates
+        .whereType<CableDesignV2PropertyPresentation>()
+        .toList(growable: false);
+    return CableDesignV2CableProfilePresentation(
+      identity: profile.cableType.code,
+      sourceReferences: List.unmodifiable(profile.sourceReferences),
+      properties: List.unmodifiable(properties),
+    );
+  }
+
+  CableDesignV2PropertyPresentation? _property({
+    required String label,
+    required String value,
+    required RoutingPropertySource? source,
+  }) => source == null
+      ? null
+      : CableDesignV2PropertyPresentation(
+          label: label,
+          value: value,
+          source: source,
+        );
 
   CableDesignV2CorrectionPresentation _correction(
     String name,

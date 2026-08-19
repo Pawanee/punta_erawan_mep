@@ -5,6 +5,7 @@ import '../../../voltage_drop/enums/voltage_phase.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/cable_design_v2_presentation_status.dart';
 import '../enums/resolved_correction_state_v2.dart';
+import '../enums/routing_property_source.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
 
 /// Immutable, UI-ready view of an already-computed V2 execution outcome.
@@ -16,6 +17,8 @@ class CableDesignV2PresentationState {
     this.selectedDesign,
     this.ampacitySummary,
     this.voltageDropSummary,
+    this.installationReference,
+    this.cableProfile,
     this.missingInputs = const [],
   });
 
@@ -26,6 +29,8 @@ class CableDesignV2PresentationState {
       selectedDesign = null,
       ampacitySummary = null,
       voltageDropSummary = null,
+      installationReference = null,
+      cableProfile = null,
       missingInputs = const [];
 
   final CableDesignV2PresentationStatus status;
@@ -34,7 +39,47 @@ class CableDesignV2PresentationState {
   final CableDesignV2SelectedDesignPresentation? selectedDesign;
   final CableDesignV2AmpacityPresentation? ampacitySummary;
   final CableDesignV2VoltageDropPresentation? voltageDropSummary;
+  final CableDesignV2InstallationReferencePresentation? installationReference;
+  final CableDesignV2CableProfilePresentation? cableProfile;
   final List<String> missingInputs;
+}
+
+/// UI-ready provenance already resolved by the Table 5-47 routing path.
+class CableDesignV2InstallationReferencePresentation {
+  const CableDesignV2InstallationReferencePresentation({
+    required this.groupNumber,
+    required this.sourceReference,
+    required this.characteristics,
+  });
+
+  final int groupNumber;
+  final String sourceReference;
+  final List<String> characteristics;
+}
+
+/// UI-ready provenance for intrinsic cable facts already resolved by routing.
+class CableDesignV2CableProfilePresentation {
+  const CableDesignV2CableProfilePresentation({
+    required this.identity,
+    required this.sourceReferences,
+    required this.properties,
+  });
+
+  final String identity;
+  final List<String> sourceReferences;
+  final List<CableDesignV2PropertyPresentation> properties;
+}
+
+class CableDesignV2PropertyPresentation {
+  const CableDesignV2PropertyPresentation({
+    required this.label,
+    required this.value,
+    required this.source,
+  });
+
+  final String label;
+  final String value;
+  final RoutingPropertySource source;
 }
 
 class CableDesignV2SelectedDesignPresentation {

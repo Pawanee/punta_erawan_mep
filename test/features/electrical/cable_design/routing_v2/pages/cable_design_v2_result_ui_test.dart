@@ -7,6 +7,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ca
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/cable_design_v2_presentation_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/cable_design_workflow.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/resolved_correction_state_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/routing_property_source.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_adaptation_result.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_execution_caller_input.dart';
@@ -80,12 +81,39 @@ void main() {
     correctionReferences: ['Table 5-43'],
   );
 
+  const installationReference = CableDesignV2InstallationReferencePresentation(
+    groupNumber: 3,
+    sourceReference: 'Table 5-47',
+    characteristics: [
+      'Surface mounted on wall or ceiling without similar enclosing covering.',
+    ],
+  );
+
+  const cableProfile = CableDesignV2CableProfilePresentation(
+    identity: 'VAF',
+    sourceReferences: ['Table 5-48'],
+    properties: [
+      CableDesignV2PropertyPresentation(
+        label: 'Shape',
+        value: 'flat',
+        source: RoutingPropertySource.cableProfile,
+      ),
+      CableDesignV2PropertyPresentation(
+        label: 'Core type',
+        value: 'Multi Core',
+        source: RoutingPropertySource.cableProfile,
+      ),
+    ],
+  );
+
   const notVerified = CableDesignV2PresentationState(
     status: CableDesignV2PresentationStatus.voltageDropNotVerified,
     headline: 'Voltage drop not verified',
     message: 'Ampacity is available; voltage-drop facts were not supplied.',
     selectedDesign: selected,
     ampacitySummary: ampacity,
+    installationReference: installationReference,
+    cableProfile: cableProfile,
     voltageDropSummary: CableDesignV2VoltageDropPresentation(
       status: VoltageDropVerificationStatusV2.notVerified,
     ),
@@ -97,6 +125,8 @@ void main() {
     message: 'Ampacity and voltage drop are verified.',
     selectedDesign: selected,
     ampacitySummary: ampacity,
+    installationReference: installationReference,
+    cableProfile: cableProfile,
     voltageDropSummary: CableDesignV2VoltageDropPresentation(
       status: VoltageDropVerificationStatusV2.verified,
       sourceTableId: '9.2',
@@ -121,6 +151,8 @@ void main() {
         'The selected ampacity design is retained; no automatic change was made.',
     selectedDesign: selected,
     ampacitySummary: ampacity,
+    installationReference: installationReference,
+    cableProfile: cableProfile,
     voltageDropSummary: CableDesignV2VoltageDropPresentation(
       status: VoltageDropVerificationStatusV2.failed,
       sourceTableId: '9.2',
@@ -299,9 +331,20 @@ void main() {
       await prepareAndCalculate(tester, verified);
       expect(find.text('Source column: C1'), findsNothing);
       expect(find.textContaining('Table 5-21'), findsNothing);
+      expect(find.textContaining('Table 5-47'), findsNothing);
+      expect(find.textContaining('Table 5-48'), findsNothing);
       await openReferences(tester);
+      expect(find.text('INSTALLATION REFERENCE'), findsOneWidget);
+      expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+      expect(find.text('CABLE PROFILE'), findsOneWidget);
+      expect(find.text('Routing cable identity: VAF'), findsOneWidget);
+      expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+      expect(
+        find.text('Shape: flat (Approved cable profile / master source)'),
+        findsOneWidget,
+      );
       expect(find.text('AMPACITY'), findsOneWidget);
-      expect(find.text('Resolved installation group: Group 3'), findsOneWidget);
+      expect(find.text('Resolved installation group: Group 3'), findsNWidgets(2));
       expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
       expect(find.text('Source column: C1'), findsOneWidget);
       expect(find.text('Base ampacity reference: Table 5-21'), findsOneWidget);
