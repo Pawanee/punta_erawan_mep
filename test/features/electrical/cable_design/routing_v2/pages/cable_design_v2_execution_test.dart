@@ -57,15 +57,17 @@ class _InsufficientControllerSpy extends CableDesignExecutionControllerV2 {
     CableDesignExecutionCallerInput input,
   ) async {
     calls++;
-    return completion = Future.value(const CableDesignExecutionControllerResultV2(
-      status: CableDesignExecutionControllerStatusV2.insufficient,
-      adaptation: CableDesignExecutionCallerAdaptationResult(
-        status: CableDesignExecutionCallerAdaptationStatus.insufficient,
-        request: null,
-        missingFields: ['controllerInput'],
+    return completion = Future.value(
+      const CableDesignExecutionControllerResultV2(
+        status: CableDesignExecutionControllerStatusV2.insufficient,
+        adaptation: CableDesignExecutionCallerAdaptationResult(
+          status: CableDesignExecutionCallerAdaptationStatus.insufficient,
+          request: null,
+          missingFields: ['controllerInput'],
+        ),
+        reason: 'Controller requires additional input.',
       ),
-      reason: 'Controller requires additional input.',
-    ));
+    );
   }
 }
 
@@ -223,9 +225,9 @@ void main() {
       await tester.tap(find.byKey(const Key('v2-calculate')).first);
       await completeExecution(tester, controller);
       expect(controller.calls, 1);
-      expect(find.text('Cable: VAF'), findsOneWidget);
+      expect(find.text('Cable product / standard: VAF'), findsOneWidget);
       expect(find.textContaining('Selected cable size:'), findsOneWidget);
-      expect(find.text('Voltage drop status: notVerified'), findsOneWidget);
+      expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
     },
   );
 
@@ -242,8 +244,8 @@ void main() {
     await tester.tap(find.byKey(const Key('v2-calculate')).first);
     await completeExecution(tester, controller);
     expect(controller.calls, 1);
-    expect(find.text('Cable: VAF-G'), findsOneWidget);
-    expect(find.text('Voltage drop status: notVerified'), findsOneWidget);
+    expect(find.text('Cable product / standard: VAF-G'), findsOneWidget);
+    expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
   });
 
   testWidgets('an input edit after readiness invalidates the execution gate', (
@@ -258,7 +260,7 @@ void main() {
     await enterReadyAmpacityInputs(tester, product: 'VAF');
     await tester.tap(find.byKey(const Key('v2-calculate')).first);
     await completeExecution(tester, controller);
-    expect(find.text('Cable: VAF'), findsOneWidget);
+    expect(find.text('Cable product / standard: VAF'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, 1200));
     await tester.pumpAndSettle();
     await tester.enterText(
@@ -291,8 +293,8 @@ void main() {
     await tester.tap(find.byKey(const Key('v2-calculate')).first);
     await completeExecution(tester, controller);
     expect(controller.calls, 1);
-    expect(find.text('Cable: VAF'), findsOneWidget);
-    expect(find.text('Voltage drop status: verified'), findsOneWidget);
+    expect(find.text('Cable product / standard: VAF'), findsOneWidget);
+    expect(find.text('Voltage drop: VERIFIED'), findsOneWidget);
   });
 
   testWidgets(
@@ -316,9 +318,9 @@ void main() {
       await tester.tap(find.byKey(const Key('v2-calculate')).first);
       await completeExecution(tester, controller);
       expect(controller.calls, 1);
-      expect(find.text('Cable: VAF'), findsOneWidget);
-      expect(find.text('Runs: 1'), findsOneWidget);
-      expect(find.text('Voltage drop status: failed'), findsOneWidget);
+      expect(find.text('Cable product / standard: VAF'), findsOneWidget);
+      expect(find.text('Number of runs: 1'), findsOneWidget);
+      expect(find.text('Voltage drop: FAILED'), findsOneWidget);
     },
   );
 
@@ -349,10 +351,7 @@ void main() {
     await enterReadyAmpacityInputs(tester, product: 'VAF');
     await tester.drag(find.byType(ListView), const Offset(0, 1200));
     await tester.pumpAndSettle();
-    await tester.enterText(
-      find.byKey(const Key('v2-load-current')).first,
-      '0',
-    );
+    await tester.enterText(find.byKey(const Key('v2-load-current')).first, '0');
     await scrollToKey(tester, const Key('v2-check-inputs'));
     await tester.ensureVisible(find.byKey(const Key('v2-check-inputs')).first);
     await tester.pump();
@@ -385,10 +384,7 @@ void main() {
     expect(presenter.calls, 1);
     await tester.drag(find.byType(ListView), const Offset(0, -2000));
     await tester.pump();
-    expect(
-      find.text('Result: More design input is required'),
-      findsOneWidget,
-    );
+    expect(find.text('Result: More design input is required'), findsOneWidget);
   });
 
   testWidgets('a running execution blocks a duplicate Calculate tap', (
