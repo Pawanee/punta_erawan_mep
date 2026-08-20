@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_design_routing_mode.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.dart';
+import 'package:mep_project/features/electrical/cable_design/enums/conductor_temperature_class.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/phase_system.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
@@ -22,14 +23,20 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/services
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   final service = CombinedCableDesignOrchestratorV2();
-  CableDesignRequestV2 request({bool context = true, double load = 10}) =>
+  CableDesignRequestV2 request({
+    bool context = true,
+    double load = 10,
+    CableRoutingIdentity identity = CableRoutingIdentity.vaf,
+    SupplementalCablePropertiesInput? supplemental,
+    double ambientTemperature = 40,
+  }) =>
       CableDesignRequestV2(
         loadCurrent: load,
         phaseSystem: PhaseSystem.singlePhase,
         loadedConductors: 2,
         coreType: CoreType.multiCore,
         routingMode: CableDesignRoutingMode.routingV2,
-        identity: CableRoutingIdentity.vaf,
+        identity: identity,
         engineeringInstallation: context
             ? const EngineeringInstallationInput(
                 environments: {
@@ -38,7 +45,8 @@ void main() {
                 supports: {InstallationSupport.surfaceMount},
               )
             : null,
-        ambientTemperature: 40,
+        ambientTemperature: ambientTemperature,
+        supplementalCableProperties: supplemental,
       );
   test('ampacity insufficient maps without VD continuation', () async {
     final r = await service.design(request(context: false));
@@ -330,4 +338,35 @@ void main() {
       expect(r.voltageDropResult.allowableVoltageDropPercent, .01);
     },
   );
+
+  test('IEC 10 C6 ampacity traceability remains independent from VD routing',
+      () async {
+    final r = await service.design(
+      request(
+        identity: CableRoutingIdentity.iec10,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+      voltageDropContext: const VoltageDropContinuationContextV2(
+        installationGroup: VoltageDropInstallationGroup.group1,
+        insulation: CableInsulation.pvc,
+        coreType: CoreType.multiCore,
+        phase: VoltagePhase.singlePhase,
+        systemVoltage: 230,
+        lengthM: 10,
+        allowableVoltageDropPercent: 99,
+      ),
+    );
+
+    expect(r.ampacityResult.status, AmpacityRoutingStatus.resolved);
+    expect(r.ampacityResult.selected!.candidate.sourceTableId, '5-21');
+    expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C6');
+    expect(r.ampacityResult.selected!.temperatureFactor, isNull);
+    expect(r.ampacityResult.selected!.groupingFactor, isNull);
+    expect(r.voltageDropResult.tableId, '9.2');
+    expect(r.voltageDropResult.sourceReferences, contains('9.2'));
+  });
 }

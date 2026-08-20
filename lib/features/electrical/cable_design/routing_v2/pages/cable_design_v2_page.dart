@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../enums/core_type.dart';
+import '../../enums/cable_shape.dart';
+import '../../enums/conductor_temperature_class.dart';
 import '../../enums/phase_system.dart';
 import '../../models/cable_routing_identity.dart';
+import '../../models/supplemental_cable_properties_input.dart';
 import '../../../voltage_drop/enums/cable_arrangement.dart';
 import '../../../voltage_drop/enums/cable_insulation.dart';
 import '../../../voltage_drop/enums/voltage_drop_installation_group.dart';
@@ -72,6 +75,7 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
     CableRoutingIdentity? identity,
     Set<InstallationEnvironment>? environments,
     Set<InstallationSupport>? supports,
+    SupplementalCablePropertiesInput? supplementalCableProperties,
     bool? verifyVoltageDrop,
     VoltagePhase? voltageDropPhase,
     CableInsulation? voltageDropInsulation,
@@ -86,6 +90,7 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
     bool updateCircuitLengthM = false,
     bool updateSystemVoltage = false,
     bool updateAllowableVoltageDropPercent = false,
+    bool updateSupplementalCableProperties = false,
   }) {
     setState(() {
       _inputState = CableDesignV2InputState(
@@ -102,7 +107,9 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         hasOuterSheath: _inputState.hasOuterSheath,
         spacingAtLeastCableDiameter: _inputState.spacingAtLeastCableDiameter,
         ventilationOpeningPercent: _inputState.ventilationOpeningPercent,
-        supplementalCableProperties: _inputState.supplementalCableProperties,
+        supplementalCableProperties: updateSupplementalCableProperties
+            ? supplementalCableProperties
+            : _inputState.supplementalCableProperties,
         verifyVoltageDrop: verifyVoltageDrop ?? _inputState.verifyVoltageDrop,
         voltageDropPhase: voltageDropPhase ?? _inputState.voltageDropPhase,
         voltageDropInsulation:
@@ -128,6 +135,23 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
       _presentationState = const CableDesignV2PresentationState.initial();
       _executionState = _ExecutionState.idle;
     });
+  }
+
+  void _replaceIec10Supplemental({
+    CableShape? cableShape,
+    CableInsulation? insulation,
+    ConductorTemperatureClass? conductorTemperatureClass,
+  }) {
+    final current = _inputState.supplementalCableProperties;
+    _replaceInputState(
+      supplementalCableProperties: SupplementalCablePropertiesInput(
+        cableShape: cableShape ?? current?.cableShape,
+        insulation: insulation ?? current?.insulation,
+        conductorTemperatureClass:
+            conductorTemperatureClass ?? current?.conductorTemperatureClass,
+      ),
+      updateSupplementalCableProperties: true,
+    );
   }
 
   void _checkInputs() {
@@ -245,20 +269,26 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 onChanged: (value) =>
                     _replaceInputState(loadedConductors: value),
               ),
-              DropdownButtonFormField<CoreType>(
-                key: const Key('v2-core-type'),
-                value: _inputState.coreType,
-                decoration: const InputDecoration(labelText: 'Core type'),
-                items: CoreType.values
-                    .map(
-                      (value) => DropdownMenuItem(
-                        value: value,
-                        child: Text(value.displayName),
-                      ),
-                    )
-                    .toList(),
-                onChanged: (value) => _replaceInputState(coreType: value),
-              ),
+              if (_inputState.identity == CableRoutingIdentity.iec10)
+                const ListTile(
+                  title: Text('Core type: Multi Core'),
+                  subtitle: Text('Profile source: Table 5-48'),
+                )
+              else
+                DropdownButtonFormField<CoreType>(
+                  key: const Key('v2-core-type'),
+                  value: _inputState.coreType,
+                  decoration: const InputDecoration(labelText: 'Core type'),
+                  items: CoreType.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(value.displayName),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => _replaceInputState(coreType: value),
+                ),
               TextFormField(
                 key: const Key('v2-ambient-temperature'),
                 keyboardType: TextInputType.number,
@@ -283,14 +313,38 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 title: const Text('VAF'),
                 value: CableRoutingIdentity.vaf,
                 groupValue: _inputState.identity,
-                onChanged: (value) => _replaceInputState(identity: value),
+                onChanged: (value) => _replaceInputState(
+                  identity: value,
+                  supplementalCableProperties: null,
+                  updateSupplementalCableProperties: true,
+                ),
               ),
               RadioListTile<CableRoutingIdentity>(
                 title: const Text('VAF-G'),
                 value: CableRoutingIdentity.vafG,
                 groupValue: _inputState.identity,
-                onChanged: (value) => _replaceInputState(identity: value),
+                onChanged: (value) => _replaceInputState(
+                  identity: value,
+                  supplementalCableProperties: null,
+                  updateSupplementalCableProperties: true,
+                ),
               ),
+              RadioListTile<CableRoutingIdentity>(
+                key: const Key('v2-product-iec10'),
+                title: const Text('60227 IEC 10'),
+                value: CableRoutingIdentity.iec10,
+                groupValue: _inputState.identity,
+                onChanged: (value) => _replaceInputState(
+                  identity: value,
+                  supplementalCableProperties: null,
+                  updateSupplementalCableProperties: true,
+                ),
+              ),
+              if (_inputState.identity == CableRoutingIdentity.iec10)
+                _Iec10SupplementalInputs(
+                  state: _inputState.supplementalCableProperties,
+                  onChanged: _replaceIec10Supplemental,
+                ),
             ],
           ),
         ),
@@ -393,6 +447,71 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
 }
 
 enum _ExecutionState { idle, running, completed }
+
+class _Iec10SupplementalInputs extends StatelessWidget {
+  const _Iec10SupplementalInputs({
+    required this.state,
+    required this.onChanged,
+  });
+
+  final SupplementalCablePropertiesInput? state;
+  final void Function({
+    CableShape? cableShape,
+    CableInsulation? insulation,
+    ConductorTemperatureClass? conductorTemperatureClass,
+  })
+  onChanged;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      DropdownButtonFormField<CableShape>(
+        key: const Key('v2-iec10-cable-shape'),
+        value: state?.cableShape,
+        decoration: const InputDecoration(labelText: 'Cable shape'),
+        items: CableShape.values
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text(value.name),
+              ),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(cableShape: value),
+      ),
+      DropdownButtonFormField<CableInsulation>(
+        key: const Key('v2-iec10-insulation'),
+        value: state?.insulation,
+        decoration: const InputDecoration(labelText: 'Insulation'),
+        items: CableInsulation.values
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text(value.name),
+              ),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(insulation: value),
+      ),
+      DropdownButtonFormField<ConductorTemperatureClass>(
+        key: const Key('v2-iec10-conductor-temperature-class'),
+        value: state?.conductorTemperatureClass,
+        decoration: const InputDecoration(
+          labelText: 'Conductor temperature class',
+        ),
+        items: ConductorTemperatureClass.values
+            .map(
+              (value) => DropdownMenuItem(
+                value: value,
+                child: Text('${value.material} ${value.temperatureC}°C'),
+              ),
+            )
+            .toList(),
+        onChanged: (value) => onChanged(conductorTemperatureClass: value),
+      ),
+    ],
+  );
+}
 
 class _ResultSummary extends StatelessWidget {
   const _ResultSummary({required this.state});

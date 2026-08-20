@@ -31,6 +31,7 @@ void main() {
     CableDesignRoutingMode routingMode = CableDesignRoutingMode.legacy,
     CableRoutingIdentity? identity,
     CoreType coreType = CoreType.multiCore,
+    int loadedConductors = 2,
     double loadCurrent = 10,
     double ambientTemperature = 40,
     EngineeringInstallationInput? installation,
@@ -38,7 +39,7 @@ void main() {
   }) => CableDesignRequestV2(
     loadCurrent: loadCurrent,
     phaseSystem: PhaseSystem.singlePhase,
-    loadedConductors: 2,
+    loadedConductors: loadedConductors,
     coreType: coreType,
     routingMode: routingMode,
     ambientTemperature: ambientTemperature,
@@ -204,6 +205,128 @@ void main() {
       result.voltageDropStatus,
       VoltageDropVerificationStatusV2.notVerified,
     );
+  });
+
+  test('IEC 10 resolves only Table 5-21 C6 at 40C', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec10,
+        installation: surfaceWall,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(result.routingResult!.ampacityTable, AmpacityTable.table521);
+    expect(result.routingResult!.sourceColumnId, 'C6');
+    expect(result.selected!.candidate.sourceTableId, '5-21');
+    expect(result.selected!.candidate.sourceColumnId, 'C6');
+    expect(result.selected!.temperatureFactor, isNull);
+    expect(result.selected!.groupingFactor, isNull);
+    expect(
+      result.selected!.temperatureApplication.state,
+      ResolvedCorrectionStateV2.notRequired,
+    );
+    expect(
+      result.selected!.groupingApplication.state,
+      ResolvedCorrectionStateV2.notRequired,
+    );
+  });
+
+  test('IEC 10 applies only Table 5-43 temperature correction at 45C', () async {
+    final factor = await TemperatureFactorService().resolve(
+      ambientTemperatureC: 45,
+      temperatureClass: ConductorTemperatureClass.pvc70,
+    );
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec10,
+        installation: surfaceWall,
+        ambientTemperature: 45,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(result.selected!.candidate.sourceColumnId, 'C6');
+    expect(result.selected!.temperatureFactor, factor);
+    expect(
+      result.selected!.temperatureApplication.sourceReference,
+      'Table 5-43',
+    );
+    expect(result.selected!.groupingFactor, isNull);
+    expect(
+      result.selected!.groupingApplication.state,
+      ResolvedCorrectionStateV2.notRequired,
+    );
+  });
+
+  test('IEC 10 fails closed for missing or contradictory supplemental facts', () async {
+    for (final supplemental in <SupplementalCablePropertiesInput>[
+      const SupplementalCablePropertiesInput(
+        insulation: CableInsulation.pvc,
+        conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+      ),
+      const SupplementalCablePropertiesInput(
+        cableShape: CableShape.round,
+        conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+      ),
+      const SupplementalCablePropertiesInput(
+        cableShape: CableShape.round,
+        insulation: CableInsulation.pvc,
+      ),
+    ]) {
+      final result = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec10,
+          installation: surfaceWall,
+          supplemental: supplemental,
+        ),
+      );
+      expectNotPrepared(result, AmpacityRoutingStatus.insufficient);
+    }
+    final contradictory = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec10,
+        installation: surfaceWall,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.flat,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+    expectNotPrepared(contradictory, AmpacityRoutingStatus.noMatch);
+  });
+
+  test('IEC 10 rejects three loaded conductors without activating C7', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec10,
+        loadedConductors: 3,
+        installation: surfaceWall,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+    expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+    expect(result.routingResult, isNull);
   });
 
   test('conflicting VAF round shape fails closed without fallback', () async {

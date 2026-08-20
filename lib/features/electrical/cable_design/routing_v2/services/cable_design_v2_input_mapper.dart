@@ -1,6 +1,7 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/core_type.dart';
 import '../../models/engineering_installation_input.dart';
+import '../../models/cable_routing_identity.dart';
 import '../enums/cable_design_v2_input_mapping_status.dart';
 import '../models/cable_design_request_v2.dart';
 import '../models/cable_design_v2_input_mapping_result.dart';
@@ -16,7 +17,10 @@ class CableDesignV2InputMapper {
     if (state.loadCurrent == null) missing.add('loadCurrent');
     if (state.phaseSystem == null) missing.add('phaseSystem');
     if (state.loadedConductors == null) missing.add('loadedConductors');
-    if (state.coreType == null) missing.add('coreType');
+    // IEC 10's multi-core construction is profile-sourced by Table 5-48.
+    if (state.identity != CableRoutingIdentity.iec10 && state.coreType == null) {
+      missing.add('coreType');
+    }
     if (state.ambientTemperature == null) missing.add('ambientTemperature');
     if (state.identity == null) missing.add('identity');
     if (state.environments == null || state.environments!.isEmpty) {
@@ -32,11 +36,37 @@ class CableDesignV2InputMapper {
         reason: 'Load current and loaded conductors must be greater than zero.',
       );
     }
+    if (state.identity == CableRoutingIdentity.iec10) {
+      if (state.loadedConductors != 2) {
+        return const CableDesignV2InputMappingResult(
+          status: CableDesignV2InputMappingStatus.invalid,
+          reason: '60227 IEC 10 currently supports only two loaded conductors.',
+        );
+      }
+      final supplemental = state.supplementalCableProperties;
+      final missingSupplemental = <String>[];
+      if (supplemental?.cableShape == null) {
+        missingSupplemental.add('supplementalCableProperties.cableShape');
+      }
+      if (supplemental?.insulation == null) {
+        missingSupplemental.add('supplementalCableProperties.insulation');
+      }
+      if (supplemental?.conductorTemperatureClass == null) {
+        missingSupplemental.add(
+          'supplementalCableProperties.conductorTemperatureClass',
+        );
+      }
+      if (missingSupplemental.isNotEmpty) {
+        return _insufficient(missingSupplemental);
+      }
+    }
     final request = CableDesignRequestV2(
       loadCurrent: state.loadCurrent!,
       phaseSystem: state.phaseSystem!,
       loadedConductors: state.loadedConductors!,
-      coreType: state.coreType!,
+      coreType: state.identity == CableRoutingIdentity.iec10
+          ? CoreType.multiCore
+          : state.coreType!,
       ambientTemperature: state.ambientTemperature!,
       routingMode: CableDesignRoutingMode.routingV2,
       identity: state.identity,

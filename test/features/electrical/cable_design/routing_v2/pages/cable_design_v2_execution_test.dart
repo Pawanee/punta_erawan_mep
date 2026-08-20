@@ -126,6 +126,8 @@ void main() {
     WidgetTester tester, {
     required String product,
     String loadCurrent = '10',
+    bool selectProduct = true,
+    bool selectCore = true,
   }) async {
     await tester.drag(find.byType(ListView), const Offset(0, 1600));
     await tester.pumpAndSettle();
@@ -135,14 +137,26 @@ void main() {
     );
     await selectDropdown(tester, const Key('v2-phase-system'), '1Ø');
     await selectDropdown(tester, const Key('v2-loaded-conductors'), '2');
-    await selectDropdown(tester, const Key('v2-core-type'), 'Multi Core');
+    if (selectCore) {
+      await selectDropdown(tester, const Key('v2-core-type'), 'Multi Core');
+    }
     await tester.enterText(
       find.byKey(const Key('v2-ambient-temperature')).first,
       '40',
     );
-    await tester.tap(find.text(product));
-    await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, -800));
+    if (selectProduct) {
+      final productFinder = switch (product) {
+        '60227 IEC 10' => find.byKey(const Key('v2-product-iec10')),
+        _ => find.text(product),
+      };
+      final productTapTarget = product == '60227 IEC 10'
+          ? find.descendant(of: productFinder, matching: find.text(product))
+          : productFinder;
+      await tester.ensureVisible(productTapTarget);
+      await tester.tap(productTapTarget);
+      await tester.pumpAndSettle();
+    }
+    await tester.drag(find.byType(ListView), const Offset(0, -1000));
     await tester.pumpAndSettle();
     await selectDropdown(
       tester,
@@ -158,6 +172,24 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
     await tester.pump();
+  }
+
+  Future<void> enterIec10SupplementalInputs(WidgetTester tester) async {
+    await selectDropdown(
+      tester,
+      const Key('v2-iec10-cable-shape'),
+      'round',
+    );
+    await selectDropdown(
+      tester,
+      const Key('v2-iec10-insulation'),
+      'pvc',
+    );
+    await selectDropdown(
+      tester,
+      const Key('v2-iec10-conductor-temperature-class'),
+      'PVC 70°C',
+    );
   }
 
   Future<void> enterReadyVoltageDropInputs(
@@ -270,6 +302,58 @@ void main() {
     expect(find.text('Installation source: Table 5-47'), findsOneWidget);
     expect(find.text('Routing cable identity: VAF-G'), findsOneWidget);
     expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+  });
+
+  testWidgets('IEC 10 executes through the explicit C6 route', (tester) async {
+    tester.binding.window.physicalSizeTestValue = const Size(800, 1200);
+    tester.binding.window.devicePixelRatioTestValue = 1;
+    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+    addTearDown(tester.binding.window.clearDevicePixelRatioTestValue);
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('v2-product-iec10')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('v2-iec10-cable-shape')), findsOneWidget);
+    await enterReadyAmpacityInputs(
+      tester,
+      product: '60227 IEC 10',
+      selectProduct: false,
+      selectCore: false,
+    );
+    await scrollToKey(tester, const Key('v2-iec10-cable-shape'));
+    expect(find.text('Core type: Multi Core'), findsOneWidget);
+    expect(find.text('Profile source: Table 5-48'), findsOneWidget);
+    await enterIec10SupplementalInputs(tester);
+    await scrollToKey(tester, const Key('v2-check-inputs'));
+    await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
+    await tester.pump();
+    expect(
+      tester
+          .widget<ElevatedButton>(find.byKey(const Key('v2-calculate')).first)
+          .onPressed,
+      isNotNull,
+    );
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(controller.calls, 1);
+    expect(find.text('Cable product / standard: 60227 IEC 10'), findsOneWidget);
+    expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Routing cable identity: 60227 IEC 10'), findsOneWidget);
+    expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+    expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Source column: C6'), findsOneWidget);
+    expect(
+      find.text('Shape: round (Explicit supplemental input)'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('VAF 100 A displays the backend-selected two-run design', (

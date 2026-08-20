@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_shape.dart';
+import 'package:mep_project/features/electrical/cable_design/enums/conductor_temperature_class.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/phase_system.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_design_routing_mode.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
@@ -21,6 +22,8 @@ void main() {
   CableDesignV2InputState state({
     CableRoutingIdentity? identity = CableRoutingIdentity.vaf,
     double? loadCurrent = 10,
+    int? loadedConductors = 2,
+    CoreType? coreType = CoreType.multiCore,
     Set<InstallationEnvironment>? environments = const {
       InstallationEnvironment.surfaceMountedWallOrCeiling,
     },
@@ -33,8 +36,8 @@ void main() {
   }) => CableDesignV2InputState(
     loadCurrent: loadCurrent,
     phaseSystem: PhaseSystem.singlePhase,
-    loadedConductors: 2,
-    coreType: CoreType.multiCore,
+    loadedConductors: loadedConductors,
+    coreType: coreType,
     ambientTemperature: 40,
     identity: identity,
     environments: environments,
@@ -161,6 +164,53 @@ void main() {
       expect(caller.routingMode, CableDesignRoutingMode.routingV2);
     },
   );
+
+  test('IEC 10 requires only unresolved supplemental facts', () {
+    final incomplete = mapper.map(
+      state(identity: CableRoutingIdentity.iec10, coreType: null),
+    );
+    expect(incomplete.status, CableDesignV2InputMappingStatus.insufficient);
+    expect(
+      incomplete.missingFields,
+      containsAll(<String>[
+        'supplementalCableProperties.cableShape',
+        'supplementalCableProperties.insulation',
+        'supplementalCableProperties.conductorTemperatureClass',
+      ]),
+    );
+
+    const supplemental = SupplementalCablePropertiesInput(
+      cableShape: CableShape.round,
+      insulation: CableInsulation.pvc,
+      conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+    );
+    final ready = mapper.map(
+      state(
+        identity: CableRoutingIdentity.iec10,
+        coreType: null,
+        supplemental: supplemental,
+      ),
+    );
+    expect(ready.status, CableDesignV2InputMappingStatus.ready);
+    expect(ready.ampacityRequest!.coreType, CoreType.multiCore);
+    expect(ready.ampacityRequest!.supplementalCableProperties, same(supplemental));
+  });
+
+  test('IEC 10 rejects the unapproved three-loaded-conductor scope', () {
+    final result = mapper.map(
+      state(
+        identity: CableRoutingIdentity.iec10,
+        loadedConductors: 3,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+    expect(result.status, CableDesignV2InputMappingStatus.invalid);
+    expect(result.reason, contains('two loaded conductors'));
+  });
 }
 
 class VoltageDropContinuationContextValues {

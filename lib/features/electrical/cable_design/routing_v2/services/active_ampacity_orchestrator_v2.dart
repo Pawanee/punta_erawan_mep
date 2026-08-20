@@ -1,5 +1,6 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/ampacity_table.dart';
+import '../../models/cable_routing_identity.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/ampacity_selection_status_v2.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
@@ -52,6 +53,13 @@ class ActiveAmpacityOrchestratorV2 {
         AmpacityRoutingStatus.unsupported,
         'Request is not eligible for Routing v2.',
       );
+    if (request.identity == CableRoutingIdentity.iec10 &&
+        request.loadedConductors != 2) {
+      return _result(
+        AmpacityRoutingStatus.unsupported,
+        '60227 IEC 10 currently supports only the Table 5-21 C6 two-loaded-conductor scope.',
+      );
+    }
     final adapted = await _adapter.adapt(request);
     if (!adapted.isComplete)
       return _result(adapted.status, 'Production routing input is incomplete.');
