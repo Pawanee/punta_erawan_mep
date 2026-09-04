@@ -22,11 +22,29 @@ void main() {
 
     expect(find.text('ไม่พิจารณา Voltage Drop'), findsOneWidget);
     expect(find.text('เลือกขนาดสายจาก Ampacity เท่านั้น'), findsOneWidget);
+    expect(
+      find.textContaining('Ampacity = ความสามารถในการรับกระแสของสาย'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Voltage Drop = ข้อจำกัดแรงดันตกตามระยะทาง'),
+      findsOneWidget,
+    );
     expect(tester.widget<CheckboxListTile>(option).value, isFalse);
 
     await tester.tap(option);
     await tester.pump();
 
     expect(tester.widget<CheckboxListTile>(option).value, isTrue);
+
+    final disclaimer = find.textContaining(
+      'ควรตรวจสอบโดยวิศวกรก่อนนำไปใช้ในการก่อสร้าง',
+    );
+    await tester.scrollUntilVisible(
+      disclaimer,
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(disclaimer, findsOneWidget);
   });
 }

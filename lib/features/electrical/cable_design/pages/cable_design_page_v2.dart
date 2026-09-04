@@ -254,8 +254,12 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
     } catch (e) {
       if (!mounted) return;
 
+      debugPrint('Legacy Cable Design UI error: $e');
+
       setState(() {
-        _result = VoltageDropDesignResult.error('Voltage Drop UI error: $e');
+        _result = VoltageDropDesignResult.error(
+          'ไม่สามารถคำนวณได้ กรุณาตรวจสอบข้อมูลที่ป้อน',
+        );
         _isLoading = false;
       });
     }
@@ -335,9 +339,14 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                   const SizedBox(height: 16),
                   const Divider(),
                   ResultRow(
-                    title: 'Selected Cable',
+                    title: 'กระแสออกแบบ',
+                    value: '${_number(result.loadCurrent)} A',
+                  ),
+                  ResultRow(
+                    title: 'ขนาดสาย',
                     value: result.cableArrangement ?? '-',
                   ),
+                  ResultRow(title: 'จำนวน Run', value: '${result.runs ?? '-'}'),
                   ResultRow(
                     title: 'Ampacity / Run',
                     value: '${_number(result.ampacityPerRun)} A',
@@ -360,6 +369,11 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                     ResultRow(
                       title: 'Voltage Drop Margin',
                       value: '${_number(margin)} %',
+                    ),
+                  ] else ...[
+                    const ResultRow(
+                      title: 'สถานะ Voltage Drop',
+                      value: 'เลือกขนาดสายจาก Ampacity เท่านั้น',
                     ),
                   ],
                 ],
@@ -721,6 +735,15 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                             },
                           ),
 
+                          const Padding(
+                            padding: EdgeInsets.only(left: 16, right: 16),
+                            child: Text(
+                              'Ampacity = ความสามารถในการรับกระแสของสาย\n'
+                              'Voltage Drop = ข้อจำกัดแรงดันตกตามระยะทาง',
+                              style: TextStyle(color: Colors.black54),
+                            ),
+                          ),
+
                           _space(),
 
                           TextField(
@@ -885,9 +908,18 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                                       '${_number(_result!.voltageDropPercent)} %',
                                 ),
                               ] else
-                                const ResultRow(
-                                  title: 'Voltage Drop',
-                                  value: 'ไม่พิจารณา',
+                                const Column(
+                                  children: [
+                                    ResultRow(
+                                      title: 'Voltage Drop',
+                                      value: 'ไม่พิจารณา',
+                                    ),
+                                    ResultRow(
+                                      title: 'สถานะ',
+                                      value:
+                                          'เลือกขนาดสายจาก Ampacity เท่านั้น',
+                                    ),
+                                  ],
                                 ),
 
                               const Divider(height: 28),
@@ -919,6 +951,27 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                       ),
                     ),
                   ],
+
+                  const SizedBox(height: 24),
+                  Card(
+                    color: Colors.blueGrey.shade50,
+                    child: const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.info_outline),
+                          SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'ผลการคำนวณขึ้นอยู่กับข้อมูลและเงื่อนไขการออกแบบที่เลือก\n'
+                              'ควรตรวจสอบโดยวิศวกรก่อนนำไปใช้ในการก่อสร้าง',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                   const SizedBox(height: 40),
                 ],

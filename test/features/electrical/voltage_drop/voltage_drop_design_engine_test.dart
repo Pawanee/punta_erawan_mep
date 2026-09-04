@@ -27,6 +27,13 @@ class _FakeCableDesignEngine extends VoltageDropCableDesignEngine {
   }
 }
 
+class _ThrowingCableDesignEngine extends VoltageDropCableDesignEngine {
+  @override
+  Future<VoltageDropCableSelectionResult> design(
+    VoltageDropCableSelectionRequest request,
+  ) => throw StateError('internal detail');
+}
+
 VoltageDropCableSelectionRequest _request({
   double current = 250,
   double length = 100,
@@ -53,46 +60,49 @@ VoltageDropCableSelectionRequest _request({
 }
 
 void main() {
-  test('PART 8: main engine integrates selection into final design result', () async {
-    final fakeSelectionEngine = _FakeCableDesignEngine(
-      const VoltageDropCableSelectionResult(
-        isSuccess: true,
-        message: 'ok',
-        cableSizeSqmm: 95,
-        ampacity: 143,
-        cableArrangement: '2 × 95 sq.mm',
-        reference: 'Table 5-20',
-        groupingFactor: 1.0,
-        requiredCurrent: 250,
-        voltageDropV: 6.0,
-        voltageDropPercent: 1.5,
-        mvPerAperM: 0.48,
-        runs: 2,
-      ),
-    );
+  test(
+    'PART 8: main engine integrates selection into final design result',
+    () async {
+      final fakeSelectionEngine = _FakeCableDesignEngine(
+        const VoltageDropCableSelectionResult(
+          isSuccess: true,
+          message: 'ok',
+          cableSizeSqmm: 95,
+          ampacity: 143,
+          cableArrangement: '2 × 95 sq.mm',
+          reference: 'Table 5-20',
+          groupingFactor: 1.0,
+          requiredCurrent: 250,
+          voltageDropV: 6.0,
+          voltageDropPercent: 1.5,
+          mvPerAperM: 0.48,
+          runs: 2,
+        ),
+      );
 
-    final engine = VoltageDropDesignEngine(
-      cableDesignEngine: fakeSelectionEngine,
-    );
+      final engine = VoltageDropDesignEngine(
+        cableDesignEngine: fakeSelectionEngine,
+      );
 
-    final request = _request();
-    final result = await engine.design(request);
+      final request = _request();
+      final result = await engine.design(request);
 
-    expect(result.isSuccess, isTrue);
-    expect(fakeSelectionEngine.receivedRequest, same(request));
-    expect(result.loadCurrent, 250);
-    expect(result.groupingFactor, 1.0);
-    expect(result.requiredCurrent, 250);
-    expect(result.runs, 2);
-    expect(result.currentPerRun, 125);
-    expect(result.ampacityPerRun, 143);
-    expect(result.totalAmpacity, 286);
-    expect(result.cableSizeSqmm, 95);
-    expect(result.cableArrangement, '2 × 95 sq.mm');
-    expect(result.cableLengthM, 100);
-    expect(result.voltageDropV, 6.0);
-    expect(result.voltageDropPercent, 1.5);
-  });
+      expect(result.isSuccess, isTrue);
+      expect(fakeSelectionEngine.receivedRequest, same(request));
+      expect(result.loadCurrent, 250);
+      expect(result.groupingFactor, 1.0);
+      expect(result.requiredCurrent, 250);
+      expect(result.runs, 2);
+      expect(result.currentPerRun, 125);
+      expect(result.ampacityPerRun, 143);
+      expect(result.totalAmpacity, 286);
+      expect(result.cableSizeSqmm, 95);
+      expect(result.cableArrangement, '2 × 95 sq.mm');
+      expect(result.cableLengthM, 100);
+      expect(result.voltageDropV, 6.0);
+      expect(result.voltageDropPercent, 1.5);
+    },
+  );
 
   test('PART 8: main engine propagates failed cable selection', () async {
     final fakeSelectionEngine = _FakeCableDesignEngine(
@@ -114,22 +124,40 @@ void main() {
     );
   });
 
-  test('PART 8: rejects invalid load before calling selection engine', () async {
-    final fakeSelectionEngine = _FakeCableDesignEngine(
-      const VoltageDropCableSelectionResult(
-        isSuccess: true,
-        message: 'should not be called',
-      ),
-    );
+  test(
+    'PART 8: rejects invalid load before calling selection engine',
+    () async {
+      final fakeSelectionEngine = _FakeCableDesignEngine(
+        const VoltageDropCableSelectionResult(
+          isSuccess: true,
+          message: 'should not be called',
+        ),
+      );
 
-    final engine = VoltageDropDesignEngine(
-      cableDesignEngine: fakeSelectionEngine,
-    );
+      final engine = VoltageDropDesignEngine(
+        cableDesignEngine: fakeSelectionEngine,
+      );
 
-    final result = await engine.design(_request(current: 0));
+      final result = await engine.design(_request(current: 0));
 
-    expect(result.isSuccess, isFalse);
-    expect(result.message, 'Load Current ต้องมากกว่า 0 A');
-    expect(fakeSelectionEngine.receivedRequest, isNull);
-  });
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'Load Current ต้องมากกว่า 0 A');
+      expect(fakeSelectionEngine.receivedRequest, isNull);
+    },
+  );
+
+  test(
+    'unexpected implementation errors use customer-facing wording',
+    () async {
+      final engine = VoltageDropDesignEngine(
+        cableDesignEngine: _ThrowingCableDesignEngine(),
+      );
+
+      final result = await engine.design(_request());
+
+      expect(result.isSuccess, isFalse);
+      expect(result.message, 'ไม่สามารถคำนวณได้ กรุณาตรวจสอบข้อมูลที่ป้อน');
+      expect(result.message, isNot(contains('internal detail')));
+    },
+  );
 }

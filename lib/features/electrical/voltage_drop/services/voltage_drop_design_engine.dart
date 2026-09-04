@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../models/voltage_drop_cable_selection_request.dart';
 import '../models/voltage_drop_design_result.dart';
 import 'voltage_drop_cable_design_engine.dart';
@@ -50,8 +52,9 @@ class VoltageDropDesignEngine {
         cableLengthM: request.lengthM,
       );
     } catch (e) {
+      debugPrint('Voltage Drop Design Engine error: $e');
       return VoltageDropDesignResult.error(
-        'Voltage Drop Design Engine error: $e',
+        'ไม่สามารถคำนวณได้ กรุณาตรวจสอบข้อมูลที่ป้อน',
       );
     }
   }
