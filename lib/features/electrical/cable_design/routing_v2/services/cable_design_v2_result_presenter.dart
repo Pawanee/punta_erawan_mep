@@ -77,6 +77,7 @@ class CableDesignV2ResultPresenter {
       cableIdentityDisplay:
           controller.adaptation.request?.routingV2CableRequest?.identity?.code,
       cableSizeSqmm: selected.candidate.sizeSqmm,
+      loadedConductors: selected.candidate.loadedConductors,
       runs: selected.runs,
       currentPerRun: selected.currentPerRun,
       baseAmpacity: selected.candidate.baseAmpacity,

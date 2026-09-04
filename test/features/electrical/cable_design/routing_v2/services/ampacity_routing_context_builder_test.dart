@@ -158,6 +158,19 @@ void main() {
       ),
     );
     expect(dcThree.status, AmpacityRoutingStatus.noMatch);
+    final iec10C7Dc = await builder.build(
+      request(
+        cableType: CableProfileType.iec10,
+        system: RoutingElectricalSystem.dc,
+        loaded: 3,
+        installationCore: CoreType.multiCore,
+        shape: CableShape.round,
+        insulation: CableInsulation.pvc,
+        temperature: ConductorTemperatureClass.pvc70,
+      ),
+    );
+    expect(iec10C7Dc.status, AmpacityRoutingStatus.noMatch);
+    expect(iec10C7Dc.sourceColumnId, isNull);
     final iec = await builder.build(
       request(
         cableType: CableProfileType.iec605021,

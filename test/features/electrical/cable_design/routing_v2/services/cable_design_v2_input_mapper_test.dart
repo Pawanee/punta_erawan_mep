@@ -193,23 +193,43 @@ void main() {
     );
     expect(ready.status, CableDesignV2InputMappingStatus.ready);
     expect(ready.ampacityRequest!.coreType, CoreType.multiCore);
-    expect(ready.ampacityRequest!.supplementalCableProperties, same(supplemental));
+    expect(
+      ready.ampacityRequest!.supplementalCableProperties,
+      same(supplemental),
+    );
   });
 
-  test('IEC 10 rejects the unapproved three-loaded-conductor scope', () {
-    final result = mapper.map(
-      state(
-        identity: CableRoutingIdentity.iec10,
-        loadedConductors: 3,
-        supplemental: const SupplementalCablePropertiesInput(
-          cableShape: CableShape.round,
-          insulation: CableInsulation.pvc,
-          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
-        ),
-      ),
+  test('IEC 10 accepts only the approved C6 and C7 loaded-conductor facts', () {
+    const supplemental = SupplementalCablePropertiesInput(
+      cableShape: CableShape.round,
+      insulation: CableInsulation.pvc,
+      conductorTemperatureClass: ConductorTemperatureClass.pvc70,
     );
-    expect(result.status, CableDesignV2InputMappingStatus.invalid);
-    expect(result.reason, contains('two loaded conductors'));
+    for (final loaded in [2, 3]) {
+      final result = mapper.map(
+        state(
+          identity: CableRoutingIdentity.iec10,
+          loadedConductors: loaded,
+          supplemental: supplemental,
+        ),
+      );
+      expect(result.status, CableDesignV2InputMappingStatus.ready);
+      expect(result.ampacityRequest!.loadedConductors, loaded);
+      expect(result.ampacityRequest!.phaseSystem, PhaseSystem.singlePhase);
+      expect(result.voltageDropContext, isNull);
+    }
+    expect(
+      mapper
+          .map(
+            state(
+              identity: CableRoutingIdentity.iec10,
+              loadedConductors: 4,
+              supplemental: supplemental,
+            ),
+          )
+          .status,
+      CableDesignV2InputMappingStatus.invalid,
+    );
   });
 }
 

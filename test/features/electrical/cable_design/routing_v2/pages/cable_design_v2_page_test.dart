@@ -48,6 +48,8 @@ void main() {
           .groupValue,
       CableRoutingIdentity.vaf,
     );
+    await tester.ensureVisible(find.text('VAF-G'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('VAF-G'));
     await tester.pump();
     expect(

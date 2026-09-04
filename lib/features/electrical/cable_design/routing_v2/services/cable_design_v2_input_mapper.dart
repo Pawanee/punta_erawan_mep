@@ -18,7 +18,8 @@ class CableDesignV2InputMapper {
     if (state.phaseSystem == null) missing.add('phaseSystem');
     if (state.loadedConductors == null) missing.add('loadedConductors');
     // IEC 10's multi-core construction is profile-sourced by Table 5-48.
-    if (state.identity != CableRoutingIdentity.iec10 && state.coreType == null) {
+    if (state.identity != CableRoutingIdentity.iec10 &&
+        state.coreType == null) {
       missing.add('coreType');
     }
     if (state.ambientTemperature == null) missing.add('ambientTemperature');
@@ -37,10 +38,10 @@ class CableDesignV2InputMapper {
       );
     }
     if (state.identity == CableRoutingIdentity.iec10) {
-      if (state.loadedConductors != 2) {
+      if (state.loadedConductors != 2 && state.loadedConductors != 3) {
         return const CableDesignV2InputMappingResult(
           status: CableDesignV2InputMappingStatus.invalid,
-          reason: '60227 IEC 10 currently supports only two loaded conductors.',
+          reason: '60227 IEC 10 supports only two or three loaded conductors.',
         );
       }
       final supplemental = state.supplementalCableProperties;

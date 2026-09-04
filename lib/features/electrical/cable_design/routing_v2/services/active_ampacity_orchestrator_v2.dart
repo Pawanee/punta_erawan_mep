@@ -54,10 +54,11 @@ class ActiveAmpacityOrchestratorV2 {
         'Request is not eligible for Routing v2.',
       );
     if (request.identity == CableRoutingIdentity.iec10 &&
-        request.loadedConductors != 2) {
+        request.loadedConductors != 2 &&
+        request.loadedConductors != 3) {
       return _result(
         AmpacityRoutingStatus.unsupported,
-        '60227 IEC 10 currently supports only the Table 5-21 C6 two-loaded-conductor scope.',
+        '60227 IEC 10 supports only the approved Table 5-21 C6/C7 loaded-conductor scopes.',
       );
     }
     final adapted = await _adapter.adapt(request);

@@ -269,6 +269,13 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 onChanged: (value) =>
                     _replaceInputState(loadedConductors: value),
               ),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'จำนวนตัวนำที่มีกระแส ใช้สำหรับเลือกเงื่อนไข Ampacity\n'
+                  'และไม่ใช่การกำหนดระบบ 1 เฟส / 3 เฟส',
+                ),
+              ),
               if (_inputState.identity == CableRoutingIdentity.iec10)
                 const ListTile(
                   title: Text('Core type: Multi Core'),
@@ -471,10 +478,8 @@ class _Iec10SupplementalInputs extends StatelessWidget {
         decoration: const InputDecoration(labelText: 'Cable shape'),
         items: CableShape.values
             .map(
-              (value) => DropdownMenuItem(
-                value: value,
-                child: Text(value.name),
-              ),
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.name)),
             )
             .toList(),
         onChanged: (value) => onChanged(cableShape: value),
@@ -485,10 +490,8 @@ class _Iec10SupplementalInputs extends StatelessWidget {
         decoration: const InputDecoration(labelText: 'Insulation'),
         items: CableInsulation.values
             .map(
-              (value) => DropdownMenuItem(
-                value: value,
-                child: Text(value.name),
-              ),
+              (value) =>
+                  DropdownMenuItem(value: value, child: Text(value.name)),
             )
             .toList(),
         onChanged: (value) => onChanged(insulation: value),
@@ -543,6 +546,8 @@ class _ResultSummary extends StatelessWidget {
                 Text(
                   'Selected cable size: ${_format(selected.cableSizeSqmm)} sq.mm',
                 ),
+                if (selected.loadedConductors case final value?)
+                  Text('Loaded conductors: $value'),
                 Text('Number of runs: ${selected.runs}'),
                 Text('Current per run: ${_format(selected.currentPerRun)} A'),
                 Text('Base ampacity: ${_format(selected.baseAmpacity)} A'),

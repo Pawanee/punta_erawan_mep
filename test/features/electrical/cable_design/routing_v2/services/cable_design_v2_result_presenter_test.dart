@@ -43,11 +43,12 @@ void main() {
     double loadCurrent = 10,
     double ambientTemperature = 40,
     CableRoutingIdentity identity = CableRoutingIdentity.vaf,
+    int loadedConductors = 2,
     SupplementalCablePropertiesInput? supplemental,
   }) => CableDesignRequestV2(
     loadCurrent: loadCurrent,
     phaseSystem: PhaseSystem.singlePhase,
-    loadedConductors: 2,
+    loadedConductors: loadedConductors,
     coreType: CoreType.multiCore,
     ambientTemperature: ambientTemperature,
     routingMode: CableDesignRoutingMode.routingV2,
@@ -203,6 +204,32 @@ void main() {
       );
     },
   );
+
+  test('presents IEC 10 C7 loaded-conductor and source traceability', () async {
+    final state = await present(
+      requestV2: request(
+        identity: CableRoutingIdentity.iec10,
+        loadedConductors: 3,
+        loadCurrent: 60,
+        supplemental: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+      ),
+    );
+    expect(state.selectedDesign!.cableIdentityDisplay, '60227 IEC 10');
+    expect(state.selectedDesign!.loadedConductors, 3);
+    expect(state.selectedDesign!.cableSizeSqmm, 16);
+    expect(state.selectedDesign!.runs, 1);
+    expect(state.selectedDesign!.currentPerRun, 60);
+    expect(state.selectedDesign!.baseAmpacity, 66);
+    expect(state.selectedDesign!.correctedAmpacityPerRun, 66);
+    expect(state.ampacitySummary!.sourceTableId, '5-21');
+    expect(state.ampacitySummary!.sourceColumnId, 'C7');
+    expect(state.installationReference!.sourceReference, 'Table 5-47');
+    expect(state.cableProfile!.sourceReferences, contains('Table 5-48'));
+  });
 
   test('presents verified VD separately from ampacity traceability', () async {
     final state = await present(voltageDropContext: context());

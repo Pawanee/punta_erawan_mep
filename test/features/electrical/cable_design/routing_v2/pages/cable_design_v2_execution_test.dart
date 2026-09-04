@@ -126,6 +126,7 @@ void main() {
     WidgetTester tester, {
     required String product,
     String loadCurrent = '10',
+    String loadedConductors = '2',
     bool selectProduct = true,
     bool selectCore = true,
   }) async {
@@ -136,7 +137,11 @@ void main() {
       loadCurrent,
     );
     await selectDropdown(tester, const Key('v2-phase-system'), '1Ø');
-    await selectDropdown(tester, const Key('v2-loaded-conductors'), '2');
+    await selectDropdown(
+      tester,
+      const Key('v2-loaded-conductors'),
+      loadedConductors,
+    );
     if (selectCore) {
       await selectDropdown(tester, const Key('v2-core-type'), 'Multi Core');
     }
@@ -175,16 +180,8 @@ void main() {
   }
 
   Future<void> enterIec10SupplementalInputs(WidgetTester tester) async {
-    await selectDropdown(
-      tester,
-      const Key('v2-iec10-cable-shape'),
-      'round',
-    );
-    await selectDropdown(
-      tester,
-      const Key('v2-iec10-insulation'),
-      'pvc',
-    );
+    await selectDropdown(tester, const Key('v2-iec10-cable-shape'), 'round');
+    await selectDropdown(tester, const Key('v2-iec10-insulation'), 'pvc');
     await selectDropdown(
       tester,
       const Key('v2-iec10-conductor-temperature-class'),
@@ -354,6 +351,56 @@ void main() {
       find.text('Shape: round (Explicit supplemental input)'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('IEC 10 executes and presents the explicit C7 route', (
+    tester,
+  ) async {
+    tester.binding.window.physicalSizeTestValue = const Size(800, 1200);
+    tester.binding.window.devicePixelRatioTestValue = 1;
+    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+    addTearDown(tester.binding.window.clearDevicePixelRatioTestValue);
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    expect(
+      find.text(
+        'จำนวนตัวนำที่มีกระแส ใช้สำหรับเลือกเงื่อนไข Ampacity\n'
+        'และไม่ใช่การกำหนดระบบ 1 เฟส / 3 เฟส',
+      ),
+      findsOneWidget,
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('v2-product-iec10')));
+    await tester.pumpAndSettle();
+    await enterReadyAmpacityInputs(
+      tester,
+      product: '60227 IEC 10',
+      loadCurrent: '60',
+      loadedConductors: '3',
+      selectProduct: false,
+      selectCore: false,
+    );
+    await enterIec10SupplementalInputs(tester);
+    await scrollToKey(tester, const Key('v2-check-inputs'));
+    await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(find.text('Cable product / standard: 60227 IEC 10'), findsOneWidget);
+    expect(find.text('Loaded conductors: 3'), findsOneWidget);
+    expect(find.text('Selected cable size: 16 sq.mm'), findsOneWidget);
+    expect(find.text('Number of runs: 1'), findsOneWidget);
+    expect(find.text('Current per run: 60 A'), findsOneWidget);
+    expect(find.text('Base ampacity: 66 A'), findsOneWidget);
+    expect(find.text('Corrected ampacity: 66 A'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Source column: C7'), findsOneWidget);
   });
 
   testWidgets('VAF 100 A displays the backend-selected two-run design', (

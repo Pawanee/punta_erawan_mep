@@ -86,6 +86,7 @@ class CableDesignV2SelectedDesignPresentation {
   const CableDesignV2SelectedDesignPresentation({
     required this.cableIdentityDisplay,
     required this.cableSizeSqmm,
+    this.loadedConductors,
     required this.runs,
     required this.currentPerRun,
     required this.baseAmpacity,
@@ -94,6 +95,7 @@ class CableDesignV2SelectedDesignPresentation {
 
   final String? cableIdentityDisplay;
   final double cableSizeSqmm;
+  final int? loadedConductors;
   final int runs;
   final double currentPerRun;
   final double baseAmpacity;
