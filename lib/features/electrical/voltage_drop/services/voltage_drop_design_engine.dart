@@ -21,9 +21,10 @@ class VoltageDropDesignEngine {
   VoltageDropDesignEngine({
     VoltageDropCableDesignEngine? cableDesignEngine,
     VoltageDropResultIntegrationService? resultIntegrationService,
-  })  : cableDesignEngine = cableDesignEngine ?? VoltageDropCableDesignEngine(),
-        resultIntegrationService =
-            resultIntegrationService ?? const VoltageDropResultIntegrationService();
+  }) : cableDesignEngine = cableDesignEngine ?? VoltageDropCableDesignEngine(),
+       resultIntegrationService =
+           resultIntegrationService ??
+           const VoltageDropResultIntegrationService();
 
   final VoltageDropCableDesignEngine cableDesignEngine;
   final VoltageDropResultIntegrationService resultIntegrationService;
@@ -34,15 +35,11 @@ class VoltageDropDesignEngine {
   ) async {
     try {
       if (request.cableRequest.loadCurrent <= 0) {
-        return VoltageDropDesignResult.error(
-          'Load Current ต้องมากกว่า 0 A',
-        );
+        return VoltageDropDesignResult.error('Load Current ต้องมากกว่า 0 A');
       }
 
-      if (request.lengthM <= 0) {
-        return VoltageDropDesignResult.error(
-          'Length ต้องมากกว่า 0 m',
-        );
+      if (request.voltageDropEnabled && request.lengthM <= 0) {
+        return VoltageDropDesignResult.error('Length ต้องมากกว่า 0 m');
       }
 
       final selectionResult = await cableDesignEngine.design(request);

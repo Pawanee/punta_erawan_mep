@@ -20,6 +20,7 @@ void main() {
     required double current,
     required double length,
     required VoltageDropInstallationGroup group,
+    bool voltageDropEnabled = true,
   }) {
     return VoltageDropCableSelectionRequest(
       cableRequest: CableDesignRequest(
@@ -39,6 +40,7 @@ void main() {
       systemVoltage: 400,
       allowableVoltageDropPercent: 3,
       installationGroup: group,
+      voltageDropEnabled: voltageDropEnabled,
     );
   }
 
@@ -133,5 +135,68 @@ void main() {
         'ไม่พบขนาดสายที่ผ่านทั้ง Ampacity และ Voltage Drop',
       );
     });
+
+    test(
+      'VD disabled returns the first ampacity-valid candidate without VD upsize',
+      () async {
+        final disabled = await engine.design(
+          request(
+            current: 250,
+            length: 300,
+            group: VoltageDropInstallationGroup.group1,
+            voltageDropEnabled: false,
+          ),
+        );
+        final enabled = await engine.design(
+          request(
+            current: 250,
+            length: 300,
+            group: VoltageDropInstallationGroup.group1,
+          ),
+        );
+
+        expect(disabled.isSuccess, isTrue);
+        expect(disabled.voltageDropConsidered, isFalse);
+        expect(disabled.cableArrangement, '1 × 240 sq.mm');
+        expect(disabled.cableSizeSqmm, 240);
+        expect(disabled.ampacity, 249);
+        expect(disabled.correctedAmpacityPerRun, closeTo(286.35, 0.000001));
+        expect(disabled.voltageDropPercent, isNull);
+        expect(disabled.voltageDropV, isNull);
+        expect(enabled.voltageDropConsidered, isTrue);
+        expect(enabled.cableArrangement, '2 × 185 sq.mm');
+        expect(enabled.voltageDropPercent, isNotNull);
+      },
+    );
+
+    test(
+      'VD mode does not change ampacity calculation for same candidate',
+      () async {
+        final disabled = await engine.design(
+          request(
+            current: 250,
+            length: 100,
+            group: VoltageDropInstallationGroup.group1,
+            voltageDropEnabled: false,
+          ),
+        );
+        final enabled = await engine.design(
+          request(
+            current: 250,
+            length: 100,
+            group: VoltageDropInstallationGroup.group1,
+          ),
+        );
+
+        expect(disabled.cableSizeSqmm, enabled.cableSizeSqmm);
+        expect(disabled.baseAmpacityPerRun, enabled.baseAmpacityPerRun);
+        expect(
+          disabled.correctedAmpacityPerRun,
+          enabled.correctedAmpacityPerRun,
+        );
+        expect(disabled.groupingFactor, enabled.groupingFactor);
+        expect(disabled.temperatureFactor, enabled.temperatureFactor);
+      },
+    );
   });
 }

@@ -1,4 +1,4 @@
- import '../models/voltage_drop_cable_selection_result.dart';
+import '../models/voltage_drop_cable_selection_result.dart';
 import '../models/voltage_drop_design_result.dart';
 
 /// ============================================================================
@@ -22,9 +22,7 @@ class VoltageDropResultIntegrationService {
     required double cableLengthM,
   }) {
     if (!selectionResult.isSuccess) {
-      return VoltageDropDesignResult.error(
-        selectionResult.message,
-      );
+      return VoltageDropDesignResult.error(selectionResult.message);
     }
 
     final runs = selectionResult.runs;
@@ -41,12 +39,10 @@ class VoltageDropResultIntegrationService {
     final arrangement = selectionResult.cableArrangement;
 
     final ampacityReference =
-    selectionResult.ampacityReference ??
-    selectionResult.reference;
+        selectionResult.ampacityReference ?? selectionResult.reference;
 
-final voltageDropReference =
-    selectionResult.voltageDropReference ??
-    selectionResult.reference;
+    final voltageDropReference =
+        selectionResult.voltageDropReference ?? selectionResult.reference;
 
     if (runs == null || runs <= 0) {
       return VoltageDropDesignResult.error(
@@ -55,60 +51,80 @@ final voltageDropReference =
     }
 
     if (ampacityPerRun == null || ampacityPerRun <= 0) {
-      return VoltageDropDesignResult.error(
-        'ไม่พบค่า Ampacity ที่ถูกต้อง',
-      );
+      return VoltageDropDesignResult.error('ไม่พบค่า Ampacity ที่ถูกต้อง');
     }
 
     if (requiredCurrent == null || requiredCurrent <= 0) {
-      return VoltageDropDesignResult.error(
-        'ไม่พบ Required Current ที่ถูกต้อง',
-      );
+      return VoltageDropDesignResult.error('ไม่พบ Required Current ที่ถูกต้อง');
     }
 
     if (groupingFactor == null || groupingFactor <= 0) {
-      return VoltageDropDesignResult.error(
-        'ไม่พบ Grouping Factor ที่ถูกต้อง',
-      );
+      return VoltageDropDesignResult.error('ไม่พบ Grouping Factor ที่ถูกต้อง');
     }
 
-    if (loadCurrent <= 0 || cableLengthM <= 0) {
+    if (loadCurrent <= 0 ||
+        (selectionResult.voltageDropConsidered && cableLengthM <= 0)) {
       return VoltageDropDesignResult.error(
         'Load Current และ Cable Length ต้องมากกว่า 0',
       );
     }
 
-    if (cableSize == null ||
-        voltageDropV == null ||
-        voltageDropPercent == null ||
-        mvPerAperM == null ||
-        arrangement == null) {
+    if (cableSize == null || arrangement == null) {
+      return VoltageDropDesignResult.error('ผลการเลือกสายมีข้อมูลไม่ครบ');
+    }
+
+    if (ampacityReference == null || ampacityReference.isEmpty) {
+      return VoltageDropDesignResult.error('ไม่พบ Ampacity Reference');
+    }
+
+    if (selectionResult.voltageDropConsidered &&
+        (voltageDropV == null ||
+            voltageDropPercent == null ||
+            mvPerAperM == null)) {
       return VoltageDropDesignResult.error(
-        'ผลการเลือกสายมีข้อมูลไม่ครบ',
+        'ผลการคำนวณ Voltage Drop มีข้อมูลไม่ครบ',
       );
     }
 
-    if (ampacityReference == null ||
-        ampacityReference.isEmpty) {
-      return VoltageDropDesignResult.error(
-        'ไม่พบ Ampacity Reference',
-      );
-    }
-
-    if (voltageDropReference == null ||
-        voltageDropReference.isEmpty) {
-      return VoltageDropDesignResult.error(
-        'ไม่พบ Voltage Drop Reference',
-      );
+    if (selectionResult.voltageDropConsidered &&
+        (voltageDropReference == null || voltageDropReference.isEmpty)) {
+      return VoltageDropDesignResult.error('ไม่พบ Voltage Drop Reference');
     }
 
     // Actual current flowing in each parallel run.
     // Required Current remains separate and is used for ampacity design.
-    final currentPerRun =
-        loadCurrent / runs;
+    final currentPerRun = loadCurrent / runs;
 
-    final totalAmpacity =
-        ampacityPerRun * runs;
+    final totalAmpacity = ampacityPerRun * runs;
+
+    if (!selectionResult.voltageDropConsidered) {
+      return VoltageDropDesignResult.ampacityOnly(
+        loadCurrent: loadCurrent,
+        groupingFactor: groupingFactor,
+        temperatureFactor: temperatureFactor,
+        baseAmpacityPerRun: baseAmpacityPerRun,
+        correctedAmpacityPerRun: correctedAmpacityPerRun,
+        sourceTableId: selectionResult.sourceTableId,
+        sourceTableDisplayName: selectionResult.sourceTableDisplayName,
+        installationMethod: selectionResult.installationMethod,
+        loadedConductors: selectionResult.loadedConductors,
+        coreType: selectionResult.coreType,
+        cableType: selectionResult.cableType,
+        conductorTemperatureClass: selectionResult.conductorTemperatureClass,
+        ambientTemperatureC: selectionResult.ambientTemperatureC,
+        groupingCircuits: selectionResult.groupingCircuits,
+        groupingReference: selectionResult.groupingReference,
+        temperatureReference: selectionResult.temperatureReference,
+        requiredCurrent: requiredCurrent,
+        runs: runs,
+        currentPerRun: currentPerRun,
+        cableSizeSqmm: cableSize,
+        ampacityPerRun: ampacityPerRun,
+        totalAmpacity: totalAmpacity,
+        cableArrangement: arrangement,
+        ampacityReference: ampacityReference,
+      );
+    }
 
     return VoltageDropDesignResult.success(
       loadCurrent: loadCurrent,
@@ -135,9 +151,9 @@ final voltageDropReference =
       totalAmpacity: totalAmpacity,
       cableArrangement: arrangement,
       cableLengthM: cableLengthM,
-      voltageDropV: voltageDropV,
-      voltageDropPercent: voltageDropPercent,
-      mvPerAperM: mvPerAperM,
+      voltageDropV: voltageDropV!,
+      voltageDropPercent: voltageDropPercent!,
+      mvPerAperM: mvPerAperM!,
 
       ampacityReference: ampacityReference,
       voltageDropReference: voltageDropReference,

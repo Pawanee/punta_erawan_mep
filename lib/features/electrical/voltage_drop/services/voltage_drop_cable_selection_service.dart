@@ -7,6 +7,7 @@ import '../enums/voltage_drop_core_type.dart';
 import '../models/voltage_drop_cable_selection_request.dart';
 import '../models/voltage_drop_cable_selection_result.dart';
 import '../models/voltage_drop_request.dart';
+import '../models/voltage_drop_table_entry.dart';
 import '../repositories/voltage_drop_repository.dart';
 import 'voltage_drop_calculation_service.dart';
 
@@ -35,13 +36,13 @@ class VoltageDropCableSelectionService {
     VoltageDropRepository? voltageDropRepository,
     VoltageDropCalculationService? voltageDropCalculationService,
     AmpacityCorrectionService? ampacityCorrectionService,
-  })  : voltageDropRepository =
-            voltageDropRepository ?? const VoltageDropRepository(),
-        voltageDropCalculationService =
-            voltageDropCalculationService ??
-                const VoltageDropCalculationService(),
-        ampacityCorrectionService =
-            ampacityCorrectionService ?? const AmpacityCorrectionService();
+  }) : voltageDropRepository =
+           voltageDropRepository ?? const VoltageDropRepository(),
+       voltageDropCalculationService =
+           voltageDropCalculationService ??
+           const VoltageDropCalculationService(),
+       ampacityCorrectionService =
+           ampacityCorrectionService ?? const AmpacityCorrectionService();
 
   final VoltageDropRepository voltageDropRepository;
   final VoltageDropCalculationService voltageDropCalculationService;
@@ -65,25 +66,25 @@ class VoltageDropCableSelectionService {
       );
     }
 
-    if (request.lengthM <= 0) {
-      return VoltageDropCableSelectionResult.error(
-        'Length ต้องมากกว่า 0 m',
-      );
+    if (request.voltageDropEnabled && request.lengthM <= 0) {
+      return VoltageDropCableSelectionResult.error('Length ต้องมากกว่า 0 m');
     }
 
-    if (request.systemVoltage <= 0) {
+    if (request.voltageDropEnabled && request.systemVoltage <= 0) {
       return VoltageDropCableSelectionResult.error(
         'System Voltage ต้องมากกว่า 0 V',
       );
     }
 
-    if (request.allowableVoltageDropPercent <= 0) {
+    if (request.voltageDropEnabled &&
+        request.allowableVoltageDropPercent <= 0) {
       return VoltageDropCableSelectionResult.error(
         'Allowable Voltage Drop ต้องมากกว่า 0 %',
       );
     }
 
-    if (cableRequest.coreType == CoreType.singleCore &&
+    if (request.voltageDropEnabled &&
+        cableRequest.coreType == CoreType.singleCore &&
         !request.installationGroup.isGroup1_2_5 &&
         request.arrangement == null) {
       return VoltageDropCableSelectionResult.error(
@@ -104,9 +105,7 @@ class VoltageDropCableSelectionService {
       );
     }
 
-    filtered.sort(
-      (a, b) => a.cableSizeSqmm.compareTo(b.cableSizeSqmm),
-    );
+    filtered.sort((a, b) => a.cableSizeSqmm.compareTo(b.cableSizeSqmm));
 
     if (groupingFactor <= 0) {
       return VoltageDropCableSelectionResult.error(
@@ -118,14 +117,16 @@ class VoltageDropCableSelectionService {
     // corrected ampacity per run against actual current per run below.
     final requiredCurrent = cableRequest.loadCurrent / groupingFactor;
 
-    final tableRows = await voltageDropRepository.loadTable(
-      insulation: request.insulation,
-      coreType: cableRequest.coreType == CoreType.singleCore
-          ? VoltageDropCoreType.singleCore
-          : VoltageDropCoreType.multiCore,
-    );
+    final tableRows = request.voltageDropEnabled
+        ? await voltageDropRepository.loadTable(
+            insulation: request.insulation,
+            coreType: cableRequest.coreType == CoreType.singleCore
+                ? VoltageDropCoreType.singleCore
+                : VoltageDropCoreType.multiCore,
+          )
+        : const <VoltageDropTableEntry>[];
 
-    if (tableRows.isEmpty) {
+    if (request.voltageDropEnabled && tableRows.isEmpty) {
       return VoltageDropCableSelectionResult.error(
         'Voltage Drop Table 9.1 - 9.4 ไม่มีข้อมูล',
       );
@@ -153,6 +154,36 @@ class VoltageDropCableSelectionService {
           continue;
         }
 
+        final sizeText = cable.cableSizeSqmm % 1 == 0
+            ? cable.cableSizeSqmm.toInt().toString()
+            : cable.cableSizeSqmm.toString();
+
+        if (!request.voltageDropEnabled) {
+          return VoltageDropCableSelectionResult.ampacityOnly(
+            cableSizeSqmm: cable.cableSizeSqmm,
+            ampacity: cable.ampacity,
+            cableArrangement: '$runs × $sizeText sq.mm',
+            ampacityReference: cable.reference,
+            groupingFactor: groupingFactor,
+            temperatureFactor: temperatureFactor,
+            baseAmpacityPerRun: cable.ampacity,
+            correctedAmpacityPerRun: correctedAmpacityPerRun,
+            sourceTableId: cable.sourceTableId,
+            sourceTableDisplayName: cable.sourceTableDisplayName,
+            installationMethod: cable.installationMethod,
+            loadedConductors: cable.loadedConductors,
+            coreType: cable.coreType,
+            cableType: cableRequest.cableType,
+            conductorTemperatureClass: conductorTemperatureClass,
+            ambientTemperatureC: cableRequest.ambientTemperature,
+            groupingCircuits: cableRequest.groupingCircuits,
+            groupingReference: 'Table 5-8',
+            temperatureReference: Table543TemperatureFactor.reference,
+            requiredCurrent: requiredCurrent,
+            runs: runs,
+          );
+        }
+
         // ---------------------------------------------------------------
         // เงื่อนไขที่ 2: Voltage Drop
         // ---------------------------------------------------------------
@@ -167,8 +198,7 @@ class VoltageDropCableSelectionService {
             currentA: currentPerRun,
             lengthM: request.lengthM,
             systemVoltage: request.systemVoltage,
-            allowableVoltageDropPercent:
-                request.allowableVoltageDropPercent,
+            allowableVoltageDropPercent: request.allowableVoltageDropPercent,
             installationGroup: request.installationGroup,
             arrangement: request.arrangement,
           ),
@@ -183,42 +213,38 @@ class VoltageDropCableSelectionService {
           continue;
         }
 
-        final sizeText = cable.cableSizeSqmm % 1 == 0
-            ? cable.cableSizeSqmm.toInt().toString()
-            : cable.cableSizeSqmm.toString();
-
         return VoltageDropCableSelectionResult.success(
-  cableSizeSqmm: cable.cableSizeSqmm,
-  ampacity: cable.ampacity,
-  cableArrangement: '$runs × $sizeText sq.mm',
+          cableSizeSqmm: cable.cableSizeSqmm,
+          ampacity: cable.ampacity,
+          cableArrangement: '$runs × $sizeText sq.mm',
 
-  // Ampacity source
-  ampacityReference: cable.reference,
+          // Ampacity source
+          ampacityReference: cable.reference,
 
-  // Voltage Drop source
-  voltageDropReference: vdResult.table!,
+          // Voltage Drop source
+          voltageDropReference: vdResult.table!,
 
-  groupingFactor: groupingFactor,
-  temperatureFactor: temperatureFactor,
-  baseAmpacityPerRun: cable.ampacity,
-  correctedAmpacityPerRun: correctedAmpacityPerRun,
-  sourceTableId: cable.sourceTableId,
-  sourceTableDisplayName: cable.sourceTableDisplayName,
-  installationMethod: cable.installationMethod,
-  loadedConductors: cable.loadedConductors,
-  coreType: cable.coreType,
-  cableType: cableRequest.cableType,
-  conductorTemperatureClass: conductorTemperatureClass,
-  ambientTemperatureC: cableRequest.ambientTemperature,
-  groupingCircuits: cableRequest.groupingCircuits,
-  groupingReference: 'Table 5-8',
-  temperatureReference: Table543TemperatureFactor.reference,
-  requiredCurrent: requiredCurrent,
-  voltageDropV: vdResult.voltageDropV!,
-  voltageDropPercent: vdResult.voltageDropPercent!,
-  mvPerAperM: vdResult.mvPerAperM!,
-  runs: runs,
-);
+          groupingFactor: groupingFactor,
+          temperatureFactor: temperatureFactor,
+          baseAmpacityPerRun: cable.ampacity,
+          correctedAmpacityPerRun: correctedAmpacityPerRun,
+          sourceTableId: cable.sourceTableId,
+          sourceTableDisplayName: cable.sourceTableDisplayName,
+          installationMethod: cable.installationMethod,
+          loadedConductors: cable.loadedConductors,
+          coreType: cable.coreType,
+          cableType: cableRequest.cableType,
+          conductorTemperatureClass: conductorTemperatureClass,
+          ambientTemperatureC: cableRequest.ambientTemperature,
+          groupingCircuits: cableRequest.groupingCircuits,
+          groupingReference: 'Table 5-8',
+          temperatureReference: Table543TemperatureFactor.reference,
+          requiredCurrent: requiredCurrent,
+          voltageDropV: vdResult.voltageDropV!,
+          voltageDropPercent: vdResult.voltageDropPercent!,
+          mvPerAperM: vdResult.mvPerAperM!,
+          runs: runs,
+        );
       }
     }
 

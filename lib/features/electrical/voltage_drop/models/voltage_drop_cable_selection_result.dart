@@ -53,6 +53,7 @@ class VoltageDropCableSelectionResult {
     this.voltageDropPercent,
     this.mvPerAperM,
     this.runs,
+    this.voltageDropConsidered = true,
   });
 
   final bool isSuccess;
@@ -118,6 +119,10 @@ class VoltageDropCableSelectionResult {
   /// จำนวน Parallel Runs
   final int? runs;
 
+  /// False when the legacy workflow intentionally skipped voltage-drop
+  /// calculation and candidate filtering.
+  final bool voltageDropConsidered;
+
   factory VoltageDropCableSelectionResult.success({
     required double cableSizeSqmm,
     required double ampacity,
@@ -159,9 +164,7 @@ class VoltageDropCableSelectionResult {
       cableArrangement: cableArrangement,
 
       // Legacy compatibility
-      reference: reference ??
-          ampacityReference ??
-          voltageDropReference,
+      reference: reference ?? ampacityReference ?? voltageDropReference,
 
       // PART 9.4
       ampacityReference: ampacityReference,
@@ -187,13 +190,64 @@ class VoltageDropCableSelectionResult {
       voltageDropPercent: voltageDropPercent,
       mvPerAperM: mvPerAperM,
       runs: runs,
+      voltageDropConsidered: true,
+    );
+  }
+
+  factory VoltageDropCableSelectionResult.ampacityOnly({
+    required double cableSizeSqmm,
+    required double ampacity,
+    required String cableArrangement,
+    required String ampacityReference,
+    required double groupingFactor,
+    required double temperatureFactor,
+    required double baseAmpacityPerRun,
+    required double correctedAmpacityPerRun,
+    required String? sourceTableId,
+    required String? sourceTableDisplayName,
+    required InstallationMethod installationMethod,
+    required int loadedConductors,
+    required CoreType coreType,
+    required CableType cableType,
+    required ConductorTemperatureClass conductorTemperatureClass,
+    required double ambientTemperatureC,
+    required int groupingCircuits,
+    required String groupingReference,
+    required String temperatureReference,
+    required double requiredCurrent,
+    required int runs,
+  }) {
+    return VoltageDropCableSelectionResult(
+      isSuccess: true,
+      message:
+          'Cable selected successfully by ampacity; voltage drop not considered.',
+      cableSizeSqmm: cableSizeSqmm,
+      ampacity: ampacity,
+      cableArrangement: cableArrangement,
+      reference: ampacityReference,
+      ampacityReference: ampacityReference,
+      groupingFactor: groupingFactor,
+      temperatureFactor: temperatureFactor,
+      baseAmpacityPerRun: baseAmpacityPerRun,
+      correctedAmpacityPerRun: correctedAmpacityPerRun,
+      sourceTableId: sourceTableId,
+      sourceTableDisplayName: sourceTableDisplayName,
+      installationMethod: installationMethod,
+      loadedConductors: loadedConductors,
+      coreType: coreType,
+      cableType: cableType,
+      conductorTemperatureClass: conductorTemperatureClass,
+      ambientTemperatureC: ambientTemperatureC,
+      groupingCircuits: groupingCircuits,
+      groupingReference: groupingReference,
+      temperatureReference: temperatureReference,
+      requiredCurrent: requiredCurrent,
+      runs: runs,
+      voltageDropConsidered: false,
     );
   }
 
   factory VoltageDropCableSelectionResult.error(String message) {
-    return VoltageDropCableSelectionResult(
-      isSuccess: false,
-      message: message,
-    );
+    return VoltageDropCableSelectionResult(isSuccess: false, message: message);
   }
 }

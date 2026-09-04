@@ -56,23 +56,25 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   final CableContextPolicy _cableContextPolicy =
       const ApprovedCableTypeContextPolicy();
 
-  final TextEditingController _currentController =
-      TextEditingController();
+  final TextEditingController _currentController = TextEditingController();
 
-  final TextEditingController _ambientController =
-      TextEditingController(text: '30');
+  final TextEditingController _ambientController = TextEditingController(
+    text: '30',
+  );
 
-  final TextEditingController _groupingController =
-      TextEditingController(text: '1');
+  final TextEditingController _groupingController = TextEditingController(
+    text: '1',
+  );
 
-  final TextEditingController _voltageDropController =
-      TextEditingController(text: '3');
+  final TextEditingController _voltageDropController = TextEditingController(
+    text: '3',
+  );
 
-  final TextEditingController _lengthController =
-      TextEditingController();
+  final TextEditingController _lengthController = TextEditingController();
 
-  final TextEditingController _systemVoltageController =
-      TextEditingController(text: '400');
+  final TextEditingController _systemVoltageController = TextEditingController(
+    text: '400',
+  );
 
   PhaseSystem _phaseSystem = PhaseSystem.threePhase;
   CableType _cableType = CableType.iec01;
@@ -84,6 +86,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   CableArrangement? _arrangement;
 
   bool _isLoading = false;
+  bool _voltageDropEnabled = true;
 
   VoltageDropDesignResult? _result;
 
@@ -104,8 +107,9 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
     _groupingController.text = '1';
     _voltageDropController.text = '3';
     _lengthController.clear();
-    _systemVoltageController.text =
-        _phaseSystem.name == 'singlePhase' ? '230' : '400';
+    _systemVoltageController.text = _phaseSystem.name == 'singlePhase'
+        ? '230'
+        : '400';
 
     setState(() {
       _phaseSystem = PhaseSystem.threePhase;
@@ -114,6 +118,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       _coreType = CoreType.singleCore;
       _loadedConductors = 3;
       _arrangement = null;
+      _voltageDropEnabled = true;
       _result = null;
     });
   }
@@ -126,9 +131,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   }
 
   bool _isGroup1_2_5(String name) {
-    return name == 'group1' ||
-        name == 'group2' ||
-        name == 'group5';
+    return name == 'group1' || name == 'group2' || name == 'group5';
   }
 
   /// Resolves insulation from the approved CableType -> CableContext policy.
@@ -160,37 +163,30 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
   }
 
   Future<void> _calculate() async {
-    final loadCurrent =
-        double.tryParse(_currentController.text) ?? 0;
+    final loadCurrent = double.tryParse(_currentController.text) ?? 0;
 
-    final lengthM =
-        double.tryParse(_lengthController.text) ?? 0;
+    final lengthM = double.tryParse(_lengthController.text) ?? 0;
 
-    final systemVoltage =
-        double.tryParse(_systemVoltageController.text) ?? 0;
+    final systemVoltage = double.tryParse(_systemVoltageController.text) ?? 0;
 
     final allowableVoltageDrop =
         double.tryParse(_voltageDropController.text) ?? 0;
 
     if (loadCurrent <= 0) {
       setState(() {
-        _result = VoltageDropDesignResult.error(
-          'Load Current ต้องมากกว่า 0 A',
-        );
+        _result = VoltageDropDesignResult.error('Load Current ต้องมากกว่า 0 A');
       });
       return;
     }
 
-    if (lengthM <= 0) {
+    if (_voltageDropEnabled && lengthM <= 0) {
       setState(() {
-        _result = VoltageDropDesignResult.error(
-          'Cable Length ต้องมากกว่า 0 m',
-        );
+        _result = VoltageDropDesignResult.error('Cable Length ต้องมากกว่า 0 m');
       });
       return;
     }
 
-    if (systemVoltage <= 0) {
+    if (_voltageDropEnabled && systemVoltage <= 0) {
       setState(() {
         _result = VoltageDropDesignResult.error(
           'System Voltage ต้องมากกว่า 0 V',
@@ -199,7 +195,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       return;
     }
 
-    if (allowableVoltageDrop <= 0) {
+    if (_voltageDropEnabled && allowableVoltageDrop <= 0) {
       setState(() {
         _result = VoltageDropDesignResult.error(
           'Allowable Voltage Drop ต้องมากกว่า 0 %',
@@ -208,7 +204,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       return;
     }
 
-    if (_requiresArrangement && _arrangement == null) {
+    if (_voltageDropEnabled && _requiresArrangement && _arrangement == null) {
       setState(() {
         _result = VoltageDropDesignResult.error(
           'Single Core สำหรับ Group 3, 4, 6, 7 ต้องระบุ Cable Arrangement',
@@ -224,10 +220,8 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       installationMethod: _installationMethod,
       loadedConductors: _loadedConductors,
       coreType: _coreType,
-      ambientTemperature:
-          double.tryParse(_ambientController.text) ?? 30,
-      groupingCircuits:
-          int.tryParse(_groupingController.text) ?? 1,
+      ambientTemperature: double.tryParse(_ambientController.text) ?? 30,
+      groupingCircuits: int.tryParse(_groupingController.text) ?? 1,
       allowableVoltageDrop: allowableVoltageDrop,
     );
 
@@ -240,6 +234,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       allowableVoltageDropPercent: allowableVoltageDrop,
       installationGroup: _resolveInstallationGroup(),
       arrangement: _arrangement,
+      voltageDropEnabled: _voltageDropEnabled,
     );
 
     setState(() {
@@ -260,9 +255,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       if (!mounted) return;
 
       setState(() {
-        _result = VoltageDropDesignResult.error(
-          'Voltage Drop UI error: $e',
-        );
+        _result = VoltageDropDesignResult.error('Voltage Drop UI error: $e');
         _isLoading = false;
       });
     }
@@ -280,20 +273,18 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       return const SizedBox.shrink();
     }
 
-    final allowable =
-        double.tryParse(_voltageDropController.text) ?? 0;
+    final voltageDropConsidered = result.voltageDropConsidered;
+    final allowable = double.tryParse(_voltageDropController.text) ?? 0;
 
-    final actual = result.voltageDropPercent ?? 0;
+    final actual = result.voltageDropPercent;
 
-    final margin = allowable - actual;
+    final margin = actual == null ? null : allowable - actual;
 
-    final isPass = margin >= 0;
+    final isPass = !voltageDropConsidered || (margin != null && margin >= 0);
 
     return Card(
       elevation: 4,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -357,16 +348,20 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                   ),
                   ResultRow(
                     title: 'Voltage Drop',
-                    value: '${_number(result.voltageDropPercent)} %',
+                    value: voltageDropConsidered
+                        ? '${_number(result.voltageDropPercent)} %'
+                        : 'ไม่พิจารณา',
                   ),
-                  ResultRow(
-                    title: 'Allowable Voltage Drop',
-                    value: '${_number(allowable)} %',
-                  ),
-                  ResultRow(
-                    title: 'Voltage Drop Margin',
-                    value: '${_number(margin)} %',
-                  ),
+                  if (voltageDropConsidered) ...[
+                    ResultRow(
+                      title: 'Allowable Voltage Drop',
+                      value: '${_number(allowable)} %',
+                    ),
+                    ResultRow(
+                      title: 'Voltage Drop Margin',
+                      value: '${_number(margin)} %',
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -455,492 +450,480 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                   horizontal: isCompact ? 16 : 28,
                   vertical: isCompact ? 16 : 24,
                 ),
-            children: [
-              const CableHeader(),
-              const SizedBox(height: 20),
+                children: [
+                  const CableHeader(),
+                  const SizedBox(height: 20),
 
-              // ----------------------------------------------------------------
-              // INPUT
-              // ----------------------------------------------------------------
-              Card(
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const SectionHeader(
-                        icon: Icons.settings,
-                        title: 'Design Input',
-                        color: Colors.blue,
-                      ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _currentController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Load Current (A)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.bolt),
-                        ),
-                      ),
-
-                      _space(),
-
-                      DropdownButtonFormField<PhaseSystem>(
-                        value: _phaseSystem,
-                        decoration: const InputDecoration(
-                          labelText: 'Phase System',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.power),
-                        ),
-                        items: PhaseSystem.values
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.displayName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            _phaseSystem = value;
-                            _systemVoltageController.text =
-                                value.name == 'singlePhase'
-                                    ? '230'
-                                    : '400';
-                          });
-                        },
-                      ),
-
-                      _space(),
-
-                      DropdownButtonFormField<CableType>(
-                        value: _cableType,
-                        decoration: const InputDecoration(
-                          labelText: 'Cable Type',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.cable),
-                        ),
-                        items: CableType.values
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.displayName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            _cableType = value;
-                          });
-                        },
-                      ),
-
-                      _space(),
-
-                      DropdownButtonFormField<InstallationMethod>(
-                        value: _installationMethod,
-                        decoration: const InputDecoration(
-                          labelText: 'Installation Method',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.route),
-                        ),
-                        items: InstallationMethod.values
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.displayName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            _installationMethod = value;
-
-                            if (_isGroup1_2_5(value.name)) {
-                              _arrangement = null;
-                            }
-                          });
-                        },
-                      ),
-
-                      _space(),
-
-                      DropdownButtonFormField<CoreType>(
-                        value: _coreType,
-                        decoration: const InputDecoration(
-                          labelText: 'Core Type',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.memory),
-                        ),
-                        items: CoreType.values
-                            .map(
-                              (e) => DropdownMenuItem(
-                                value: e,
-                                child: Text(e.displayName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            _coreType = value;
-
-                            if (value.name != 'singleCore') {
-                              _arrangement = null;
-                            }
-                          });
-                        },
-                      ),
-
-                      if (_requiresArrangement) ...[
-                        _space(),
-
-                        DropdownButtonFormField<CableArrangement>(
-                          value: _arrangement,
-                          decoration: const InputDecoration(
-                            labelText: 'Cable Arrangement',
-                            border: OutlineInputBorder(),
-                            prefixIcon: Icon(Icons.alt_route),
+                  // ----------------------------------------------------------------
+                  // INPUT
+                  // ----------------------------------------------------------------
+                  Card(
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SectionHeader(
+                            icon: Icons.settings,
+                            title: 'Design Input',
+                            color: Colors.blue,
                           ),
-                          items: CableArrangement.values
-                              .map(
-                                (e) => DropdownMenuItem(
-                                  value: e,
-                                  child: Text(e.name),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            setState(() {
-                              _arrangement = value;
-                            });
-                          },
-                        ),
-                      ],
 
-                      _space(),
+                          _space(),
 
-                      DropdownButtonFormField<int>(
-                        value: _loadedConductors,
-                        decoration: const InputDecoration(
-                          labelText: 'Loaded Conductors',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.linear_scale),
-                        ),
-                        items: const [
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('1'),
+                          TextField(
+                            controller: _currentController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Load Current (A)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.bolt),
+                            ),
                           ),
-                          DropdownMenuItem(
-                            value: 2,
-                            child: Text('2'),
+
+                          _space(),
+
+                          DropdownButtonFormField<PhaseSystem>(
+                            value: _phaseSystem,
+                            decoration: const InputDecoration(
+                              labelText: 'Phase System',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.power),
+                            ),
+                            items: PhaseSystem.values
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e.displayName),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+
+                              setState(() {
+                                _phaseSystem = value;
+                                _systemVoltageController.text =
+                                    value.name == 'singlePhase' ? '230' : '400';
+                              });
+                            },
                           ),
-                          DropdownMenuItem(
-                            value: 3,
-                            child: Text('3'),
+
+                          _space(),
+
+                          DropdownButtonFormField<CableType>(
+                            value: _cableType,
+                            decoration: const InputDecoration(
+                              labelText: 'Cable Type',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.cable),
+                            ),
+                            items: CableType.values
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e.displayName),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+
+                              setState(() {
+                                _cableType = value;
+                              });
+                            },
                           ),
+
+                          _space(),
+
+                          DropdownButtonFormField<InstallationMethod>(
+                            value: _installationMethod,
+                            decoration: const InputDecoration(
+                              labelText: 'Installation Method',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.route),
+                            ),
+                            items: InstallationMethod.values
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e.displayName),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+
+                              setState(() {
+                                _installationMethod = value;
+
+                                if (_isGroup1_2_5(value.name)) {
+                                  _arrangement = null;
+                                }
+                              });
+                            },
+                          ),
+
+                          _space(),
+
+                          DropdownButtonFormField<CoreType>(
+                            value: _coreType,
+                            decoration: const InputDecoration(
+                              labelText: 'Core Type',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.memory),
+                            ),
+                            items: CoreType.values
+                                .map(
+                                  (e) => DropdownMenuItem(
+                                    value: e,
+                                    child: Text(e.displayName),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (value) {
+                              if (value == null) return;
+
+                              setState(() {
+                                _coreType = value;
+
+                                if (value.name != 'singleCore') {
+                                  _arrangement = null;
+                                }
+                              });
+                            },
+                          ),
+
+                          if (_requiresArrangement) ...[
+                            _space(),
+
+                            DropdownButtonFormField<CableArrangement>(
+                              value: _arrangement,
+                              decoration: const InputDecoration(
+                                labelText: 'Cable Arrangement',
+                                border: OutlineInputBorder(),
+                                prefixIcon: Icon(Icons.alt_route),
+                              ),
+                              items: CableArrangement.values
+                                  .map(
+                                    (e) => DropdownMenuItem(
+                                      value: e,
+                                      child: Text(e.name),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _arrangement = value;
+                                });
+                              },
+                            ),
+                          ],
+
+                          _space(),
+
+                          DropdownButtonFormField<int>(
+                            value: _loadedConductors,
+                            decoration: const InputDecoration(
+                              labelText: 'Loaded Conductors',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.linear_scale),
+                            ),
+                            items: const [
+                              DropdownMenuItem(value: 1, child: Text('1')),
+                              DropdownMenuItem(value: 2, child: Text('2')),
+                              DropdownMenuItem(value: 3, child: Text('3')),
+                            ],
+                            onChanged: (value) {
+                              if (value == null) return;
+
+                              setState(() {
+                                _loadedConductors = value;
+                              });
+                            },
+                          ),
+
+                          _space(),
+
+                          TextField(
+                            controller: _ambientController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Ambient Temperature (°C)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.thermostat),
+                            ),
+                          ),
+
+                          _space(),
+
+                          TextField(
+                            controller: _groupingController,
+                            keyboardType: TextInputType.number,
+                            decoration: const InputDecoration(
+                              labelText: 'Grouping Circuits',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.grid_view),
+                            ),
+                          ),
+
+                          _space(),
+
+                          TextField(
+                            controller: _lengthController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Cable Length (m)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.straighten),
+                            ),
+                          ),
+
+                          _space(),
+
+                          TextField(
+                            controller: _systemVoltageController,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'System Voltage (V)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.electrical_services),
+                            ),
+                          ),
+
+                          _space(),
+
+                          CheckboxListTile(
+                            key: const Key('voltage-drop-enabled'),
+                            contentPadding: EdgeInsets.zero,
+                            value: !_voltageDropEnabled,
+                            title: const Text('ไม่พิจารณา Voltage Drop'),
+                            subtitle: const Text(
+                              'เลือกขนาดสายจาก Ampacity เท่านั้น',
+                            ),
+                            onChanged: (value) {
+                              setState(() {
+                                _voltageDropEnabled = !(value ?? false);
+                              });
+                            },
+                          ),
+
+                          _space(),
+
+                          TextField(
+                            controller: _voltageDropController,
+                            enabled: _voltageDropEnabled,
+                            keyboardType: const TextInputType.numberWithOptions(
+                              decimal: true,
+                            ),
+                            decoration: const InputDecoration(
+                              labelText: 'Allowable Voltage Drop (%)',
+                              border: OutlineInputBorder(),
+                              prefixIcon: Icon(Icons.percent),
+                            ),
+                          ),
+
+                          _space(),
+
+                          _buildActionButtons(),
                         ],
-                        onChanged: (value) {
-                          if (value == null) return;
-
-                          setState(() {
-                            _loadedConductors = value;
-                          });
-                        },
                       ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _ambientController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Ambient Temperature (°C)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.thermostat),
-                        ),
-                      ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _groupingController,
-                        keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(
-                          labelText: 'Grouping Circuits',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.grid_view),
-                        ),
-                      ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _lengthController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Cable Length (m)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.straighten),
-                        ),
-                      ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _systemVoltageController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'System Voltage (V)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.electrical_services),
-                        ),
-                      ),
-
-                      _space(),
-
-                      TextField(
-                        controller: _voltageDropController,
-                        keyboardType:
-                            const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Allowable Voltage Drop (%)',
-                          border: OutlineInputBorder(),
-                          prefixIcon: Icon(Icons.percent),
-                        ),
-                      ),
-
-                      _space(),
-
-                      _buildActionButtons(),
-                    ],
-                  ),
-                ),
-              ),
-
-              // ----------------------------------------------------------------
-              // RESULT
-              // ----------------------------------------------------------------
-              if (_isLoading) ...[
-                const SizedBox(height: 24),
-                const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ],
-
-              if (_result != null) ...[
-                const SizedBox(height: 24),
-
-                if (_result!.isSuccess) ...[
-                  _buildDesignSummary(),
-                  const SizedBox(height: 24),
-                ],
-
-                Card(
-                  elevation: 4,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                      children: [
-                        SectionHeader(
-                          icon: _result!.isSuccess
-                              ? Icons.check_circle
-                              : Icons.error,
-                          title: _result!.isSuccess
-                              ? 'Calculation Result'
-                              : 'Calculation Failed',
-                          color: _result!.isSuccess
-                              ? Colors.green
-                              : Colors.red,
-                        ),
-
-                        _space(),
-
-                        ResultRow(
-                          title: 'Status',
-                          value: _result!.message,
-                        ),
-
-                        if (_result!.isSuccess) ...[
-                          const Divider(height: 28),
-
-                          const Text(
-                            'Input / Grouping',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-
-                          _space(),
-
-                          ResultRow(
-                            title: 'Load Current',
-                            value:
-                                '${_number(_result!.loadCurrent)} A',
-                          ),
-
-                          ResultRow(
-                            title: 'Grouping Factor',
-                            value: _number(
-                              _result!.groupingFactor,
-                            ),
-                          ),
-
-                          ResultRow(
-                            title: 'Required Current',
-                            value:
-                                '${_number(_result!.requiredCurrent)} A',
-                          ),
-
-                          const Divider(height: 28),
-
-                          const Text(
-                            'Cable Selection',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-
-                          _space(),
-
-                          ResultRow(
-                            title: 'Selected Cable',
-                            value:
-                                '${_number(_result!.cableSizeSqmm, digits: 0)} sq.mm',
-                          ),
-
-                          ResultRow(
-                            title: 'Parallel Runs',
-                            value:
-                                '${_result!.runs ?? '-'}',
-                          ),
-
-                          ResultRow(
-                            title: 'Actual Load Current / Run',
-                            value:
-                                '${_number(_result!.currentPerRun)} A',
-                          ),
-
-                          ResultRow(
-                            title: 'Ampacity / Run',
-                            value:
-                                '${_number(_result!.ampacityPerRun)} A',
-                          ),
-
-                          ResultRow(
-                            title: 'Total Ampacity',
-                            value:
-                                '${_number(_result!.totalAmpacity)} A',
-                          ),
-
-                          ResultRow(
-                            title: 'Cable Arrangement',
-                            value:
-                                _result!.cableArrangement ?? '-',
-                          ),
-
-                          const Divider(height: 28),
-
-                          const Text(
-                            'Voltage Drop',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-
-                          _space(),
-
-                          ResultRow(
-                            title: 'Cable Length',
-                            value:
-                                '${_number(_result!.cableLengthM)} m',
-                          ),
-
-                          ResultRow(
-                            title: 'mV/A/m',
-                            value:
-                                _number(_result!.mvPerAperM),
-                          ),
-
-                          ResultRow(
-                            title: 'Voltage Drop',
-                            value:
-                                '${_number(_result!.voltageDropV)} V',
-                          ),
-
-                          ResultRow(
-                            title: 'Voltage Drop %',
-                            value:
-                                '${_number(_result!.voltageDropPercent)} %',
-                          ),
-
-                          const Divider(height: 28),
-
-                          const Text(
-                            'Reference Traceability',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-
-                          _space(),
-
-                          ResultRow(
-                            title: 'Ampacity Reference',
-                            value:
-                                _result!.ampacityReference ?? '-',
-                          ),
-
-                          ResultRow(
-                            title: 'Voltage Drop Reference',
-                            value:
-                                _result!.voltageDropReference ?? '-',
-                          ),
-                        ],
-                      ],
                     ),
                   ),
-                ),
-              ],
 
-              const SizedBox(height: 40),
-            ],
-          ),
-        ),
+                  // ----------------------------------------------------------------
+                  // RESULT
+                  // ----------------------------------------------------------------
+                  if (_isLoading) ...[
+                    const SizedBox(height: 24),
+                    const Center(child: CircularProgressIndicator()),
+                  ],
+
+                  if (_result != null) ...[
+                    const SizedBox(height: 24),
+
+                    if (_result!.isSuccess) ...[
+                      _buildDesignSummary(),
+                      const SizedBox(height: 24),
+                    ],
+
+                    Card(
+                      elevation: 4,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              icon: _result!.isSuccess
+                                  ? Icons.check_circle
+                                  : Icons.error,
+                              title: _result!.isSuccess
+                                  ? 'Calculation Result'
+                                  : 'Calculation Failed',
+                              color: _result!.isSuccess
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+
+                            _space(),
+
+                            ResultRow(title: 'Status', value: _result!.message),
+
+                            if (_result!.isSuccess) ...[
+                              const Divider(height: 28),
+
+                              const Text(
+                                'Input / Grouping',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              _space(),
+
+                              ResultRow(
+                                title: 'Load Current',
+                                value: '${_number(_result!.loadCurrent)} A',
+                              ),
+
+                              ResultRow(
+                                title: 'Grouping Factor',
+                                value: _number(_result!.groupingFactor),
+                              ),
+
+                              ResultRow(
+                                title: 'Required Current',
+                                value: '${_number(_result!.requiredCurrent)} A',
+                              ),
+
+                              const Divider(height: 28),
+
+                              const Text(
+                                'Cable Selection',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              _space(),
+
+                              ResultRow(
+                                title: 'Selected Cable',
+                                value:
+                                    '${_number(_result!.cableSizeSqmm, digits: 0)} sq.mm',
+                              ),
+
+                              ResultRow(
+                                title: 'Parallel Runs',
+                                value: '${_result!.runs ?? '-'}',
+                              ),
+
+                              ResultRow(
+                                title: 'Actual Load Current / Run',
+                                value: '${_number(_result!.currentPerRun)} A',
+                              ),
+
+                              ResultRow(
+                                title: 'Ampacity / Run',
+                                value: '${_number(_result!.ampacityPerRun)} A',
+                              ),
+
+                              ResultRow(
+                                title: 'Total Ampacity',
+                                value: '${_number(_result!.totalAmpacity)} A',
+                              ),
+
+                              ResultRow(
+                                title: 'Cable Arrangement',
+                                value: _result!.cableArrangement ?? '-',
+                              ),
+
+                              const Divider(height: 28),
+
+                              const Text(
+                                'Voltage Drop',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              _space(),
+
+                              if (_result!.voltageDropConsidered) ...[
+                                ResultRow(
+                                  title: 'Cable Length',
+                                  value: '${_number(_result!.cableLengthM)} m',
+                                ),
+                                ResultRow(
+                                  title: 'mV/A/m',
+                                  value: _number(_result!.mvPerAperM),
+                                ),
+                                ResultRow(
+                                  title: 'Voltage Drop',
+                                  value: '${_number(_result!.voltageDropV)} V',
+                                ),
+                                ResultRow(
+                                  title: 'Voltage Drop %',
+                                  value:
+                                      '${_number(_result!.voltageDropPercent)} %',
+                                ),
+                              ] else
+                                const ResultRow(
+                                  title: 'Voltage Drop',
+                                  value: 'ไม่พิจารณา',
+                                ),
+
+                              const Divider(height: 28),
+
+                              const Text(
+                                'Reference Traceability',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+
+                              _space(),
+
+                              ResultRow(
+                                title: 'Ampacity Reference',
+                                value: _result!.ampacityReference ?? '-',
+                              ),
+
+                              ResultRow(
+                                title: 'Voltage Drop Reference',
+                                value: _result!.voltageDropConsidered
+                                    ? (_result!.voltageDropReference ?? '-')
+                                    : 'Not Verified',
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+
+                  const SizedBox(height: 40),
+                ],
+              ),
+            ),
           );
         },
       ),

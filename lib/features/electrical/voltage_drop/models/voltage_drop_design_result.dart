@@ -51,6 +51,7 @@ class VoltageDropDesignResult {
     this.ampacityReference,
     this.voltageDropReference,
     this.reference,
+    this.voltageDropConsidered = true,
   });
 
   final bool isSuccess;
@@ -97,6 +98,7 @@ class VoltageDropDesignResult {
 
   /// Legacy field สำหรับ compatibility
   final String? reference;
+  final bool voltageDropConsidered;
 
   factory VoltageDropDesignResult.success({
     required double loadCurrent,
@@ -165,16 +167,69 @@ class VoltageDropDesignResult {
       voltageDropReference: voltageDropReference,
 
       // Legacy compatibility
-      reference: reference ??
-          ampacityReference ??
-          voltageDropReference,
+      reference: reference ?? ampacityReference ?? voltageDropReference,
+      voltageDropConsidered: true,
     );
   }
 
+  factory VoltageDropDesignResult.ampacityOnly({
+    required double loadCurrent,
+    required double groupingFactor,
+    required double? temperatureFactor,
+    required double? baseAmpacityPerRun,
+    required double? correctedAmpacityPerRun,
+    required String? sourceTableId,
+    required String? sourceTableDisplayName,
+    required InstallationMethod? installationMethod,
+    required int? loadedConductors,
+    required CoreType? coreType,
+    required CableType? cableType,
+    required ConductorTemperatureClass? conductorTemperatureClass,
+    required double? ambientTemperatureC,
+    required int? groupingCircuits,
+    required String? groupingReference,
+    required String? temperatureReference,
+    required double requiredCurrent,
+    required int runs,
+    required double currentPerRun,
+    required double cableSizeSqmm,
+    required double ampacityPerRun,
+    required double totalAmpacity,
+    required String cableArrangement,
+    required String ampacityReference,
+  }) => VoltageDropDesignResult(
+    isSuccess: true,
+    message:
+        'Cable selected successfully by ampacity; voltage drop not considered.',
+    loadCurrent: loadCurrent,
+    groupingFactor: groupingFactor,
+    temperatureFactor: temperatureFactor,
+    baseAmpacityPerRun: baseAmpacityPerRun,
+    correctedAmpacityPerRun: correctedAmpacityPerRun,
+    sourceTableId: sourceTableId,
+    sourceTableDisplayName: sourceTableDisplayName,
+    installationMethod: installationMethod,
+    loadedConductors: loadedConductors,
+    coreType: coreType,
+    cableType: cableType,
+    conductorTemperatureClass: conductorTemperatureClass,
+    ambientTemperatureC: ambientTemperatureC,
+    groupingCircuits: groupingCircuits,
+    groupingReference: groupingReference,
+    temperatureReference: temperatureReference,
+    requiredCurrent: requiredCurrent,
+    runs: runs,
+    currentPerRun: currentPerRun,
+    cableSizeSqmm: cableSizeSqmm,
+    ampacityPerRun: ampacityPerRun,
+    totalAmpacity: totalAmpacity,
+    cableArrangement: cableArrangement,
+    ampacityReference: ampacityReference,
+    reference: ampacityReference,
+    voltageDropConsidered: false,
+  );
+
   factory VoltageDropDesignResult.error(String message) {
-    return VoltageDropDesignResult(
-      isSuccess: false,
-      message: message,
-    );
+    return VoltageDropDesignResult(isSuccess: false, message: message);
   }
 }

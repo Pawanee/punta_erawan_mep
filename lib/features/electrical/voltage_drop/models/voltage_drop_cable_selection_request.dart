@@ -27,6 +27,7 @@ class VoltageDropCableSelectionRequest {
     required this.allowableVoltageDropPercent,
     required this.installationGroup,
     this.arrangement,
+    this.voltageDropEnabled = true,
   });
 
   final CableDesignRequest cableRequest;
@@ -35,6 +36,12 @@ class VoltageDropCableSelectionRequest {
   final double lengthM;
   final double systemVoltage;
   final double allowableVoltageDropPercent;
+
+  /// Whether voltage drop participates in legacy cable selection.
+  ///
+  /// When false, selection is based on corrected ampacity only. The allowable
+  /// percentage remains a real user setting and is not overloaded with zero.
+  final bool voltageDropEnabled;
 
   /// กลุ่มการติดตั้งสำหรับ Table 9.1 / 9.3
   final VoltageDropInstallationGroup installationGroup;
