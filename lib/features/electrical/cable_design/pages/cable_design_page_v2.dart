@@ -21,7 +21,6 @@ import '../routing_v2/models/cable_design_workflow_activation.dart';
 import '../routing_v2/pages/cable_design_v2_page.dart';
 import '../widgets/cable_header.dart';
 import '../widgets/result_row.dart';
-import '../widgets/section_header.dart';
 
 /// ============================================================================
 /// PUNTA ERAWAN MEP
@@ -294,11 +293,12 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SectionHeader(
+            _LegacySectionHeader(
               icon: isPass ? Icons.verified : Icons.warning,
               title: 'Design Summary',
               color: isPass ? Colors.green : Colors.orange,
             ),
+            const _ThaiSectionHelper('สรุปผลการออกแบบ'),
             _space(),
             Container(
               width: double.infinity,
@@ -390,14 +390,21 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       builder: (context, constraints) {
         final isCompact = constraints.maxWidth < 480;
         final calculateButton = FilledButton.icon(
+          key: const Key('legacy-calculate'),
           onPressed: _isLoading ? null : _calculate,
           icon: const Icon(Icons.calculate),
-          label: const Text('CALCULATE'),
+          label: const _BilingualButtonLabel(
+            english: 'CALCULATE',
+            thai: 'คำนวณ',
+          ),
         );
         final resetButton = OutlinedButton.icon(
           onPressed: _isLoading ? null : _resetForm,
           icon: const Icon(Icons.refresh),
-          label: const Text('RESET'),
+          label: const _BilingualButtonLabel(
+            english: 'RESET',
+            thai: 'ล้างข้อมูล',
+          ),
         );
 
         if (isCompact) {
@@ -431,9 +438,12 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
         centerTitle: true,
         backgroundColor: Colors.blue.shade700,
         foregroundColor: Colors.white,
-        title: const Text(
-          'PUNTA ERAWAN MEP',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: const FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            'PUNTA ERAWAN MEP',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
         actions: [
           TextButton(
@@ -448,7 +458,13 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
               ),
             ),
             style: TextButton.styleFrom(foregroundColor: Colors.white),
-            child: const Text('Advanced Cable Design'),
+            child: const SizedBox(
+              width: 112,
+              child: _BilingualButtonLabel(
+                english: 'Advanced Cable Design',
+                thai: 'การออกแบบสายไฟขั้นสูง',
+              ),
+            ),
           ),
         ],
       ),
@@ -481,34 +497,43 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const SectionHeader(
+                          const _LegacySectionHeader(
                             icon: Icons.settings,
                             title: 'Design Input',
                             color: Colors.blue,
                           ),
+                          const _ThaiSectionHelper('ข้อมูลการออกแบบ'),
 
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-load-current'),
                             controller: _currentController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Load Current (A)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.bolt),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Load Current (A)',
+                              thai: 'กระแสโหลดที่ใช้ในการออกแบบ',
+                              prefixIcon: Icons.bolt,
                             ),
                           ),
 
                           _space(),
 
                           DropdownButtonFormField<PhaseSystem>(
+                            key: const Key('legacy-phase-system'),
+                            isExpanded: true,
                             value: _phaseSystem,
-                            decoration: const InputDecoration(
-                              labelText: 'Phase System',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.power),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Phase System',
+                              thai: 'ระบบเฟสของวงจร',
+                              prefixIcon: Icons.power,
+                              infoKey: const Key('legacy-info-phase-system'),
+                              infoText:
+                                  'ระบบเฟสของวงจรใช้กำหนดเงื่อนไขการออกแบบและแรงดันระบบเริ่มต้น\n\nPhase System remains an explicit engineering input.',
                             ),
                             items: PhaseSystem.values
                                 .map(
@@ -532,11 +557,16 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           DropdownButtonFormField<CableType>(
+                            isExpanded: true,
                             value: _cableType,
-                            decoration: const InputDecoration(
-                              labelText: 'Cable Type',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.cable),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Cable Type',
+                              thai: 'ชนิดสายไฟ',
+                              prefixIcon: Icons.cable,
+                              infoKey: const Key('legacy-info-cable-type'),
+                              infoText:
+                                  'เลือกชนิดหรือมาตรฐานสายไฟตามงานออกแบบ โดยชื่อมาตรฐานจะคงรูปเดิม\n\nCable Type determines the approved cable context.',
                             ),
                             items: CableType.values
                                 .map(
@@ -558,11 +588,18 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           DropdownButtonFormField<InstallationMethod>(
+                            isExpanded: true,
                             value: _installationMethod,
-                            decoration: const InputDecoration(
-                              labelText: 'Installation Method',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.route),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Installation Method',
+                              thai: 'วิธีการติดตั้ง',
+                              prefixIcon: Icons.route,
+                              infoKey: const Key(
+                                'legacy-info-installation-method',
+                              ),
+                              infoText:
+                                  'เลือกวิธีติดตั้งจริงเพื่อใช้เงื่อนไขพิกัดกระแสและแหล่งอ้างอิงที่ถูกต้อง\n\nInstallation Method is an explicit engineering condition.',
                             ),
                             items: InstallationMethod.values
                                 .map(
@@ -588,11 +625,13 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           DropdownButtonFormField<CoreType>(
+                            isExpanded: true,
                             value: _coreType,
-                            decoration: const InputDecoration(
-                              labelText: 'Core Type',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.memory),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Core Type',
+                              thai: 'ชนิดแกนของสายไฟ',
+                              prefixIcon: Icons.memory,
                             ),
                             items: CoreType.values
                                 .map(
@@ -619,11 +658,13 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                             _space(),
 
                             DropdownButtonFormField<CableArrangement>(
+                              isExpanded: true,
                               value: _arrangement,
-                              decoration: const InputDecoration(
-                                labelText: 'Cable Arrangement',
-                                border: OutlineInputBorder(),
-                                prefixIcon: Icon(Icons.alt_route),
+                              decoration: _legacyFieldDecoration(
+                                context,
+                                english: 'Cable Arrangement',
+                                thai: 'รูปแบบการจัดวางสาย',
+                                prefixIcon: Icons.alt_route,
                               ),
                               items: CableArrangement.values
                                   .map(
@@ -644,11 +685,13 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           DropdownButtonFormField<int>(
+                            isExpanded: true,
                             value: _loadedConductors,
-                            decoration: const InputDecoration(
-                              labelText: 'Loaded Conductors',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.linear_scale),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Loaded Conductors',
+                              thai: 'จำนวนตัวนำที่มีกระแส',
+                              prefixIcon: Icons.linear_scale,
                             ),
                             items: const [
                               DropdownMenuItem(value: 1, child: Text('1')),
@@ -667,54 +710,62 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-ambient-temperature'),
                             controller: _ambientController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Ambient Temperature (°C)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.thermostat),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Ambient Temperature (°C)',
+                              thai: 'อุณหภูมิแวดล้อม',
+                              prefixIcon: Icons.thermostat,
                             ),
                           ),
 
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-grouping-circuits'),
                             controller: _groupingController,
                             keyboardType: TextInputType.number,
-                            decoration: const InputDecoration(
-                              labelText: 'Grouping Circuits',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.grid_view),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Grouping Circuits',
+                              thai: 'จำนวนวงจรที่จัดกลุ่มร่วมกัน',
+                              prefixIcon: Icons.grid_view,
                             ),
                           ),
 
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-cable-length'),
                             controller: _lengthController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Cable Length (m)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.straighten),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Cable Length (m)',
+                              thai: 'ความยาววงจร',
+                              prefixIcon: Icons.straighten,
                             ),
                           ),
 
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-system-voltage'),
                             controller: _systemVoltageController,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'System Voltage (V)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.electrical_services),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'System Voltage (V)',
+                              thai: 'แรงดันระบบ',
+                              prefixIcon: Icons.electrical_services,
                             ),
                           ),
 
@@ -724,9 +775,19 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                             key: const Key('voltage-drop-enabled'),
                             contentPadding: EdgeInsets.zero,
                             value: !_voltageDropEnabled,
-                            title: const Text('ไม่พิจารณา Voltage Drop'),
+                            title: const _BilingualFieldLabel(
+                              english: 'Do not consider voltage drop',
+                              thai: 'ไม่พิจารณา Voltage Drop',
+                            ),
                             subtitle: const Text(
-                              'เลือกขนาดสายจาก Ampacity เท่านั้น',
+                              'ไม่ได้พิจารณาแรงดันตกในการเลือกขนาดสาย\n'
+                              'Ampacity-only cable selection',
+                            ),
+                            secondary: const _LegacyInfoButton(
+                              key: Key('legacy-info-voltage-drop'),
+                              title: 'Voltage Drop Verification',
+                              text:
+                                  'เมื่อเลือกตัวเลือกนี้ ระบบจะเลือกขนาดสายจาก Ampacity เท่านั้น และไม่ถือว่าแรงดันตกเป็น 0% หรือผ่านการตรวจสอบ\n\nVoltage drop is not considered or verified.',
                             ),
                             onChanged: (value) {
                               setState(() {
@@ -747,15 +808,22 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                           _space(),
 
                           TextField(
+                            key: const Key('legacy-allowable-voltage-drop'),
                             controller: _voltageDropController,
                             enabled: _voltageDropEnabled,
                             keyboardType: const TextInputType.numberWithOptions(
                               decimal: true,
                             ),
-                            decoration: const InputDecoration(
-                              labelText: 'Allowable Voltage Drop (%)',
-                              border: OutlineInputBorder(),
-                              prefixIcon: Icon(Icons.percent),
+                            decoration: _legacyFieldDecoration(
+                              context,
+                              english: 'Allowable Voltage Drop (%)',
+                              thai: 'แรงดันตกที่ยอมให้',
+                              prefixIcon: Icons.percent,
+                              infoKey: const Key(
+                                'legacy-info-allowable-voltage-drop',
+                              ),
+                              infoText:
+                                  'ค่าร้อยละแรงดันตกสูงสุดที่ยอมให้ ใช้เฉพาะเมื่อพิจารณา Voltage Drop\n\nAllowable Voltage Drop is the verification limit.',
                             ),
                           ),
 
@@ -790,7 +858,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SectionHeader(
+                            _LegacySectionHeader(
                               icon: _result!.isSuccess
                                   ? Icons.check_circle
                                   : Icons.error,
@@ -800,6 +868,11 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                               color: _result!.isSuccess
                                   ? Colors.green
                                   : Colors.red,
+                            ),
+                            _ThaiSectionHelper(
+                              _result!.isSuccess
+                                  ? 'ผลการคำนวณ'
+                                  : 'ไม่สามารถคำนวณได้',
                             ),
 
                             _space(),
@@ -815,6 +888,9 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
+                              ),
+                              const _ThaiSectionHelper(
+                                'ข้อมูลนำเข้า / การจัดกลุ่ม',
                               ),
 
                               _space(),
@@ -843,6 +919,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                                   fontSize: 16,
                                 ),
                               ),
+                              const _ThaiSectionHelper('ผลการเลือกขนาดสายไฟ'),
 
                               _space(),
 
@@ -886,6 +963,7 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                                   fontSize: 16,
                                 ),
                               ),
+                              const _ThaiSectionHelper('แรงดันตก'),
 
                               _space(),
 
@@ -930,6 +1008,9 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
                                 ),
+                              ),
+                              const _ThaiSectionHelper(
+                                'แหล่งอ้างอิง / รายละเอียดการคำนวณ',
                               ),
 
                               _space(),
@@ -982,4 +1063,156 @@ class _CableDesignPageV2State extends State<CableDesignPageV2> {
       ),
     );
   }
+}
+
+InputDecoration _legacyFieldDecoration(
+  BuildContext context, {
+  required String english,
+  required String thai,
+  required IconData prefixIcon,
+  Key? infoKey,
+  String? infoText,
+}) => InputDecoration(
+  labelText: english,
+  helperText: thai,
+  helperMaxLines: 2,
+  helperStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+    fontWeight: FontWeight.normal,
+  ),
+  border: const OutlineInputBorder(),
+  prefixIcon: Icon(prefixIcon),
+  suffixIcon: infoText == null
+      ? null
+      : _LegacyInfoButton(key: infoKey, title: english, text: infoText),
+);
+
+class _BilingualFieldLabel extends StatelessWidget {
+  const _BilingualFieldLabel({required this.english, required this.thai});
+
+  final String english;
+  final String thai;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(english),
+      Text(
+        thai,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.normal,
+        ),
+      ),
+    ],
+  );
+}
+
+class _BilingualButtonLabel extends StatelessWidget {
+  const _BilingualButtonLabel({required this.english, required this.thai});
+
+  final String english;
+  final String thai;
+
+  @override
+  Widget build(BuildContext context) => FittedBox(
+    fit: BoxFit.scaleDown,
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(english),
+        Text(thai, style: Theme.of(context).textTheme.labelSmall),
+      ],
+    ),
+  );
+}
+
+class _ThaiSectionHelper extends StatelessWidget {
+  const _ThaiSectionHelper(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(left: 48, top: 2),
+    child: Text(
+      text,
+      maxLines: 2,
+      overflow: TextOverflow.ellipsis,
+      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+    ),
+  );
+}
+
+class _LegacySectionHeader extends StatelessWidget {
+  const _LegacySectionHeader({
+    required this.icon,
+    required this.title,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      CircleAvatar(
+        radius: 18,
+        backgroundColor: color.withValues(alpha: 0.15),
+        child: Icon(icon, color: color, size: 20),
+      ),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Text(
+          title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+      ),
+    ],
+  );
+}
+
+class _LegacyInfoButton extends StatelessWidget {
+  const _LegacyInfoButton({
+    super.key,
+    required this.title,
+    required this.text,
+  });
+
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'ข้อมูลเพิ่มเติม / More information',
+    icon: const Icon(Icons.info_outline),
+    onPressed: () => showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(child: Text(text)),
+        actions: [
+          TextButton(
+            key: const Key('legacy-info-close'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ปิด / Close'),
+          ),
+        ],
+      ),
+    ),
+  );
 }
