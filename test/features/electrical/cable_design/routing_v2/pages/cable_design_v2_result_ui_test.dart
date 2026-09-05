@@ -171,7 +171,12 @@ void main() {
     Key key,
     String label,
   ) async {
-    await tester.ensureVisible(find.byKey(key).first);
+    await tester.scrollUntilVisible(
+      find.byKey(key).first,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(key).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
@@ -201,6 +206,13 @@ void main() {
       find.byKey(const Key('v2-ambient-temperature')),
       '40',
     );
+    await tester.scrollUntilVisible(
+      find.text('VAF'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.drag(find.byType(ListView), const Offset(0, -120));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('VAF'));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView), const Offset(0, -800));
@@ -215,8 +227,11 @@ void main() {
       const Key('v2-installation-support'),
       'surfaceMount',
     );
-    await tester.drag(find.byType(ListView), const Offset(0, -1000));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('v2-check-inputs')),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.byKey(const Key('v2-check-inputs')));
     await tester.pump();
     await tester.tap(find.byKey(const Key('v2-calculate')));
@@ -344,7 +359,10 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('AMPACITY'), findsOneWidget);
-      expect(find.text('Resolved installation group: Group 3'), findsNWidgets(2));
+      expect(
+        find.text('Resolved installation group: Group 3'),
+        findsNWidgets(2),
+      );
       expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
       expect(find.text('Source column: C1'), findsOneWidget);
       expect(find.text('Base ampacity reference: Table 5-21'), findsOneWidget);

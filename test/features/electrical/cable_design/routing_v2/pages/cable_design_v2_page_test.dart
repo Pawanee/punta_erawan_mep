@@ -34,34 +34,36 @@ void main() {
     tester,
   ) async {
     await pumpPage(tester);
+    final vafRadio = find.byWidgetPredicate(
+      (widget) =>
+          widget is Radio<CableRoutingIdentity> &&
+          widget.value == CableRoutingIdentity.vaf,
+    );
+    await Scrollable.ensureVisible(
+      tester.element(find.text('VAF')),
+      alignment: 0.5,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.text('VAF'));
     await tester.pump();
     expect(
-      tester
-          .widget<Radio<CableRoutingIdentity>>(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is Radio<CableRoutingIdentity> &&
-                  widget.value == CableRoutingIdentity.vaf,
-            ),
-          )
-          .groupValue,
+      tester.widget<Radio<CableRoutingIdentity>>(vafRadio).groupValue,
       CableRoutingIdentity.vaf,
     );
-    await tester.ensureVisible(find.text('VAF-G'));
+    final vafGRadio = find.byWidgetPredicate(
+      (widget) =>
+          widget is Radio<CableRoutingIdentity> &&
+          widget.value == CableRoutingIdentity.vafG,
+    );
+    await Scrollable.ensureVisible(
+      tester.element(find.text('VAF-G')),
+      alignment: 0.5,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.text('VAF-G'));
     await tester.pump();
     expect(
-      tester
-          .widget<Radio<CableRoutingIdentity>>(
-            find.byWidgetPredicate(
-              (widget) =>
-                  widget is Radio<CableRoutingIdentity> &&
-                  widget.value == CableRoutingIdentity.vafG,
-            ),
-          )
-          .groupValue,
+      tester.widget<Radio<CableRoutingIdentity>>(vafGRadio).groupValue,
       CableRoutingIdentity.vafG,
     );
   });
@@ -81,6 +83,46 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('v2-vd-phase')), findsWidgets);
       expect(find.text('Table 9.1'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'shows Thai field help and info dialog without mutating engineering input',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 700);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await pumpPage(tester);
+      expect(find.text('กระแสโหลดที่ใช้ในการออกแบบ'), findsOneWidget);
+      expect(find.text('จำนวนตัวนำที่มีกระแส'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      final loadedBefore = tester
+          .state<FormFieldState<int>>(
+            find.byKey(const Key('v2-loaded-conductors')),
+          )
+          .value;
+      await tester.tap(find.byKey(const Key('v2-info-loaded-conductors')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(
+        find.textContaining('ไม่ใช่จำนวนเฟสของระบบโดยตรง'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('v2-info-close')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(
+        tester
+            .state<FormFieldState<int>>(
+              find.byKey(const Key('v2-loaded-conductors')),
+            )
+            .value,
+        loadedBefore,
+      );
+      expect(tester.takeException(), isNull);
     },
   );
 

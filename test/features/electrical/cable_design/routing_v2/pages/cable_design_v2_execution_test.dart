@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/cable_design_execution_caller_adaptation_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/cable_design_execution_controller_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/cable_design_workflow.dart';
@@ -95,7 +96,12 @@ void main() {
     Key key,
     String label,
   ) async {
-    await tester.ensureVisible(find.byKey(key).first);
+    await tester.scrollUntilVisible(
+      find.byKey(key).first,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(key).first);
     await tester.pumpAndSettle();
     await tester.tap(find.text(label).last);
@@ -160,7 +166,11 @@ void main() {
           product == '60227 IEC 10' || product == 'IEC 60502-1'
           ? find.descendant(of: productFinder, matching: find.text(product))
           : productFinder;
-      await tester.ensureVisible(productTapTarget);
+      await tester.scrollUntilVisible(
+        productTapTarget,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(productTapTarget);
       await tester.pumpAndSettle();
     }
@@ -176,8 +186,7 @@ void main() {
       const Key('v2-installation-support'),
       'surfaceMount',
     );
-    await tester.drag(find.byType(ListView), const Offset(0, -1000));
-    await tester.pumpAndSettle();
+    await scrollToKey(tester, const Key('v2-check-inputs'));
     await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
     await tester.pump();
   }
@@ -315,7 +324,11 @@ void main() {
         home: CableDesignV2Page(activation: activation, controller: controller),
       ),
     );
-    await tester.drag(find.byType(ListView), const Offset(0, -450));
+    await scrollToKey(tester, const Key('v2-product-iec10'));
+    await Scrollable.ensureVisible(
+      tester.element(find.byKey(const Key('v2-product-iec10'))),
+      alignment: 0.5,
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('v2-product-iec10')));
     await tester.pumpAndSettle();
@@ -326,9 +339,14 @@ void main() {
       selectProduct: false,
       selectCore: false,
     );
-    await scrollToKey(tester, const Key('v2-iec10-cable-shape'));
-    expect(find.text('Core type: Multi Core'), findsOneWidget);
-    expect(find.text('Profile source: Table 5-48'), findsOneWidget);
+    expect(
+      tester
+          .widget<RadioListTile<CableRoutingIdentity>>(
+            find.byKey(const Key('v2-product-iec10')),
+          )
+          .groupValue,
+      CableRoutingIdentity.iec10,
+    );
     await enterIec10SupplementalInputs(tester);
     await scrollToKey(tester, const Key('v2-check-inputs'));
     await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
@@ -369,13 +387,7 @@ void main() {
         home: CableDesignV2Page(activation: activation, controller: controller),
       ),
     );
-    expect(
-      find.text(
-        'จำนวนตัวนำที่มีกระแส ใช้สำหรับเลือกเงื่อนไข Ampacity\n'
-        'และไม่ใช่การกำหนดระบบ 1 เฟส / 3 เฟส',
-      ),
-      findsOneWidget,
-    );
+    expect(find.text('จำนวนตัวนำที่มีกระแส'), findsOneWidget);
     await tester.drag(find.byType(ListView), const Offset(0, -450));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('v2-product-iec10')));

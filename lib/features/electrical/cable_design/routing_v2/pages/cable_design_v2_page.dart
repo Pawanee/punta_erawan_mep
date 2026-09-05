@@ -233,19 +233,28 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Advanced Cable Design')),
+    appBar: AppBar(
+      title: const FittedBox(
+        fit: BoxFit.scaleDown,
+        alignment: Alignment.centerLeft,
+        child: Text('Advanced Cable Design'),
+      ),
+    ),
     body: ListView(
       padding: const EdgeInsets.all(16),
       children: [
         _Section(
           title: 'Electrical Load',
+          thaiTitle: 'ข้อมูลโหลดไฟฟ้า',
           child: Column(
             children: [
               TextFormField(
                 key: const Key('v2-load-current'),
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Load current (A)',
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Load current (A)',
+                  thai: 'กระแสโหลดที่ใช้ในการออกแบบ',
                 ),
                 onChanged: (value) => _replaceInputState(
                   loadCurrent: double.tryParse(value),
@@ -255,7 +264,11 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
               DropdownButtonFormField<PhaseSystem>(
                 key: const Key('v2-phase-system'),
                 value: _inputState.phaseSystem,
-                decoration: const InputDecoration(labelText: 'Phase / system'),
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Phase / system',
+                  thai: 'ระบบเฟสของวงจร',
+                ),
                 items: PhaseSystem.values
                     .map(
                       (value) => DropdownMenuItem(
@@ -269,8 +282,13 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
               DropdownButtonFormField<int>(
                 key: const Key('v2-loaded-conductors'),
                 value: _inputState.loadedConductors,
-                decoration: const InputDecoration(
-                  labelText: 'Loaded conductors',
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Loaded conductors',
+                  thai: 'จำนวนตัวนำที่มีกระแส',
+                  infoKey: const Key('v2-info-loaded-conductors'),
+                  infoText:
+                      'จำนวนตัวนำที่มีกระแส ใช้เป็นเงื่อนไขในการเลือกคอลัมน์ Ampacity และไม่ใช่จำนวนเฟสของระบบโดยตรง\n\nLoaded conductors is an ampacity-table condition, not the system phase count.',
                 ),
                 items: const [
                   DropdownMenuItem(value: 2, child: Text('2')),
@@ -278,13 +296,6 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 ],
                 onChanged: (value) =>
                     _replaceInputState(loadedConductors: value),
-              ),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'จำนวนตัวนำที่มีกระแส ใช้สำหรับเลือกเงื่อนไข Ampacity\n'
-                  'และไม่ใช่การกำหนดระบบ 1 เฟส / 3 เฟส',
-                ),
               ),
               if (_inputState.identity == CableRoutingIdentity.iec10)
                 const ListTile(
@@ -295,7 +306,11 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 DropdownButtonFormField<CoreType>(
                   key: const Key('v2-core-type'),
                   value: _inputState.coreType,
-                  decoration: const InputDecoration(labelText: 'Core type'),
+                  decoration: _engineeringFieldDecoration(
+                    context,
+                    english: 'Core type',
+                    thai: 'ชนิดแกนของสายไฟ',
+                  ),
                   items: CoreType.values
                       .map(
                         (value) => DropdownMenuItem(
@@ -309,8 +324,10 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
               TextFormField(
                 key: const Key('v2-ambient-temperature'),
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Ambient temperature (°C)',
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Ambient temperature (°C)',
+                  thai: 'อุณหภูมิแวดล้อม',
                 ),
                 onChanged: (value) => _replaceInputState(
                   ambientTemperature: double.tryParse(value),
@@ -322,10 +339,14 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ),
         _Section(
           title: 'Cable Product',
+          thaiTitle: 'ชนิดและมาตรฐานสายไฟ',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Cable product / standard'),
+              const _BilingualHeading(
+                english: 'Cable product / standard',
+                thai: 'ชนิดสาย / มาตรฐานสายไฟ',
+              ),
               RadioListTile<CableRoutingIdentity>(
                 title: const Text('VAF'),
                 value: CableRoutingIdentity.vaf,
@@ -394,8 +415,13 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 DropdownButtonFormField<RoutingElectricalSystem>(
                   key: const Key('v2-routing-electrical-system'),
                   value: _inputState.routingElectricalSystem,
-                  decoration: const InputDecoration(
-                    labelText: 'Routing V2 electrical system',
+                  decoration: _engineeringFieldDecoration(
+                    context,
+                    english: 'Routing V2 electrical system',
+                    thai: 'ระบบไฟฟ้าที่ใช้กำหนดเงื่อนไข Ampacity',
+                    infoKey: const Key('v2-info-routing-system'),
+                    infoText:
+                        'ระบบไฟฟ้าที่ใช้ตรวจเงื่อนไขของตารางพิกัดกระแส เช่น AC หรือ DC โดยแยกจากข้อมูล Voltage Drop\n\nRouting V2 electrical system is used for ampacity-table applicability.',
                   ),
                   items: RoutingElectricalSystem.values
                       .map(
@@ -419,7 +445,14 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                 DropdownButtonFormField<bool>(
                   key: const Key('v2-outer-sheath'),
                   value: _inputState.hasOuterSheath,
-                  decoration: const InputDecoration(labelText: 'Outer sheath'),
+                  decoration: _engineeringFieldDecoration(
+                    context,
+                    english: 'Outer sheath',
+                    thai: 'เปลือกหุ้มสาย',
+                    infoKey: const Key('v2-info-outer-sheath'),
+                    infoText:
+                        'ระบุว่าสายมีเปลือกหุ้มภายนอกหรือไม่ ข้อมูลนี้ใช้ร่วมกับวิธีติดตั้งเพื่อเลือกกลุ่มอ้างอิง\n\nOuter sheath is an explicit installation-routing fact.',
+                  ),
                   items: const [
                     DropdownMenuItem(value: true, child: Text('Present')),
                     DropdownMenuItem(value: false, child: Text('Not present')),
@@ -435,12 +468,17 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ),
         _Section(
           title: 'Installation',
+          thaiTitle: 'วิธีติดตั้ง',
           child: Column(
             children: [
               DropdownButtonFormField<InstallationEnvironment>(
                 key: const Key('v2-installation-environment'),
                 value: _inputState.environments?.singleOrNull,
-                decoration: const InputDecoration(labelText: 'Environment'),
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Environment',
+                  thai: 'สภาพแวดล้อมการติดตั้ง',
+                ),
                 items: InstallationEnvironment.values
                     .map(
                       (value) => DropdownMenuItem(
@@ -456,8 +494,10 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
               DropdownButtonFormField<InstallationSupport>(
                 key: const Key('v2-installation-support'),
                 value: _inputState.supports?.singleOrNull,
-                decoration: const InputDecoration(
-                  labelText: 'Support / enclosure',
+                decoration: _engineeringFieldDecoration(
+                  context,
+                  english: 'Support / enclosure',
+                  thai: 'วิธีรองรับ / สิ่งห่อหุ้มสาย',
                 ),
                 items: InstallationSupport.values
                     .map(
@@ -476,11 +516,21 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ),
         _Section(
           title: 'Voltage Drop Verification',
+          thaiTitle: 'การตรวจสอบแรงดันตก',
           child: Column(
             children: [
               SwitchListTile(
                 key: const Key('v2-verify-voltage-drop'),
-                title: const Text('Verify voltage drop'),
+                title: const _BilingualHeading(
+                  english: 'Verify voltage drop',
+                  thai: 'ตรวจสอบแรงดันตก',
+                ),
+                secondary: _EngineeringInfoButton(
+                  key: const Key('v2-info-voltage-drop'),
+                  title: 'Voltage Drop Verification',
+                  text:
+                      'การตรวจสอบแรงดันตกเป็นขั้นตอนแยกจาก Ampacity และต้องกรอกข้อมูลเฉพาะให้ครบ\n\nVoltage Drop Verification does not change or infer the ampacity inputs.',
+                ),
                 value: _inputState.verifyVoltageDrop,
                 onChanged: (value) =>
                     _replaceInputState(verifyVoltageDrop: value),
@@ -495,6 +545,7 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         ),
         _Section(
           title: 'Calculate / Result',
+          thaiTitle: 'คำนวณ / ผลลัพธ์',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -553,7 +604,11 @@ class _Table521SupplementalInputs extends StatelessWidget {
       DropdownButtonFormField<CableShape>(
         key: const Key('v2-iec10-cable-shape'),
         value: state?.cableShape,
-        decoration: const InputDecoration(labelText: 'Cable shape'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'Cable shape',
+          thai: 'รูปทรงสาย',
+        ),
         items: CableShape.values
             .map(
               (value) =>
@@ -565,7 +620,11 @@ class _Table521SupplementalInputs extends StatelessWidget {
       DropdownButtonFormField<CableInsulation>(
         key: const Key('v2-iec10-insulation'),
         value: state?.insulation,
-        decoration: const InputDecoration(labelText: 'Insulation'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'Insulation',
+          thai: 'ชนิดฉนวน',
+        ),
         items: CableInsulation.values
             .map(
               (value) =>
@@ -577,8 +636,10 @@ class _Table521SupplementalInputs extends StatelessWidget {
       DropdownButtonFormField<ConductorTemperatureClass>(
         key: const Key('v2-iec10-conductor-temperature-class'),
         value: state?.conductorTemperatureClass,
-        decoration: const InputDecoration(
-          labelText: 'Conductor temperature class',
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'Conductor temperature class',
+          thai: 'พิกัดอุณหภูมิตัวนำ',
         ),
         items: ConductorTemperatureClass.values
             .map(
@@ -614,6 +675,7 @@ class _ResultSummary extends StatelessWidget {
           const SizedBox(height: 16),
           _ResultSection(
             title: 'DESIGN SUMMARY',
+            thaiTitle: 'สรุปผลการออกแบบ',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -641,6 +703,7 @@ class _ResultSummary extends StatelessWidget {
           const SizedBox(height: 16),
           _ResultSection(
             title: 'ENGINEERING DETAILS',
+            thaiTitle: 'รายละเอียดทางวิศวกรรม',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -649,7 +712,10 @@ class _ResultSummary extends StatelessWidget {
                   if (ampacity.reason != null) Text(ampacity.reason!),
                   if (ampacity.corrections.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    const Text('Corrections'),
+                    const _BilingualHeading(
+                      english: 'Corrections',
+                      thai: 'ค่าปรับแก้',
+                    ),
                     for (final correction in ampacity.corrections)
                       Text(_correctionText(correction)),
                   ],
@@ -749,6 +815,10 @@ class _ResultSummary extends StatelessWidget {
     ResolvedCorrectionStateV2.applied =>
       '${correction.name}: ${_format(correction.factor)}'
           '${correction.sourceReference == null ? '' : ' — ${correction.sourceReference}'}',
+    ResolvedCorrectionStateV2.notRequired
+        when correction.name == 'Temperature correction' =>
+      'Temperature correction: No temperature correction required at 40°C\n'
+          'ที่ 40°C ไม่ต้องใช้ค่าปรับแก้อุณหภูมิ',
     ResolvedCorrectionStateV2.notRequired =>
       '${correction.name}: ${correction.reason ?? 'Not required by source'}',
     ResolvedCorrectionStateV2.unresolved =>
@@ -779,7 +849,16 @@ class _TraceabilityDetails extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ExpansionTile(
-    title: const Text('Reference / Calculation Details'),
+    title: const _BilingualHeading(
+      english: 'Reference / Calculation Details',
+      thai: 'แหล่งอ้างอิง / รายละเอียดการคำนวณ',
+    ),
+    trailing: const _EngineeringInfoButton(
+      key: Key('v2-info-reference-details'),
+      title: 'Reference / Calculation Details',
+      text:
+          'แสดงแหล่งอ้างอิง ตาราง ค่าปรับแก้ และรายละเอียดการคำนวณที่ใช้กับผลลัพธ์นี้\n\nReference / Calculation Details provides engineering traceability.',
+    ),
     childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
     children: [
       if (installationReference != null)
@@ -896,15 +975,24 @@ class _VoltageDropReferences extends StatelessWidget {
 }
 
 class _ResultSection extends StatelessWidget {
-  const _ResultSection({required this.title, required this.child});
+  const _ResultSection({
+    required this.title,
+    required this.child,
+    this.thaiTitle,
+  });
   final String title;
   final Widget child;
+  final String? thaiTitle;
 
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(title, style: Theme.of(context).textTheme.titleSmall),
+      _BilingualHeading(
+        english: title,
+        thai: thaiTitle,
+        englishStyle: Theme.of(context).textTheme.titleSmall,
+      ),
       const SizedBox(height: 4),
       child,
     ],
@@ -966,7 +1054,11 @@ class _VoltageDropInputs extends StatelessWidget {
       DropdownButtonFormField<VoltagePhase>(
         key: const Key('v2-vd-phase'),
         value: state.voltageDropPhase,
-        decoration: const InputDecoration(labelText: 'VD phase / system'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'VD phase / system',
+          thai: 'ระบบไฟฟ้าสำหรับคำนวณแรงดันตก',
+        ),
         items: VoltagePhase.values
             .map(
               (value) =>
@@ -978,7 +1070,11 @@ class _VoltageDropInputs extends StatelessWidget {
       DropdownButtonFormField<CableInsulation>(
         key: const Key('v2-vd-insulation'),
         value: state.voltageDropInsulation,
-        decoration: const InputDecoration(labelText: 'VD insulation'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'VD insulation',
+          thai: 'ชนิดฉนวนสำหรับแรงดันตก',
+        ),
         items: CableInsulation.values
             .map(
               (value) =>
@@ -990,7 +1086,11 @@ class _VoltageDropInputs extends StatelessWidget {
       DropdownButtonFormField<CoreType>(
         key: const Key('v2-vd-core-type'),
         value: state.voltageDropCoreType,
-        decoration: const InputDecoration(labelText: 'VD core type'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'VD core type',
+          thai: 'ชนิดแกนสายสำหรับแรงดันตก',
+        ),
         items: CoreType.values
             .map(
               (value) => DropdownMenuItem(
@@ -1004,7 +1104,14 @@ class _VoltageDropInputs extends StatelessWidget {
       DropdownButtonFormField<VoltageDropInstallationGroup>(
         key: const Key('v2-vd-installation-group'),
         value: state.voltageDropInstallationGroup,
-        decoration: const InputDecoration(labelText: 'VD installation group'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'VD installation group',
+          thai: 'กลุ่มวิธีติดตั้งสำหรับแรงดันตก',
+          infoKey: const Key('v2-info-vd-installation-group'),
+          infoText:
+              'กลุ่มวิธีติดตั้งที่ใช้เฉพาะการตรวจสอบแรงดันตก และไม่ได้ถูกอนุมานจาก Ampacity โดยอัตโนมัติ\n\nVD installation group applies only to voltage-drop verification.',
+        ),
         items: VoltageDropInstallationGroup.values
             .map(
               (value) =>
@@ -1029,7 +1136,11 @@ class _VoltageDropInputs extends StatelessWidget {
       TextFormField(
         key: const Key('v2-vd-length'),
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'Circuit length (m)'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'Circuit length (m)',
+          thai: 'ความยาววงจร',
+        ),
         onChanged: (value) => onChanged(
           circuitLengthM: double.tryParse(value),
           updateCircuitLengthM: true,
@@ -1038,7 +1149,11 @@ class _VoltageDropInputs extends StatelessWidget {
       TextFormField(
         key: const Key('v2-vd-system-voltage'),
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'System voltage (V)'),
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'System voltage (V)',
+          thai: 'แรงดันระบบ',
+        ),
         onChanged: (value) => onChanged(
           systemVoltage: double.tryParse(value),
           updateSystemVoltage: true,
@@ -1047,8 +1162,10 @@ class _VoltageDropInputs extends StatelessWidget {
       TextFormField(
         key: const Key('v2-vd-allowable'),
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(
-          labelText: 'Allowable voltage drop (%)',
+        decoration: _engineeringFieldDecoration(
+          context,
+          english: 'Allowable voltage drop (%)',
+          thai: 'แรงดันตกที่ยอมให้',
         ),
         onChanged: (value) => onChanged(
           allowableVoltageDropPercent: double.tryParse(value),
@@ -1059,10 +1176,92 @@ class _VoltageDropInputs extends StatelessWidget {
   );
 }
 
+InputDecoration _engineeringFieldDecoration(
+  BuildContext context, {
+  required String english,
+  required String thai,
+  Key? infoKey,
+  String? infoText,
+}) => InputDecoration(
+  labelText: english,
+  helperText: thai,
+  helperMaxLines: 2,
+  helperStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+    color: Theme.of(context).colorScheme.onSurfaceVariant,
+    fontWeight: FontWeight.normal,
+  ),
+  suffixIcon: infoText == null
+      ? null
+      : _EngineeringInfoButton(key: infoKey, title: english, text: infoText),
+);
+
+class _BilingualHeading extends StatelessWidget {
+  const _BilingualHeading({
+    required this.english,
+    this.thai,
+    this.englishStyle,
+  });
+
+  final String english;
+  final String? thai;
+  final TextStyle? englishStyle;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(english, style: englishStyle),
+      if (thai case final thai?)
+        Text(
+          thai,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.normal,
+          ),
+        ),
+    ],
+  );
+}
+
+class _EngineeringInfoButton extends StatelessWidget {
+  const _EngineeringInfoButton({
+    super.key,
+    required this.title,
+    required this.text,
+  });
+
+  final String title;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => IconButton(
+    tooltip: 'ข้อมูลเพิ่มเติม / More information',
+    icon: const Icon(Icons.info_outline),
+    onPressed: () => showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SingleChildScrollView(child: Text(text)),
+        actions: [
+          TextButton(
+            key: const Key('v2-info-close'),
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('ปิด / Close'),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
 class _Section extends StatelessWidget {
-  const _Section({required this.title, required this.child});
+  const _Section({required this.title, required this.child, this.thaiTitle});
   final String title;
   final Widget child;
+  final String? thaiTitle;
 
   @override
   Widget build(BuildContext context) => Card(
@@ -1072,7 +1271,12 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          _BilingualHeading(
+            english: title,
+            thai: thaiTitle,
+            englishStyle: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
           child,
         ],
       ),

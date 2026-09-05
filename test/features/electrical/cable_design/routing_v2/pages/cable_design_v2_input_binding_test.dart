@@ -18,7 +18,12 @@ void main() {
     Key key,
     String label,
   ) async {
-    await tester.ensureVisible(find.byKey(key).first);
+    await tester.scrollUntilVisible(
+      find.byKey(key).first,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(key).first);
     await tester.pumpAndSettle();
@@ -149,10 +154,10 @@ void main() {
       await enterCompleteAmpacityInputs(tester, product: 'VAF');
       await tester.tap(find.text('Verify voltage drop'));
       await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, 300));
-    await tester.pumpAndSettle();
-    await tester.drag(find.byType(ListView), const Offset(0, -100));
-    await tester.pumpAndSettle();
+      await tester.drag(find.byType(ListView), const Offset(0, 300));
+      await tester.pumpAndSettle();
+      await tester.drag(find.byType(ListView), const Offset(0, -100));
+      await tester.pumpAndSettle();
       await selectDropdown(tester, const Key('v2-vd-phase'), 'singlePhase');
       await selectDropdown(tester, const Key('v2-vd-insulation'), 'pvc');
       await selectDropdown(tester, const Key('v2-vd-core-type'), 'Multi Core');
