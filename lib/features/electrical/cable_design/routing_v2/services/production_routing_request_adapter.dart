@@ -79,7 +79,7 @@ class ProductionRoutingRequestAdapter {
         loadedConductors: productionRequest.loadedConductors,
         cableProperties: RoutingCablePropertiesInput(
           cableShape: supplemental?.cableShape,
-          coreType: supplemental?.coreType,
+          coreType: supplemental?.coreType ?? productionRequest.coreType,
           insulation: supplemental?.insulation,
           conductorTemperatureClass: supplemental?.conductorTemperatureClass,
           hasOuterSheath: supplemental?.hasOuterSheath,

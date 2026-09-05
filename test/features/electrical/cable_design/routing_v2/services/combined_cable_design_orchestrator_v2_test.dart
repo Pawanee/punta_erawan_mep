@@ -29,25 +29,22 @@ void main() {
     CableRoutingIdentity identity = CableRoutingIdentity.vaf,
     SupplementalCablePropertiesInput? supplemental,
     double ambientTemperature = 40,
-  }) =>
-      CableDesignRequestV2(
-        loadCurrent: load,
-        phaseSystem: PhaseSystem.singlePhase,
-        loadedConductors: 2,
-        coreType: CoreType.multiCore,
-        routingMode: CableDesignRoutingMode.routingV2,
-        identity: identity,
-        engineeringInstallation: context
-            ? const EngineeringInstallationInput(
-                environments: {
-                  InstallationEnvironment.surfaceMountedWallOrCeiling,
-                },
-                supports: {InstallationSupport.surfaceMount},
-              )
-            : null,
-        ambientTemperature: ambientTemperature,
-        supplementalCableProperties: supplemental,
-      );
+  }) => CableDesignRequestV2(
+    loadCurrent: load,
+    phaseSystem: PhaseSystem.singlePhase,
+    loadedConductors: 2,
+    coreType: CoreType.multiCore,
+    routingMode: CableDesignRoutingMode.routingV2,
+    identity: identity,
+    engineeringInstallation: context
+        ? const EngineeringInstallationInput(
+            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+            supports: {InstallationSupport.surfaceMount},
+          )
+        : null,
+    ambientTemperature: ambientTemperature,
+    supplementalCableProperties: supplemental,
+  );
   test('ampacity insufficient maps without VD continuation', () async {
     final r = await service.design(request(context: false));
     expect(r.status, CombinedCableDesignStatusV2.ampacityInsufficient);
@@ -339,34 +336,72 @@ void main() {
     },
   );
 
-  test('IEC 10 C6 ampacity traceability remains independent from VD routing',
-      () async {
-    final r = await service.design(
-      request(
-        identity: CableRoutingIdentity.iec10,
-        supplemental: const SupplementalCablePropertiesInput(
-          cableShape: CableShape.round,
-          insulation: CableInsulation.pvc,
-          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+  test(
+    'IEC 10 C6 ampacity traceability remains independent from VD routing',
+    () async {
+      final r = await service.design(
+        request(
+          identity: CableRoutingIdentity.iec10,
+          supplemental: const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+          ),
         ),
-      ),
-      voltageDropContext: const VoltageDropContinuationContextV2(
-        installationGroup: VoltageDropInstallationGroup.group1,
-        insulation: CableInsulation.pvc,
-        coreType: CoreType.multiCore,
-        phase: VoltagePhase.singlePhase,
-        systemVoltage: 230,
-        lengthM: 10,
-        allowableVoltageDropPercent: 99,
-      ),
-    );
+        voltageDropContext: const VoltageDropContinuationContextV2(
+          installationGroup: VoltageDropInstallationGroup.group1,
+          insulation: CableInsulation.pvc,
+          coreType: CoreType.multiCore,
+          phase: VoltagePhase.singlePhase,
+          systemVoltage: 230,
+          lengthM: 10,
+          allowableVoltageDropPercent: 99,
+        ),
+      );
 
-    expect(r.ampacityResult.status, AmpacityRoutingStatus.resolved);
-    expect(r.ampacityResult.selected!.candidate.sourceTableId, '5-21');
-    expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C6');
-    expect(r.ampacityResult.selected!.temperatureFactor, isNull);
-    expect(r.ampacityResult.selected!.groupingFactor, isNull);
-    expect(r.voltageDropResult.tableId, '9.2');
-    expect(r.voltageDropResult.sourceReferences, contains('9.2'));
-  });
+      expect(r.ampacityResult.status, AmpacityRoutingStatus.resolved);
+      expect(r.ampacityResult.selected!.candidate.sourceTableId, '5-21');
+      expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C6');
+      expect(r.ampacityResult.selected!.temperatureFactor, isNull);
+      expect(r.ampacityResult.selected!.groupingFactor, isNull);
+      expect(r.voltageDropResult.tableId, '9.2');
+      expect(r.voltageDropResult.sourceReferences, contains('9.2'));
+    },
+  );
+
+  test(
+    'NYY C3 ampacity provenance remains independent from explicit VD',
+    () async {
+      final r = await service.design(
+        request().copyWith(
+          identity: CableRoutingIdentity.nyy,
+          coreType: CoreType.singleCore,
+          loadedConductors: 3,
+          loadCurrent: 50,
+          supplementalCableProperties: const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+          ),
+        ),
+        voltageDropContext: const VoltageDropContinuationContextV2(
+          installationGroup: VoltageDropInstallationGroup.group1,
+          insulation: CableInsulation.pvc,
+          coreType: CoreType.singleCore,
+          phase: VoltagePhase.singlePhase,
+          systemVoltage: 230,
+          lengthM: 10,
+          allowableVoltageDropPercent: 99,
+        ),
+      );
+      expect(r.ampacityResult.selected!.candidate.sourceTableId, '5-21');
+      expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C3');
+      expect(r.ampacityResult.selected!.candidate.loadedConductors, 3);
+      expect(r.voltageDropResult.tableId, isNotNull);
+      expect(
+        r.ampacityResult.selected!.candidate.sourceReferences,
+        isNot(contains(r.voltageDropResult.tableId)),
+      );
+    },
+  );
 }

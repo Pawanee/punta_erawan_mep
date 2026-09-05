@@ -231,6 +231,77 @@ void main() {
       CableDesignV2InputMappingStatus.invalid,
     );
   });
+
+  test(
+    'NYY maps only explicit single-core C2/C3 facts without VD inference',
+    () {
+      const supplemental = SupplementalCablePropertiesInput(
+        cableShape: CableShape.round,
+        insulation: CableInsulation.pvc,
+        conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+      );
+      for (final loaded in [2, 3]) {
+        final result = mapper.map(
+          state(
+            identity: CableRoutingIdentity.nyy,
+            coreType: CoreType.singleCore,
+            loadedConductors: loaded,
+            supplemental: supplemental,
+          ),
+        );
+        expect(result.status, CableDesignV2InputMappingStatus.ready);
+        expect(result.ampacityRequest!.loadedConductors, loaded);
+        expect(result.ampacityRequest!.phaseSystem, PhaseSystem.singlePhase);
+        expect(result.voltageDropContext, isNull);
+      }
+    },
+  );
+
+  test(
+    'NYY requires supplemental facts and rejects unsupported loaded count',
+    () {
+      for (final supplemental in <SupplementalCablePropertiesInput>[
+        const SupplementalCablePropertiesInput(
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+        const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+        const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+        ),
+      ]) {
+        expect(
+          mapper
+              .map(
+                state(
+                  identity: CableRoutingIdentity.nyy,
+                  coreType: CoreType.singleCore,
+                  supplemental: supplemental,
+                ),
+              )
+              .status,
+          CableDesignV2InputMappingStatus.insufficient,
+        );
+      }
+      final unsupported = mapper.map(
+        state(
+          identity: CableRoutingIdentity.nyy,
+          coreType: CoreType.singleCore,
+          loadedConductors: 4,
+          supplemental: const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+          ),
+        ),
+      );
+      expect(unsupported.status, CableDesignV2InputMappingStatus.invalid);
+    },
+  );
 }
 
 class VoltageDropContinuationContextValues {

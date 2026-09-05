@@ -347,8 +347,20 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                   updateSupplementalCableProperties: true,
                 ),
               ),
-              if (_inputState.identity == CableRoutingIdentity.iec10)
-                _Iec10SupplementalInputs(
+              RadioListTile<CableRoutingIdentity>(
+                key: const Key('v2-product-nyy'),
+                title: const Text('NYY'),
+                value: CableRoutingIdentity.nyy,
+                groupValue: _inputState.identity,
+                onChanged: (value) => _replaceInputState(
+                  identity: value,
+                  supplementalCableProperties: null,
+                  updateSupplementalCableProperties: true,
+                ),
+              ),
+              if (_inputState.identity == CableRoutingIdentity.iec10 ||
+                  _inputState.identity == CableRoutingIdentity.nyy)
+                _Table521SupplementalInputs(
                   state: _inputState.supplementalCableProperties,
                   onChanged: _replaceIec10Supplemental,
                 ),
@@ -455,8 +467,8 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
 
 enum _ExecutionState { idle, running, completed }
 
-class _Iec10SupplementalInputs extends StatelessWidget {
-  const _Iec10SupplementalInputs({
+class _Table521SupplementalInputs extends StatelessWidget {
+  const _Table521SupplementalInputs({
     required this.state,
     required this.onChanged,
   });

@@ -1,5 +1,6 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/ampacity_table.dart';
+import '../../enums/core_type.dart';
 import '../../models/cable_routing_identity.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/ampacity_selection_status_v2.dart';
@@ -59,6 +60,20 @@ class ActiveAmpacityOrchestratorV2 {
       return _result(
         AmpacityRoutingStatus.unsupported,
         '60227 IEC 10 supports only the approved Table 5-21 C6/C7 loaded-conductor scopes.',
+      );
+    }
+    if (request.identity == CableRoutingIdentity.nyy &&
+        (request.coreType != CoreType.singleCore ||
+            (request.loadedConductors != 2 && request.loadedConductors != 3))) {
+      return _result(
+        AmpacityRoutingStatus.unsupported,
+        'NYY is limited to the approved single-core Table 5-21 C2/C3 scope.',
+      );
+    }
+    if (request.identity == CableRoutingIdentity.iec605021) {
+      return _result(
+        AmpacityRoutingStatus.unsupported,
+        'IEC 60502-1 remains inactive until an approved cable profile is available.',
       );
     }
     final adapted = await _adapter.adapt(request);

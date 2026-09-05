@@ -61,6 +61,30 @@ class CableDesignV2InputMapper {
         return _insufficient(missingSupplemental);
       }
     }
+    if (state.identity == CableRoutingIdentity.nyy) {
+      if (state.loadedConductors != 2 && state.loadedConductors != 3) {
+        return const CableDesignV2InputMappingResult(
+          status: CableDesignV2InputMappingStatus.invalid,
+          reason: 'NYY Group 3 supports only two or three loaded conductors.',
+        );
+      }
+      final supplemental = state.supplementalCableProperties;
+      final missingSupplemental = <String>[];
+      if (supplemental?.cableShape == null) {
+        missingSupplemental.add('supplementalCableProperties.cableShape');
+      }
+      if (supplemental?.insulation == null) {
+        missingSupplemental.add('supplementalCableProperties.insulation');
+      }
+      if (supplemental?.conductorTemperatureClass == null) {
+        missingSupplemental.add(
+          'supplementalCableProperties.conductorTemperatureClass',
+        );
+      }
+      if (missingSupplemental.isNotEmpty) {
+        return _insufficient(missingSupplemental);
+      }
+    }
     final request = CableDesignRequestV2(
       loadCurrent: state.loadCurrent!,
       phaseSystem: state.phaseSystem!,

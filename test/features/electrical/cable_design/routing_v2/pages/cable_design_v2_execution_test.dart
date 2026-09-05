@@ -129,6 +129,7 @@ void main() {
     String loadedConductors = '2',
     bool selectProduct = true,
     bool selectCore = true,
+    String coreType = 'Multi Core',
   }) async {
     await tester.drag(find.byType(ListView), const Offset(0, 1600));
     await tester.pumpAndSettle();
@@ -143,7 +144,7 @@ void main() {
       loadedConductors,
     );
     if (selectCore) {
-      await selectDropdown(tester, const Key('v2-core-type'), 'Multi Core');
+      await selectDropdown(tester, const Key('v2-core-type'), coreType);
     }
     await tester.enterText(
       find.byKey(const Key('v2-ambient-temperature')).first,
@@ -401,6 +402,44 @@ void main() {
     await openReferences(tester);
     expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
     expect(find.text('Source column: C7'), findsOneWidget);
+  });
+
+  testWidgets('NYY executes and presents the explicit C2 route', (
+    tester,
+  ) async {
+    tester.binding.window.physicalSizeTestValue = const Size(800, 1200);
+    tester.binding.window.devicePixelRatioTestValue = 1;
+    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+    addTearDown(tester.binding.window.clearDevicePixelRatioTestValue);
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await enterReadyAmpacityInputs(
+      tester,
+      product: 'NYY',
+      loadCurrent: '50',
+      loadedConductors: '2',
+      coreType: 'Single Core',
+    );
+    await enterIec10SupplementalInputs(tester);
+    await scrollToKey(tester, const Key('v2-check-inputs'));
+    await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(find.text('Cable product / standard: NYY'), findsOneWidget);
+    expect(find.text('Loaded conductors: 2'), findsOneWidget);
+    expect(find.text('Selected cable size: 10 sq.mm'), findsOneWidget);
+    expect(find.text('Base ampacity: 57 A'), findsOneWidget);
+    expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+    await openReferences(tester);
+    expect(find.text('Profile reference: Table 5-48'), findsOneWidget);
+    expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Source column: C2'), findsOneWidget);
   });
 
   testWidgets('VAF 100 A displays the backend-selected two-run design', (

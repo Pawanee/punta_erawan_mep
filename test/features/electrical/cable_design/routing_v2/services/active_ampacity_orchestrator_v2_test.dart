@@ -438,6 +438,186 @@ void main() {
     expect(result.routingResult, isNull);
   });
 
+  const nyySupplemental = SupplementalCablePropertiesInput(
+    cableShape: CableShape.round,
+    insulation: CableInsulation.pvc,
+    conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+  );
+
+  test('NYY C2 selects 1 x 10 sq.mm at 50 A and 40C', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.nyy,
+        coreType: CoreType.singleCore,
+        loadedConductors: 2,
+        loadCurrent: 50,
+        installation: surfaceWall,
+        supplemental: nyySupplemental,
+      ),
+    );
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(result.routingResult!.sourceColumnId, 'C2');
+    expect(result.candidates.length, 19);
+    expect(
+      result.candidates.firstWhere((c) => c.sizeSqmm == 6).baseAmpacity,
+      41,
+    );
+    expect(result.selected!.candidate.sizeSqmm, 10);
+    expect(result.selected!.candidate.baseAmpacity, 57);
+    expect(result.selected!.runs, 1);
+    expect(result.selected!.currentPerRun, 50);
+    expect(result.selected!.correctedAmpacityPerRun, 57);
+    expect(result.selected!.groupingFactor, isNull);
+    expect(
+      result.voltageDropStatus,
+      VoltageDropVerificationStatusV2.notVerified,
+    );
+  });
+
+  test('NYY C3 selects 1 x 10 sq.mm at 50 A and 40C', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.nyy,
+        coreType: CoreType.singleCore,
+        loadedConductors: 3,
+        loadCurrent: 50,
+        installation: surfaceWall,
+        supplemental: nyySupplemental,
+      ),
+    );
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(result.routingResult!.sourceColumnId, 'C3');
+    expect(result.candidates.length, 19);
+    expect(
+      result.candidates.firstWhere((c) => c.sizeSqmm == 6).baseAmpacity,
+      37,
+    );
+    expect(result.selected!.candidate.sizeSqmm, 10);
+    expect(result.selected!.candidate.baseAmpacity, 51);
+    expect(result.selected!.currentPerRun, 50);
+    expect(result.selected!.correctedAmpacityPerRun, 51);
+  });
+
+  test('NYY C2/C3 apply exact Table 5-43 factor at 45C', () async {
+    for (final loaded in [2, 3]) {
+      final result = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.nyy,
+          coreType: CoreType.singleCore,
+          loadedConductors: loaded,
+          loadCurrent: 40,
+          ambientTemperature: 45,
+          installation: surfaceWall,
+          supplemental: nyySupplemental,
+        ),
+      );
+      expect(
+        result.selected!.candidate.sourceColumnId,
+        loaded == 2 ? 'C2' : 'C3',
+      );
+      expect(result.selected!.temperatureFactor, 0.91);
+      expect(
+        result.selected!.correctedAmpacityPerRun,
+        closeTo(result.selected!.candidate.baseAmpacity * 0.91, 0.0001),
+      );
+      expect(result.selected!.groupingFactor, isNull);
+    }
+  });
+
+  test('NYY C3 multi-run remains C3 with three loaded conductors', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.nyy,
+        coreType: CoreType.singleCore,
+        loadedConductors: 3,
+        loadCurrent: 700,
+        installation: surfaceWall,
+        supplemental: nyySupplemental,
+      ),
+    );
+    expect(result.selected!.runs, 2);
+    expect(result.selected!.currentPerRun, 350);
+    expect(result.selected!.candidate.sizeSqmm, 240);
+    expect(result.selected!.candidate.baseAmpacity, 411);
+    expect(result.selected!.candidate.sourceColumnId, 'C3');
+    expect(result.selected!.candidate.loadedConductors, 3);
+    expect(result.selected!.groupingFactor, isNull);
+  });
+
+  test(
+    'NYY fails closed outside single-core C2/C3 and IEC 60502-1 stays inactive',
+    () async {
+      final invalidRequests = [
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.nyy,
+          coreType: CoreType.multiCore,
+          installation: surfaceWall,
+          supplemental: nyySupplemental,
+        ),
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.nyy,
+          coreType: CoreType.singleCore,
+          loadedConductors: 4,
+          installation: surfaceWall,
+          supplemental: nyySupplemental,
+        ),
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          installation: surfaceWall,
+          supplemental: nyySupplemental,
+        ),
+      ];
+      for (final invalid in invalidRequests) {
+        final result = await orchestrator.prepare(invalid);
+        expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+        expect(result.routingResult, isNull);
+      }
+    },
+  );
+
+  test(
+    'NYY C2/C3 reject contradictory intrinsic facts without fallback',
+    () async {
+      for (final supplemental in <SupplementalCablePropertiesInput>[
+        const SupplementalCablePropertiesInput(
+          cableShape: CableShape.flat,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+        const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.xlpe,
+          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        ),
+        const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.pvc,
+          conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+        ),
+      ]) {
+        final result = await orchestrator.prepare(
+          request(
+            routingMode: CableDesignRoutingMode.routingV2,
+            identity: CableRoutingIdentity.nyy,
+            coreType: CoreType.singleCore,
+            installation: surfaceWall,
+            supplemental: supplemental,
+          ),
+        );
+        expectNotPrepared(result, AmpacityRoutingStatus.noMatch);
+        expect(result.routingResult, isNotNull);
+      }
+    },
+  );
+
   test('conflicting VAF round shape fails closed without fallback', () async {
     final result = await orchestrator.prepare(
       request(
@@ -580,26 +760,23 @@ void main() {
     );
   });
 
-  test(
-    'IEC 60502-1 without supplemental intrinsic properties is insufficient',
-    () async {
-      final result = await orchestrator.prepare(
-        request(
-          routingMode: CableDesignRoutingMode.routingV2,
-          identity: CableRoutingIdentity.iec605021,
-          coreType: CoreType.singleCore,
-          installation: const EngineeringInstallationInput(
-            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
-            supports: {InstallationSupport.surfaceMount},
-            hasOuterSheath: true,
-          ),
+  test('IEC 60502-1 remains inactive before profile resolution', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        installation: const EngineeringInstallationInput(
+          environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+          supports: {InstallationSupport.surfaceMount},
+          hasOuterSheath: true,
         ),
-      );
+      ),
+    );
 
-      expectNotPrepared(result, AmpacityRoutingStatus.insufficient);
-      expect(result.routingResult, isNotNull);
-    },
-  );
+    expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+    expect(result.routingResult, isNull);
+  });
 
   test(
     'a resolved non-Table-5-21 route is unsupported without fallback',
