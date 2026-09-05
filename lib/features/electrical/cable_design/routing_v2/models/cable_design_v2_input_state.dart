@@ -8,12 +8,14 @@ import '../../../voltage_drop/enums/voltage_drop_installation_group.dart';
 import '../../../voltage_drop/enums/voltage_phase.dart';
 import '../enums/installation_environment.dart';
 import '../enums/installation_support.dart';
+import '../enums/routing_electrical_system.dart';
 
 /// Explicit UI facts for an inactive, future V2 design workflow.
 class CableDesignV2InputState {
   const CableDesignV2InputState({
     this.loadCurrent,
     this.phaseSystem,
+    this.routingElectricalSystem,
     this.loadedConductors,
     this.coreType,
     this.ambientTemperature,
@@ -36,6 +38,7 @@ class CableDesignV2InputState {
   });
   final double? loadCurrent;
   final PhaseSystem? phaseSystem;
+  final RoutingElectricalSystem? routingElectricalSystem;
   final int? loadedConductors;
   final CoreType? coreType;
   final double? ambientTemperature;

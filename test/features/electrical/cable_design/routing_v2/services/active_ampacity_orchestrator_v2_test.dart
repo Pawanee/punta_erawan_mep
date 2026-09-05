@@ -13,6 +13,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/in
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/resolved_correction_state_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/routing_electrical_system.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_candidate_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_correction_context_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
@@ -35,11 +36,13 @@ void main() {
     double loadCurrent = 10,
     double ambientTemperature = 40,
     PhaseSystem phaseSystem = PhaseSystem.singlePhase,
+    RoutingElectricalSystem? routingElectricalSystem,
     EngineeringInstallationInput? installation,
     SupplementalCablePropertiesInput? supplemental,
   }) => CableDesignRequestV2(
     loadCurrent: loadCurrent,
     phaseSystem: phaseSystem,
+    routingElectricalSystem: routingElectricalSystem,
     loadedConductors: loadedConductors,
     coreType: coreType,
     routingMode: routingMode,
@@ -52,6 +55,18 @@ void main() {
   const surfaceWall = EngineeringInstallationInput(
     environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
     supports: {InstallationSupport.surfaceMount},
+  );
+
+  const sheathedSurfaceWall = EngineeringInstallationInput(
+    environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+    supports: {InstallationSupport.surfaceMount},
+    hasOuterSheath: true,
+  );
+
+  const iec60502Xlpe = SupplementalCablePropertiesInput(
+    cableShape: CableShape.round,
+    insulation: CableInsulation.xlpe,
+    conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
   );
 
   void expectNotPrepared(
@@ -548,40 +563,30 @@ void main() {
     expect(result.selected!.groupingFactor, isNull);
   });
 
-  test(
-    'NYY fails closed outside single-core C2/C3 and IEC 60502-1 stays inactive',
-    () async {
-      final invalidRequests = [
-        request(
-          routingMode: CableDesignRoutingMode.routingV2,
-          identity: CableRoutingIdentity.nyy,
-          coreType: CoreType.multiCore,
-          installation: surfaceWall,
-          supplemental: nyySupplemental,
-        ),
-        request(
-          routingMode: CableDesignRoutingMode.routingV2,
-          identity: CableRoutingIdentity.nyy,
-          coreType: CoreType.singleCore,
-          loadedConductors: 4,
-          installation: surfaceWall,
-          supplemental: nyySupplemental,
-        ),
-        request(
-          routingMode: CableDesignRoutingMode.routingV2,
-          identity: CableRoutingIdentity.iec605021,
-          coreType: CoreType.singleCore,
-          installation: surfaceWall,
-          supplemental: nyySupplemental,
-        ),
-      ];
-      for (final invalid in invalidRequests) {
-        final result = await orchestrator.prepare(invalid);
-        expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
-        expect(result.routingResult, isNull);
-      }
-    },
-  );
+  test('NYY fails closed outside single-core C2/C3', () async {
+    final invalidRequests = [
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.nyy,
+        coreType: CoreType.multiCore,
+        installation: surfaceWall,
+        supplemental: nyySupplemental,
+      ),
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.nyy,
+        coreType: CoreType.singleCore,
+        loadedConductors: 4,
+        installation: surfaceWall,
+        supplemental: nyySupplemental,
+      ),
+    ];
+    for (final invalid in invalidRequests) {
+      final result = await orchestrator.prepare(invalid);
+      expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+      expect(result.routingResult, isNull);
+    }
+  });
 
   test(
     'NYY C2/C3 reject contradictory intrinsic facts without fallback',
@@ -615,6 +620,193 @@ void main() {
         expectNotPrepared(result, AmpacityRoutingStatus.noMatch);
         expect(result.routingResult, isNotNull);
       }
+    },
+  );
+
+  test('IEC 60502-1 C4 selects 1 x 6 sq.mm at 50 A for AC and DC', () async {
+    for (final system in [
+      RoutingElectricalSystem.singlePhaseAc,
+      RoutingElectricalSystem.dc,
+    ]) {
+      final result = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          loadedConductors: 2,
+          loadCurrent: 50,
+          routingElectricalSystem: system,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+      );
+      expect(result.status, AmpacityRoutingStatus.resolved);
+      expect(result.routingResult!.sourceColumnId, 'C4');
+      expect(
+        result.candidates.firstWhere((c) => c.sizeSqmm == 4).baseAmpacity,
+        42,
+      );
+      expect(result.selected!.candidate.sizeSqmm, 6);
+      expect(result.selected!.candidate.baseAmpacity, 54);
+      expect(result.selected!.runs, 1);
+      expect(result.selected!.currentPerRun, 50);
+      expect(result.selected!.temperatureFactor, isNull);
+      expect(result.selected!.groupingFactor, isNull);
+    }
+  });
+
+  test('IEC 60502-1 C5 selects 1 x 10 sq.mm at 50 A AC', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        loadedConductors: 3,
+        loadCurrent: 50,
+        routingElectricalSystem: RoutingElectricalSystem.threePhaseAc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expect(result.status, AmpacityRoutingStatus.resolved);
+    expect(result.routingResult!.sourceColumnId, 'C5');
+    expect(
+      result.candidates.firstWhere((c) => c.sizeSqmm == 6).baseAmpacity,
+      49,
+    );
+    expect(result.selected!.candidate.sizeSqmm, 10);
+    expect(result.selected!.candidate.baseAmpacity, 67);
+    expect(result.selected!.currentPerRun, 50);
+  });
+
+  test('IEC 60502-1 C4 applies exact 0.96 factor at 45C', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        loadedConductors: 2,
+        loadCurrent: 50,
+        ambientTemperature: 45,
+        routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expect(result.selected!.candidate.sizeSqmm, 6);
+    expect(result.selected!.temperatureFactor, 0.96);
+    expect(result.selected!.correctedAmpacityPerRun, closeTo(51.84, 0.0001));
+    expect(result.selected!.groupingFactor, isNull);
+  });
+
+  test('IEC 60502-1 C5 selects 2 x 185 sq.mm at 900 A', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        loadedConductors: 3,
+        loadCurrent: 900,
+        routingElectricalSystem: RoutingElectricalSystem.threePhaseAc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expect(result.candidates.last.baseAmpacity, 823);
+    expect(result.selected!.runs, 2);
+    expect(result.selected!.currentPerRun, 450);
+    expect(result.selected!.candidate.sizeSqmm, 185);
+    expect(result.selected!.candidate.baseAmpacity, 455);
+    expect(result.selected!.candidate.loadedConductors, 3);
+    expect(result.selected!.candidate.sourceColumnId, 'C5');
+    expect(result.selected!.groupingFactor, isNull);
+  });
+
+  test('IEC 60502-1 C5 rejects DC without retrying C4', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        loadedConductors: 3,
+        routingElectricalSystem: RoutingElectricalSystem.dc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expectNotPrepared(result, AmpacityRoutingStatus.noMatch);
+    expect(result.routingResult!.sourceColumnId, isNull);
+    expect(result.routingResult!.ambiguityCandidates, isEmpty);
+  });
+
+  test(
+    'IEC 60502-1 C4/C5 fail closed outside the bounded construction',
+    () async {
+      final invalid = <CableDesignRequestV2>[
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.multiCore,
+          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          loadedConductors: 4,
+          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+        for (final supplemental in [
+          const SupplementalCablePropertiesInput(
+            cableShape: CableShape.flat,
+            insulation: CableInsulation.xlpe,
+            conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+          ),
+          const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+          ),
+          const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.xlpe,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+          ),
+        ])
+          request(
+            routingMode: CableDesignRoutingMode.routingV2,
+            identity: CableRoutingIdentity.iec605021,
+            coreType: CoreType.singleCore,
+            routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+            installation: sheathedSurfaceWall,
+            supplemental: supplemental,
+          ),
+      ];
+      for (final request in invalid) {
+        final result = await orchestrator.prepare(request);
+        expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+        expect(result.routingResult, isNull);
+      }
+
+      final unsheathed = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+          installation: const EngineeringInstallationInput(
+            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+            supports: {InstallationSupport.surfaceMount},
+            hasOuterSheath: false,
+          ),
+          supplemental: iec60502Xlpe,
+        ),
+      );
+      expectNotPrepared(unsheathed, AmpacityRoutingStatus.noMatch);
     },
   );
 
@@ -760,7 +952,7 @@ void main() {
     );
   });
 
-  test('IEC 60502-1 remains inactive before profile resolution', () async {
+  test('IEC 60502-1 identity alone remains insufficient', () async {
     final result = await orchestrator.prepare(
       request(
         routingMode: CableDesignRoutingMode.routingV2,
@@ -774,7 +966,7 @@ void main() {
       ),
     );
 
-    expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+    expectNotPrepared(result, AmpacityRoutingStatus.insufficient);
     expect(result.routingResult, isNull);
   });
 
@@ -786,6 +978,7 @@ void main() {
           routingMode: CableDesignRoutingMode.routingV2,
           identity: CableRoutingIdentity.iec01,
           coreType: CoreType.singleCore,
+          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
           installation: const EngineeringInstallationInput(
             environments: {InstallationEnvironment.thermallyInsulatedCeiling},
             supports: {InstallationSupport.wiringEnclosure},

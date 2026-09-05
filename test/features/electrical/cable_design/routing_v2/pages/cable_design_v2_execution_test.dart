@@ -153,9 +153,11 @@ void main() {
     if (selectProduct) {
       final productFinder = switch (product) {
         '60227 IEC 10' => find.byKey(const Key('v2-product-iec10')),
+        'IEC 60502-1' => find.byKey(const Key('v2-product-iec60502')),
         _ => find.text(product),
       };
-      final productTapTarget = product == '60227 IEC 10'
+      final productTapTarget =
+          product == '60227 IEC 10' || product == 'IEC 60502-1'
           ? find.descendant(of: productFinder, matching: find.text(product))
           : productFinder;
       await tester.ensureVisible(productTapTarget);
@@ -440,6 +442,58 @@ void main() {
     expect(find.text('Installation source: Table 5-47'), findsOneWidget);
     expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
     expect(find.text('Source column: C2'), findsOneWidget);
+  });
+
+  testWidgets('IEC 60502-1 executes the explicit C4 construction', (
+    tester,
+  ) async {
+    tester.binding.window.physicalSizeTestValue = const Size(800, 1200);
+    tester.binding.window.devicePixelRatioTestValue = 1;
+    addTearDown(tester.binding.window.clearPhysicalSizeTestValue);
+    addTearDown(tester.binding.window.clearDevicePixelRatioTestValue);
+    final controller = _ControllerSpy();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CableDesignV2Page(activation: activation, controller: controller),
+      ),
+    );
+    await enterReadyAmpacityInputs(
+      tester,
+      product: 'IEC 60502-1',
+      loadCurrent: '50',
+      loadedConductors: '2',
+      coreType: 'Single Core',
+    );
+    await enterIec10SupplementalInputs(tester);
+    await selectDropdown(tester, const Key('v2-iec10-insulation'), 'xlpe');
+    await selectDropdown(
+      tester,
+      const Key('v2-iec10-conductor-temperature-class'),
+      'XLPE/EPR 90°C',
+    );
+    await selectDropdown(
+      tester,
+      const Key('v2-routing-electrical-system'),
+      'Single-phase AC',
+    );
+    await selectDropdown(tester, const Key('v2-outer-sheath'), 'Present');
+    await scrollToKey(tester, const Key('v2-check-inputs'));
+    await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('v2-calculate')).first);
+    await completeExecution(tester, controller);
+    expect(find.text('Cable product / standard: IEC 60502-1'), findsOneWidget);
+    expect(find.text('Selected cable size: 6 sq.mm'), findsOneWidget);
+    expect(find.text('Base ampacity: 54 A'), findsOneWidget);
+    expect(find.text('Voltage drop: NOT VERIFIED'), findsOneWidget);
+    await openReferences(tester);
+    expect(
+      find.text('Outer sheath: Present (Explicit supplemental input)'),
+      findsOneWidget,
+    );
+    expect(find.text('Installation source: Table 5-47'), findsOneWidget);
+    expect(find.text('Source ampacity table: Table 5-21'), findsOneWidget);
+    expect(find.text('Source column: C4'), findsOneWidget);
   });
 
   testWidgets('VAF 100 A displays the backend-selected two-run design', (

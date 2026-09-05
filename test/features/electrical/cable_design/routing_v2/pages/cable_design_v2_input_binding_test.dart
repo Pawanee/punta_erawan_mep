@@ -81,8 +81,11 @@ void main() {
     tester,
   ) async {
     await pumpPage(tester);
-    await tester.drag(find.byType(ListView), const Offset(0, -2000));
-    await tester.pump();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('v2-check-inputs')),
+      400,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.byKey(const Key('v2-check-inputs')).first);
     await tester.pump();
     expect(find.text('Inputs are incomplete'), findsOneWidget);

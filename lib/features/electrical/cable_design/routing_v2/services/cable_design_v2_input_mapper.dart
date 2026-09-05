@@ -1,8 +1,11 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/core_type.dart';
+import '../../enums/cable_shape.dart';
+import '../../enums/conductor_temperature_class.dart';
 import '../../models/engineering_installation_input.dart';
 import '../../models/cable_routing_identity.dart';
 import '../enums/cable_design_v2_input_mapping_status.dart';
+import '../../../voltage_drop/enums/cable_insulation.dart';
 import '../models/cable_design_request_v2.dart';
 import '../models/cable_design_v2_input_mapping_result.dart';
 import '../models/cable_design_v2_input_state.dart';
@@ -85,9 +88,43 @@ class CableDesignV2InputMapper {
         return _insufficient(missingSupplemental);
       }
     }
+    if (state.identity == CableRoutingIdentity.iec605021) {
+      final supplemental = state.supplementalCableProperties;
+      final missingIec = <String>[];
+      if (state.routingElectricalSystem == null) {
+        missingIec.add('routingElectricalSystem');
+      }
+      if (state.hasOuterSheath == null) {
+        missingIec.add('hasOuterSheath');
+      }
+      if (supplemental?.cableShape == null) {
+        missingIec.add('supplementalCableProperties.cableShape');
+      }
+      if (supplemental?.insulation == null) {
+        missingIec.add('supplementalCableProperties.insulation');
+      }
+      if (supplemental?.conductorTemperatureClass == null) {
+        missingIec.add('supplementalCableProperties.conductorTemperatureClass');
+      }
+      if (missingIec.isNotEmpty) return _insufficient(missingIec);
+      if (state.coreType != CoreType.singleCore ||
+          state.loadedConductors != 2 && state.loadedConductors != 3 ||
+          supplemental!.cableShape != CableShape.round ||
+          supplemental.insulation != CableInsulation.xlpe ||
+          supplemental.conductorTemperatureClass !=
+              ConductorTemperatureClass.xlpeEpr90 ||
+          state.hasOuterSheath != true) {
+        return const CableDesignV2InputMappingResult(
+          status: CableDesignV2InputMappingStatus.invalid,
+          reason:
+              'IEC 60502-1 is limited to the approved single-core XLPE C4/C5 construction.',
+        );
+      }
+    }
     final request = CableDesignRequestV2(
       loadCurrent: state.loadCurrent!,
       phaseSystem: state.phaseSystem!,
+      routingElectricalSystem: state.routingElectricalSystem,
       loadedConductors: state.loadedConductors!,
       coreType: state.identity == CableRoutingIdentity.iec10
           ? CoreType.multiCore

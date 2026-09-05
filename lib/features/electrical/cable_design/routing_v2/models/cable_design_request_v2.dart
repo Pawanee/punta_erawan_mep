@@ -4,6 +4,7 @@ import '../../enums/phase_system.dart';
 import '../../models/cable_routing_identity.dart';
 import '../../models/engineering_installation_input.dart';
 import '../../models/supplemental_cable_properties_input.dart';
+import '../enums/routing_electrical_system.dart';
 
 /// Native, source-faithful ampacity request for Routing v2 execution.
 ///
@@ -14,6 +15,7 @@ class CableDesignRequestV2 {
   const CableDesignRequestV2({
     required this.loadCurrent,
     required this.phaseSystem,
+    this.routingElectricalSystem,
     required this.loadedConductors,
     required this.coreType,
     required this.ambientTemperature,
@@ -25,6 +27,7 @@ class CableDesignRequestV2 {
 
   final double loadCurrent;
   final PhaseSystem phaseSystem;
+  final RoutingElectricalSystem? routingElectricalSystem;
   final int loadedConductors;
   final CoreType coreType;
   final double ambientTemperature;
@@ -36,6 +39,7 @@ class CableDesignRequestV2 {
   CableDesignRequestV2 copyWith({
     double? loadCurrent,
     PhaseSystem? phaseSystem,
+    RoutingElectricalSystem? routingElectricalSystem,
     int? loadedConductors,
     CoreType? coreType,
     double? ambientTemperature,
@@ -46,6 +50,8 @@ class CableDesignRequestV2 {
   }) => CableDesignRequestV2(
     loadCurrent: loadCurrent ?? this.loadCurrent,
     phaseSystem: phaseSystem ?? this.phaseSystem,
+    routingElectricalSystem:
+        routingElectricalSystem ?? this.routingElectricalSystem,
     loadedConductors: loadedConductors ?? this.loadedConductors,
     coreType: coreType ?? this.coreType,
     ambientTemperature: ambientTemperature ?? this.ambientTemperature,

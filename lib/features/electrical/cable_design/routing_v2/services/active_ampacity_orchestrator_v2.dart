@@ -1,6 +1,8 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/ampacity_table.dart';
 import '../../enums/core_type.dart';
+import '../../enums/cable_shape.dart';
+import '../../enums/conductor_temperature_class.dart';
 import '../../models/cable_routing_identity.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/ampacity_selection_status_v2.dart';
@@ -18,6 +20,7 @@ import '../services/correction_application_resolver_v2.dart';
 import '../services/correction_resolver_v2.dart';
 import '../services/production_routing_request_adapter.dart';
 import '../../repositories/table_5_21_repository.dart';
+import '../../../voltage_drop/enums/cable_insulation.dart';
 
 /// Parallel, fail-closed V2 ampacity boundary. Not used by the active engine.
 class ActiveAmpacityOrchestratorV2 {
@@ -71,10 +74,34 @@ class ActiveAmpacityOrchestratorV2 {
       );
     }
     if (request.identity == CableRoutingIdentity.iec605021) {
-      return _result(
-        AmpacityRoutingStatus.unsupported,
-        'IEC 60502-1 remains inactive until an approved cable profile is available.',
-      );
+      if (request.coreType != CoreType.singleCore ||
+          (request.loadedConductors != 2 && request.loadedConductors != 3)) {
+        return _result(
+          AmpacityRoutingStatus.unsupported,
+          'IEC 60502-1 is limited to the approved single-core Table 5-21 C4/C5 scope.',
+        );
+      }
+      if (request.routingElectricalSystem == null) {
+        return _result(
+          AmpacityRoutingStatus.insufficient,
+          'IEC 60502-1 requires an explicit Routing V2 electrical system.',
+        );
+      }
+      final properties = request.supplementalCableProperties;
+      final hasCompleteConstruction =
+          properties?.cableShape != null &&
+          properties?.insulation != null &&
+          properties?.conductorTemperatureClass != null;
+      if (hasCompleteConstruction &&
+          (properties!.cableShape != CableShape.round ||
+              properties.insulation != CableInsulation.xlpe ||
+              properties.conductorTemperatureClass !=
+                  ConductorTemperatureClass.xlpeEpr90)) {
+        return _result(
+          AmpacityRoutingStatus.unsupported,
+          'IEC 60502-1 C4/C5 requires explicit round XLPE 90°C construction facts.',
+        );
+      }
     }
     final adapted = await _adapter.adapt(request);
     if (!adapted.isComplete)

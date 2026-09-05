@@ -19,6 +19,7 @@ import '../enums/installation_environment.dart';
 import '../enums/installation_support.dart';
 import '../enums/resolved_correction_state_v2.dart';
 import '../enums/routing_property_source.dart';
+import '../enums/routing_electrical_system.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
 import '../models/cable_design_v2_input_state.dart';
 import '../models/cable_design_v2_input_mapping_result.dart';
@@ -69,12 +70,14 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
   void _replaceInputState({
     double? loadCurrent,
     PhaseSystem? phaseSystem,
+    RoutingElectricalSystem? routingElectricalSystem,
     int? loadedConductors,
     CoreType? coreType,
     double? ambientTemperature,
     CableRoutingIdentity? identity,
     Set<InstallationEnvironment>? environments,
     Set<InstallationSupport>? supports,
+    bool? hasOuterSheath,
     SupplementalCablePropertiesInput? supplementalCableProperties,
     bool? verifyVoltageDrop,
     VoltagePhase? voltageDropPhase,
@@ -91,11 +94,16 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
     bool updateSystemVoltage = false,
     bool updateAllowableVoltageDropPercent = false,
     bool updateSupplementalCableProperties = false,
+    bool updateRoutingElectricalSystem = false,
+    bool updateHasOuterSheath = false,
   }) {
     setState(() {
       _inputState = CableDesignV2InputState(
         loadCurrent: updateLoadCurrent ? loadCurrent : _inputState.loadCurrent,
         phaseSystem: phaseSystem ?? _inputState.phaseSystem,
+        routingElectricalSystem: updateRoutingElectricalSystem
+            ? routingElectricalSystem
+            : _inputState.routingElectricalSystem,
         loadedConductors: loadedConductors ?? _inputState.loadedConductors,
         coreType: coreType ?? _inputState.coreType,
         ambientTemperature: updateAmbientTemperature
@@ -104,7 +112,9 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
         identity: identity ?? _inputState.identity,
         environments: environments ?? _inputState.environments,
         supports: supports ?? _inputState.supports,
-        hasOuterSheath: _inputState.hasOuterSheath,
+        hasOuterSheath: updateHasOuterSheath
+            ? hasOuterSheath
+            : _inputState.hasOuterSheath,
         spacingAtLeastCableDiameter: _inputState.spacingAtLeastCableDiameter,
         ventilationOpeningPercent: _inputState.ventilationOpeningPercent,
         supplementalCableProperties: updateSupplementalCableProperties
@@ -358,12 +368,68 @@ class _CableDesignV2PageState extends State<CableDesignV2Page> {
                   updateSupplementalCableProperties: true,
                 ),
               ),
+              RadioListTile<CableRoutingIdentity>(
+                key: const Key('v2-product-iec60502'),
+                title: const Text('IEC 60502-1'),
+                value: CableRoutingIdentity.iec605021,
+                groupValue: _inputState.identity,
+                onChanged: (value) => _replaceInputState(
+                  identity: value,
+                  supplementalCableProperties: null,
+                  routingElectricalSystem: null,
+                  hasOuterSheath: null,
+                  updateSupplementalCableProperties: true,
+                  updateRoutingElectricalSystem: true,
+                  updateHasOuterSheath: true,
+                ),
+              ),
               if (_inputState.identity == CableRoutingIdentity.iec10 ||
-                  _inputState.identity == CableRoutingIdentity.nyy)
+                  _inputState.identity == CableRoutingIdentity.nyy ||
+                  _inputState.identity == CableRoutingIdentity.iec605021)
                 _Table521SupplementalInputs(
                   state: _inputState.supplementalCableProperties,
                   onChanged: _replaceIec10Supplemental,
                 ),
+              if (_inputState.identity == CableRoutingIdentity.iec605021) ...[
+                DropdownButtonFormField<RoutingElectricalSystem>(
+                  key: const Key('v2-routing-electrical-system'),
+                  value: _inputState.routingElectricalSystem,
+                  decoration: const InputDecoration(
+                    labelText: 'Routing V2 electrical system',
+                  ),
+                  items: RoutingElectricalSystem.values
+                      .map(
+                        (value) => DropdownMenuItem(
+                          value: value,
+                          child: Text(switch (value) {
+                            RoutingElectricalSystem.singlePhaseAc =>
+                              'Single-phase AC',
+                            RoutingElectricalSystem.threePhaseAc =>
+                              'Three-phase AC',
+                            RoutingElectricalSystem.dc => 'DC',
+                          }),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: (value) => _replaceInputState(
+                    routingElectricalSystem: value,
+                    updateRoutingElectricalSystem: true,
+                  ),
+                ),
+                DropdownButtonFormField<bool>(
+                  key: const Key('v2-outer-sheath'),
+                  value: _inputState.hasOuterSheath,
+                  decoration: const InputDecoration(labelText: 'Outer sheath'),
+                  items: const [
+                    DropdownMenuItem(value: true, child: Text('Present')),
+                    DropdownMenuItem(value: false, child: Text('Not present')),
+                  ],
+                  onChanged: (value) => _replaceInputState(
+                    hasOuterSheath: value,
+                    updateHasOuterSheath: true,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

@@ -12,6 +12,7 @@ import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/in
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ampacity_routing_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/routing_electrical_system.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/voltage_drop_continuation_context_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_arrangement.dart';
@@ -404,4 +405,29 @@ void main() {
       );
     },
   );
+
+  test('IEC 60502-1 C4 runs without inferring a voltage-drop route', () async {
+    final r = await service.design(
+      request().copyWith(
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.singleCore,
+        loadCurrent: 50,
+        routingElectricalSystem: RoutingElectricalSystem.dc,
+        engineeringInstallation: const EngineeringInstallationInput(
+          environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+          supports: {InstallationSupport.surfaceMount},
+          hasOuterSheath: true,
+        ),
+        supplementalCableProperties: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.xlpe,
+          conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+        ),
+      ),
+    );
+    expect(r.status, CombinedCableDesignStatusV2.voltageDropNotVerified);
+    expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C4');
+    expect(r.voltageDropResult.tableId, isNull);
+    expect(r.voltageDropResult.sourceReferences, isEmpty);
+  });
 }

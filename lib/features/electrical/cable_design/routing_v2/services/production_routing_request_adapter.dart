@@ -50,6 +50,12 @@ class ProductionRoutingRequestAdapter {
     }
     final profileType = _profileTypeFor(identity);
     final profile = await _cableProfiles.profileFor(profileType);
+    final electricalSystem =
+        productionRequest.routingElectricalSystem ??
+        _approvedCompatibilitySystem(identity, productionRequest.phaseSystem);
+    if (electricalSystem == null) {
+      missing.add('routingElectricalSystem');
+    }
     final hasOuterSheath =
         installation.hasOuterSheath ?? profile.hasOuterSheath;
     if (hasOuterSheath == null) {
@@ -75,14 +81,15 @@ class ProductionRoutingRequestAdapter {
           spacingAtLeastCableDiameter: installation.spacingAtLeastCableDiameter,
           ventilationOpeningPercent: installation.ventilationOpeningPercent,
         ),
-        electricalSystem: _systemFor(productionRequest.phaseSystem),
+        electricalSystem: electricalSystem!,
         loadedConductors: productionRequest.loadedConductors,
         cableProperties: RoutingCablePropertiesInput(
           cableShape: supplemental?.cableShape,
           coreType: supplemental?.coreType ?? productionRequest.coreType,
           insulation: supplemental?.insulation,
           conductorTemperatureClass: supplemental?.conductorTemperatureClass,
-          hasOuterSheath: supplemental?.hasOuterSheath,
+          hasOuterSheath:
+              supplemental?.hasOuterSheath ?? installation.hasOuterSheath,
         ),
         ambientTemperatureC: productionRequest.ambientTemperature,
       ),
@@ -94,6 +101,17 @@ class ProductionRoutingRequestAdapter {
       CableProfileType.values.singleWhere(
         (profile) => profile.code == cableType.code,
       );
+
+  RoutingElectricalSystem? _approvedCompatibilitySystem(
+    CableRoutingIdentity identity,
+    PhaseSystem phaseSystem,
+  ) => switch (identity) {
+    CableRoutingIdentity.vaf ||
+    CableRoutingIdentity.vafG ||
+    CableRoutingIdentity.iec10 ||
+    CableRoutingIdentity.nyy => _systemFor(phaseSystem),
+    _ => null,
+  };
 
   RoutingElectricalSystem _systemFor(PhaseSystem system) => switch (system) {
     PhaseSystem.singlePhase => RoutingElectricalSystem.singlePhaseAc,

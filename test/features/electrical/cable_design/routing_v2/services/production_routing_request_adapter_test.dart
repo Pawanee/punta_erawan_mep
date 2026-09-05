@@ -9,6 +9,7 @@ import 'package:mep_project/features/electrical/cable_design/models/supplemental
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ampacity_routing_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_environment.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
+import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/routing_electrical_system.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/cable_design_request_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/ampacity_routing_context_builder.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/production_routing_request_adapter.dart';
@@ -25,9 +26,11 @@ void main() {
     CoreType coreType = CoreType.multiCore,
     EngineeringInstallationInput? installation,
     SupplementalCablePropertiesInput? supplemental,
+    RoutingElectricalSystem? routingElectricalSystem,
   }) => CableDesignRequestV2(
     loadCurrent: 10,
     phaseSystem: PhaseSystem.singlePhase,
+    routingElectricalSystem: routingElectricalSystem,
     loadedConductors: 2,
     coreType: coreType,
     ambientTemperature: 40,
@@ -92,11 +95,44 @@ void main() {
     expect(burial.isComplete, isTrue);
   });
 
+  test(
+    'approved compatibility bridge is limited to VAF VAF-G IEC 10 and NYY',
+    () async {
+      for (final identity in [
+        CableRoutingIdentity.vaf,
+        CableRoutingIdentity.vafG,
+        CableRoutingIdentity.iec10,
+        CableRoutingIdentity.nyy,
+      ]) {
+        final adapted = await adapter.adapt(
+          request(identity: identity, installation: surfaceWall()),
+        );
+        expect(adapted.isComplete, isTrue, reason: identity.code);
+        expect(
+          adapted.request!.electricalSystem,
+          RoutingElectricalSystem.singlePhaseAc,
+        );
+      }
+
+      final nonAllowlisted = await adapter.adapt(
+        request(
+          identity: CableRoutingIdentity.iec01,
+          coreType: CoreType.singleCore,
+          installation: surfaceWall(hasOuterSheath: false),
+        ),
+      );
+      expect(nonAllowlisted.status, AmpacityRoutingStatus.insufficient);
+      expect(nonAllowlisted.request, isNull);
+      expect(nonAllowlisted.missingFields, contains('routingElectricalSystem'));
+    },
+  );
+
   test('IEC 60502-1 supplemental intrinsic facts remain explicit', () async {
     final adapted = await adapter.adapt(
       request(
         identity: CableRoutingIdentity.iec605021,
         coreType: CoreType.singleCore,
+        routingElectricalSystem: RoutingElectricalSystem.dc,
         installation: surfaceWall(hasOuterSheath: true),
         supplemental: const SupplementalCablePropertiesInput(
           cableShape: CableShape.round,
@@ -108,6 +144,9 @@ void main() {
     );
 
     expect(adapted.isComplete, isTrue);
+    expect(adapted.request!.electricalSystem, RoutingElectricalSystem.dc);
+    expect(adapted.request!.installationConditions.hasOuterSheath, isTrue);
+    expect(adapted.request!.cableProperties.hasOuterSheath, isTrue);
     expect(adapted.request!.cableProperties.insulation, CableInsulation.xlpe);
     expect(
       adapted.request!.cableProperties.conductorTemperatureClass,
@@ -120,6 +159,7 @@ void main() {
       request(
         identity: CableRoutingIdentity.iec605021,
         coreType: CoreType.singleCore,
+        routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
         installation: surfaceWall(hasOuterSheath: true),
       ),
     );
@@ -127,6 +167,45 @@ void main() {
 
     expect(adapted.isComplete, isTrue);
     expect(route.status, AmpacityRoutingStatus.insufficient);
+  });
+
+  test(
+    'IEC 60502-1 requires an explicit system at the adapter boundary',
+    () async {
+      final adapted = await adapter.adapt(
+        request(
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          installation: surfaceWall(hasOuterSheath: true),
+          supplemental: const SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            insulation: CableInsulation.xlpe,
+            conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+          ),
+        ),
+      );
+      expect(adapted.status, AmpacityRoutingStatus.insufficient);
+      expect(adapted.request, isNull);
+      expect(adapted.missingFields, contains('routingElectricalSystem'));
+    },
+  );
+
+  test('explicit IEC 60502-1 AC and DC systems take precedence', () async {
+    for (final system in [
+      RoutingElectricalSystem.threePhaseAc,
+      RoutingElectricalSystem.dc,
+    ]) {
+      final adapted = await adapter.adapt(
+        request(
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.singleCore,
+          routingElectricalSystem: system,
+          installation: surfaceWall(hasOuterSheath: true),
+        ),
+      );
+      expect(adapted.isComplete, isTrue);
+      expect(adapted.request!.electricalSystem, system);
+    }
   });
 
   test(
