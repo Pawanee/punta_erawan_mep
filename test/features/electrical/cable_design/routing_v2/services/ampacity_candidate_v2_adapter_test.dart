@@ -2,7 +2,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/cable_type.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/conductor_temperature_class.dart';
 import 'package:mep_project/features/electrical/cable_design/enums/core_type.dart';
-import 'package:mep_project/features/electrical/cable_design/enums/installation_method.dart';
 import 'package:mep_project/features/electrical/cable_design/models/cable_routing_identity.dart';
 import 'package:mep_project/features/electrical/cable_design/repositories/table_5_20_repository.dart';
 import 'package:mep_project/features/electrical/cable_design/repositories/table_5_21_repository.dart';
@@ -108,4 +107,48 @@ void main() {
       );
     }
   });
+
+  test(
+    'C8/C9 omit null cells and preserve all 17 source-ordered candidates',
+    () async {
+      final data = await Table521Repository().loadTable();
+      for (final columnId in ['C8', 'C9']) {
+        final candidates = adapter.fromTable521(
+          data: data,
+          sourceColumnId: columnId,
+        );
+        expect(candidates, hasLength(17));
+        expect(
+          candidates.map((candidate) => candidate.sizeSqmm),
+          orderedEquals([
+            1,
+            1.5,
+            2.5,
+            4,
+            6,
+            10,
+            16,
+            25,
+            35,
+            50,
+            70,
+            95,
+            120,
+            150,
+            185,
+            240,
+            300,
+          ]),
+        );
+        expect(
+          candidates.any((candidate) => candidate.sizeSqmm == 400),
+          isFalse,
+        );
+        expect(
+          candidates.any((candidate) => candidate.sizeSqmm == 500),
+          isFalse,
+        );
+      }
+    },
+  );
 }

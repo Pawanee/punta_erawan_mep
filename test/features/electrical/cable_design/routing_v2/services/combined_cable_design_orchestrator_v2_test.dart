@@ -430,4 +430,30 @@ void main() {
     expect(r.voltageDropResult.tableId, isNull);
     expect(r.voltageDropResult.sourceReferences, isEmpty);
   });
+
+  test('IEC 60502-1 C8 runs without inferring a voltage-drop route', () async {
+    final r = await service.design(
+      request().copyWith(
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.multiCore,
+        loadCurrent: 50,
+        routingElectricalSystem: RoutingElectricalSystem.dc,
+        engineeringInstallation: const EngineeringInstallationInput(
+          environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+          supports: {InstallationSupport.surfaceMount},
+          hasOuterSheath: true,
+        ),
+        supplementalCableProperties: const SupplementalCablePropertiesInput(
+          cableShape: CableShape.round,
+          insulation: CableInsulation.xlpe,
+          conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+        ),
+      ),
+    );
+    expect(r.status, CombinedCableDesignStatusV2.voltageDropNotVerified);
+    expect(r.ampacityResult.selected!.candidate.sourceColumnId, 'C8');
+    expect(r.ampacityResult.selected!.candidate.coreType, CoreType.multiCore);
+    expect(r.voltageDropResult.tableId, isNull);
+    expect(r.voltageDropResult.sourceReferences, isEmpty);
+  });
 }

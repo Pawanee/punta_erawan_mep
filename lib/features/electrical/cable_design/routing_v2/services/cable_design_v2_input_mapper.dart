@@ -107,7 +107,8 @@ class CableDesignV2InputMapper {
         missingIec.add('supplementalCableProperties.conductorTemperatureClass');
       }
       if (missingIec.isNotEmpty) return _insufficient(missingIec);
-      if (state.coreType != CoreType.singleCore ||
+      if ((state.coreType != CoreType.singleCore &&
+              state.coreType != CoreType.multiCore) ||
           state.loadedConductors != 2 && state.loadedConductors != 3 ||
           supplemental!.cableShape != CableShape.round ||
           supplemental.insulation != CableInsulation.xlpe ||
@@ -117,7 +118,7 @@ class CableDesignV2InputMapper {
         return const CableDesignV2InputMappingResult(
           status: CableDesignV2InputMappingStatus.invalid,
           reason:
-              'IEC 60502-1 is limited to the approved single-core XLPE C4/C5 construction.',
+              'IEC 60502-1 is limited to the approved XLPE C4/C5/C8/C9 construction.',
         );
       }
     }

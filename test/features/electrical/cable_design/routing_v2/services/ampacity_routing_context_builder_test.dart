@@ -297,6 +297,40 @@ void main() {
         iecSupplemented.context!.propertySources['insulation'],
         RoutingPropertySource.supplementalInput,
       );
+      for (final values in [
+        (2, RoutingElectricalSystem.singlePhaseAc, 'C8'),
+        (2, RoutingElectricalSystem.dc, 'C8'),
+        (3, RoutingElectricalSystem.threePhaseAc, 'C9'),
+      ]) {
+        final routed = await builder.build(
+          request(
+            cableType: CableProfileType.iec605021,
+            system: values.$2,
+            loaded: values.$1,
+            installationCore: CoreType.multiCore,
+            core: CoreType.multiCore,
+            shape: CableShape.round,
+            insulation: CableInsulation.xlpe,
+            temperature: ConductorTemperatureClass.xlpeEpr90,
+          ),
+        );
+        expect(routed.status, AmpacityRoutingStatus.resolved);
+        expect(routed.sourceColumnId, values.$3);
+      }
+      final c9Dc = await builder.build(
+        request(
+          cableType: CableProfileType.iec605021,
+          system: RoutingElectricalSystem.dc,
+          loaded: 3,
+          installationCore: CoreType.multiCore,
+          core: CoreType.multiCore,
+          shape: CableShape.round,
+          insulation: CableInsulation.xlpe,
+          temperature: ConductorTemperatureClass.xlpeEpr90,
+        ),
+      );
+      expect(c9Dc.status, AmpacityRoutingStatus.noMatch);
+      expect(c9Dc.sourceColumnId, isNull);
     },
   );
 }

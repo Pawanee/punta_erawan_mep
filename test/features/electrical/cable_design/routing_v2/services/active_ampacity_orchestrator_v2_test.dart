@@ -679,6 +679,153 @@ void main() {
     expect(result.selected!.currentPerRun, 50);
   });
 
+  test('IEC 60502-1 C8 selects 1 x 6 sq.mm at 50 A for AC and DC', () async {
+    for (final system in [
+      RoutingElectricalSystem.singlePhaseAc,
+      RoutingElectricalSystem.dc,
+    ]) {
+      final result = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.multiCore,
+          loadedConductors: 2,
+          loadCurrent: 50,
+          routingElectricalSystem: system,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+      );
+      expect(result.status, AmpacityRoutingStatus.resolved);
+      expect(result.routingResult!.sourceColumnId, 'C8');
+      expect(result.candidates, hasLength(17));
+      expect(result.candidates.last.sizeSqmm, 300);
+      expect(
+        result.candidates.firstWhere((c) => c.sizeSqmm == 4).baseAmpacity,
+        41,
+      );
+      expect(result.selected!.candidate.sizeSqmm, 6);
+      expect(result.selected!.candidate.baseAmpacity, 53);
+      expect(result.selected!.runs, 1);
+      expect(result.selected!.temperatureFactor, isNull);
+      expect(result.selected!.groupingFactor, isNull);
+      expect(
+        result.voltageDropStatus,
+        VoltageDropVerificationStatusV2.notVerified,
+      );
+    }
+  });
+
+  test(
+    'IEC 60502-1 C9 selects 1 x 10 sq.mm at 50 A AC and rejects DC',
+    () async {
+      final ac = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.multiCore,
+          loadedConductors: 3,
+          loadCurrent: 50,
+          routingElectricalSystem: RoutingElectricalSystem.threePhaseAc,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+      );
+      expect(ac.status, AmpacityRoutingStatus.resolved);
+      expect(ac.routingResult!.sourceColumnId, 'C9');
+      expect(ac.candidates, hasLength(17));
+      expect(ac.candidates.last.sizeSqmm, 300);
+      expect(ac.candidates.firstWhere((c) => c.sizeSqmm == 6).baseAmpacity, 47);
+      expect(ac.selected!.candidate.sizeSqmm, 10);
+      expect(ac.selected!.candidate.baseAmpacity, 65);
+
+      final dc = await orchestrator.prepare(
+        request(
+          routingMode: CableDesignRoutingMode.routingV2,
+          identity: CableRoutingIdentity.iec605021,
+          coreType: CoreType.multiCore,
+          loadedConductors: 3,
+          routingElectricalSystem: RoutingElectricalSystem.dc,
+          installation: sheathedSurfaceWall,
+          supplemental: iec60502Xlpe,
+        ),
+      );
+      expectNotPrepared(dc, AmpacityRoutingStatus.noMatch);
+      expect(dc.routingResult!.sourceColumnId, isNull);
+    },
+  );
+
+  test('IEC 60502-1 C8 applies exact 0.96 factor at 45C', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.multiCore,
+        loadedConductors: 2,
+        loadCurrent: 50,
+        ambientTemperature: 45,
+        routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expect(result.selected!.candidate.sizeSqmm, 6);
+    expect(result.selected!.temperatureFactor, 0.96);
+    expect(result.selected!.correctedAmpacityPerRun, closeTo(50.88, 0.0001));
+    expect(result.selected!.groupingFactor, isNull);
+  });
+
+  test('IEC 60502-1 C9 selects 2 x 240 sq.mm at 900 A', () async {
+    final result = await orchestrator.prepare(
+      request(
+        routingMode: CableDesignRoutingMode.routingV2,
+        identity: CableRoutingIdentity.iec605021,
+        coreType: CoreType.multiCore,
+        loadedConductors: 3,
+        loadCurrent: 900,
+        routingElectricalSystem: RoutingElectricalSystem.threePhaseAc,
+        installation: sheathedSurfaceWall,
+        supplemental: iec60502Xlpe,
+      ),
+    );
+    expect(result.candidates.last.baseAmpacity, 524);
+    expect(result.selected!.runs, 2);
+    expect(result.selected!.currentPerRun, 450);
+    expect(result.selected!.candidate.sizeSqmm, 240);
+    expect(result.selected!.candidate.baseAmpacity, 455);
+    expect(result.selected!.candidate.loadedConductors, 3);
+    expect(result.selected!.candidate.sourceColumnId, 'C9');
+    expect(result.selected!.groupingFactor, isNull);
+  });
+
+  test(
+    'IEC 60502-1 C8/C9 fail closed above the supported run search',
+    () async {
+      for (final values in [(2, 13000.0), (3, 11000.0)]) {
+        final result = await orchestrator.prepare(
+          request(
+            routingMode: CableDesignRoutingMode.routingV2,
+            identity: CableRoutingIdentity.iec605021,
+            coreType: CoreType.multiCore,
+            loadedConductors: values.$1,
+            loadCurrent: values.$2,
+            routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+            installation: sheathedSurfaceWall,
+            supplemental: iec60502Xlpe,
+          ),
+        );
+        expect(result.status, AmpacityRoutingStatus.noCandidate);
+        expect(result.selected, isNull);
+        expect(
+          result.routingResult!.sourceColumnId,
+          values.$1 == 2 ? 'C8' : 'C9',
+        );
+        expect(result.candidates, hasLength(17));
+        expect(result.candidates.last.sizeSqmm, 300);
+      }
+    },
+  );
+
   test('IEC 60502-1 C4 applies exact 0.96 factor at 45C', () async {
     final result = await orchestrator.prepare(
       request(
@@ -743,14 +890,6 @@ void main() {
     'IEC 60502-1 C4/C5 fail closed outside the bounded construction',
     () async {
       final invalid = <CableDesignRequestV2>[
-        request(
-          routingMode: CableDesignRoutingMode.routingV2,
-          identity: CableRoutingIdentity.iec605021,
-          coreType: CoreType.multiCore,
-          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
-          installation: sheathedSurfaceWall,
-          supplemental: iec60502Xlpe,
-        ),
         request(
           routingMode: CableDesignRoutingMode.routingV2,
           identity: CableRoutingIdentity.iec605021,

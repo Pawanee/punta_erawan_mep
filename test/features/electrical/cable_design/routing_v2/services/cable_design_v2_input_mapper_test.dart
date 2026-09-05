@@ -308,35 +308,41 @@ void main() {
     },
   );
 
-  test('IEC 60502-1 maps explicit C4/C5 construction without VD inference', () {
-    const supplemental = SupplementalCablePropertiesInput(
-      cableShape: CableShape.round,
-      insulation: CableInsulation.xlpe,
-      conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
-    );
-    for (final loaded in [2, 3]) {
-      final result = mapper.map(
-        state(
-          identity: CableRoutingIdentity.iec605021,
-          coreType: CoreType.singleCore,
-          loadedConductors: loaded,
-          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
-          hasOuterSheath: true,
-          supplemental: supplemental,
-        ),
+  test(
+    'IEC 60502-1 maps explicit C4/C5/C8/C9 construction without VD inference',
+    () {
+      const supplemental = SupplementalCablePropertiesInput(
+        cableShape: CableShape.round,
+        insulation: CableInsulation.xlpe,
+        conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
       );
-      expect(result.status, CableDesignV2InputMappingStatus.ready);
-      expect(
-        result.ampacityRequest!.routingElectricalSystem,
-        RoutingElectricalSystem.singlePhaseAc,
-      );
-      expect(
-        result.ampacityRequest!.engineeringInstallation!.hasOuterSheath,
-        true,
-      );
-      expect(result.voltageDropContext, isNull);
-    }
-  });
+      for (final coreType in CoreType.values) {
+        for (final loaded in [2, 3]) {
+          final result = mapper.map(
+            state(
+              identity: CableRoutingIdentity.iec605021,
+              coreType: coreType,
+              loadedConductors: loaded,
+              routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+              hasOuterSheath: true,
+              supplemental: supplemental,
+            ),
+          );
+          expect(result.status, CableDesignV2InputMappingStatus.ready);
+          expect(result.ampacityRequest!.coreType, coreType);
+          expect(
+            result.ampacityRequest!.routingElectricalSystem,
+            RoutingElectricalSystem.singlePhaseAc,
+          );
+          expect(
+            result.ampacityRequest!.engineeringInstallation!.hasOuterSheath,
+            true,
+          );
+          expect(result.voltageDropContext, isNull);
+        }
+      }
+    },
+  );
 
   test('IEC 60502-1 requires every explicit construction fact', () {
     const complete = SupplementalCablePropertiesInput(
@@ -376,20 +382,13 @@ void main() {
     }
   });
 
-  test('IEC 60502-1 rejects C8/C9, PVC, and unsheathed variants', () {
+  test('IEC 60502-1 rejects PVC and unsheathed variants', () {
     const complete = SupplementalCablePropertiesInput(
       cableShape: CableShape.round,
       insulation: CableInsulation.xlpe,
       conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
     );
     for (final input in [
-      state(
-        identity: CableRoutingIdentity.iec605021,
-        coreType: CoreType.multiCore,
-        routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
-        hasOuterSheath: true,
-        supplemental: complete,
-      ),
       state(
         identity: CableRoutingIdentity.iec605021,
         coreType: CoreType.singleCore,

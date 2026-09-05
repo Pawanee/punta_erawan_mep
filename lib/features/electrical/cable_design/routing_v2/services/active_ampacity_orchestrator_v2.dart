@@ -74,11 +74,12 @@ class ActiveAmpacityOrchestratorV2 {
       );
     }
     if (request.identity == CableRoutingIdentity.iec605021) {
-      if (request.coreType != CoreType.singleCore ||
+      if ((request.coreType != CoreType.singleCore &&
+              request.coreType != CoreType.multiCore) ||
           (request.loadedConductors != 2 && request.loadedConductors != 3)) {
         return _result(
           AmpacityRoutingStatus.unsupported,
-          'IEC 60502-1 is limited to the approved single-core Table 5-21 C4/C5 scope.',
+          'IEC 60502-1 is limited to the approved Table 5-21 C4/C5/C8/C9 scope.',
         );
       }
       if (request.routingElectricalSystem == null) {
@@ -99,7 +100,7 @@ class ActiveAmpacityOrchestratorV2 {
                   ConductorTemperatureClass.xlpeEpr90)) {
         return _result(
           AmpacityRoutingStatus.unsupported,
-          'IEC 60502-1 C4/C5 requires explicit round XLPE 90°C construction facts.',
+          'IEC 60502-1 C4/C5/C8/C9 requires explicit round XLPE 90°C construction facts.',
         );
       }
     }
