@@ -43,6 +43,7 @@ class LoadInput {
       LoadInputKind.directVa =>
         apparentPowerVa != null &&
             apparentPowerVa! > 0 &&
+            apparentPowerVa!.isFinite &&
             currentA == null &&
             quantity == null &&
             wattsPerUnit == null &&
@@ -50,6 +51,7 @@ class LoadInput {
       LoadInputKind.directCurrentA =>
         currentA != null &&
             currentA! > 0 &&
+            currentA!.isFinite &&
             apparentPowerVa == null &&
             quantity == null &&
             wattsPerUnit == null &&
@@ -59,9 +61,11 @@ class LoadInput {
             quantity! > 0 &&
             wattsPerUnit != null &&
             wattsPerUnit! > 0 &&
+            wattsPerUnit!.isFinite &&
             powerFactor != null &&
             powerFactor! > 0 &&
             powerFactor! <= 1 &&
+            powerFactor!.isFinite &&
             apparentPowerVa == null &&
             currentA == null,
     };
