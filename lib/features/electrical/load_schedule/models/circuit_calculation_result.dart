@@ -1,8 +1,10 @@
 import '../enums/calculation_status.dart';
 import '../enums/circuit_phase_configuration.dart';
+import '../enums/circuit_breaker_selection_status.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
 import 'calculation_step_result.dart';
+import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
 
 class CircuitCalculationResult {
@@ -58,7 +60,7 @@ class CircuitCalculationResult {
   final CurrentCalculationResult current;
   final CalculationStepResult cable;
   final CalculationStepResult voltageDrop;
-  final PendingEngineeringResult circuitBreaker;
+  final CircuitBreakerSelectionResult circuitBreaker;
   final PendingEngineeringResult ground;
   final PendingEngineeringResult conduit;
 
@@ -66,7 +68,7 @@ class CircuitCalculationResult {
       current.status == CalculationStatus.calculated ||
       cable.status == CalculationStatus.calculated ||
       voltageDrop.status == CalculationStatus.calculated ||
-      circuitBreaker.status == PendingEngineeringStatus.insufficient ||
+      circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
       ground.status == PendingEngineeringStatus.insufficient ||
       conduit.status == PendingEngineeringStatus.insufficient;
 
@@ -110,7 +112,7 @@ class CircuitCalculationResult {
         voltageDrop: CalculationStepResult.fromJson(
           Map<String, Object?>.from(json['voltageDrop'] as Map),
         ),
-        circuitBreaker: PendingEngineeringResult.fromJson(
+        circuitBreaker: CircuitBreakerSelectionResult.fromJson(
           Map<String, Object?>.from(json['circuitBreaker'] as Map),
         ),
         ground: PendingEngineeringResult.fromJson(

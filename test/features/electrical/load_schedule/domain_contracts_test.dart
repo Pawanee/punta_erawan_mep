@@ -119,8 +119,8 @@ void main() {
         : CurrentCalculationResult.notCalculated(),
     cable: unresolved(),
     voltageDrop: unresolved('Circuit length is not supplied.'),
-    circuitBreaker: const PendingEngineeringResult.notCalculated(
-      reason: 'CB rules are not approved in CP1.',
+    circuitBreaker: CircuitBreakerSelectionResult.notCalculated(
+      reason: 'CB selection has not been requested.',
     ),
     ground: const PendingEngineeringResult.notCalculated(
       reason: 'Ground rules are not approved in CP1.',
