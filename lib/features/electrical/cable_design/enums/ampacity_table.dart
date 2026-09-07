@@ -6,7 +6,9 @@ enum AmpacityTable {
   /// PVC 70°C baseline ampacity table.
   table520,
   table521,
+  table523,
 
   /// XLPE/EPR 90°C baseline ampacity table.
   table527,
+  table529,
 }

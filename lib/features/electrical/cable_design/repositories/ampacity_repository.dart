@@ -51,8 +51,10 @@ class AmpacityRepository {
         break;
 
       case AmpacityTable.table521:
+      case AmpacityTable.table523:
+      case AmpacityTable.table529:
         throw UnsupportedError(
-          'Table 5-21 requires table-specific cable shape and system '
+          '${metadata.displayName} requires table-specific installation and system '
           'applicability context; it is not available through '
           'AmpacityRepository.loadTable.',
         );

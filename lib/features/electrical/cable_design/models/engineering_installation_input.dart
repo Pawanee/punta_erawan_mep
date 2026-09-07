@@ -12,6 +12,7 @@ class EngineeringInstallationInput {
     this.hasOuterSheath,
     this.spacingAtLeastCableDiameter,
     this.ventilationOpeningPercent,
+    this.groupedCircuitCount,
   });
 
   final Set<InstallationEnvironment>? environments;
@@ -19,4 +20,11 @@ class EngineeringInstallationInput {
   final bool? hasOuterSheath;
   final bool? spacingAtLeastCableDiameter;
   final double? ventilationOpeningPercent;
+
+  /// Number of circuits installed as one grouping condition.
+  ///
+  /// Null is unknown and must fail closed when the source table has a
+  /// conditional grouping correction. A value of one explicitly means that
+  /// the source's multi-circuit correction is not triggered.
+  final int? groupedCircuitCount;
 }

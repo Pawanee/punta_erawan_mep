@@ -46,4 +46,47 @@ void main() {
       isTrue,
     );
   });
+
+  test('underground tables require explicit circuit count and Table 5-44', () {
+    final baseline = resolver.resolve(
+      sourceTableId: '5-29',
+      ambientTemperatureC: 30,
+      groupedCircuitCount: 1,
+    );
+    expect(baseline.referenceAmbientTemperatureC, 30);
+    expect(
+      baseline.requirements
+          .where(
+            (r) =>
+                r.dimension == CorrectionDimensionV2.ambientTemperature ||
+                r.dimension == CorrectionDimensionV2.grouping,
+          )
+          .every(
+            (r) => r.state == CorrectionRequirementStateV2.notRequiredBySource,
+          ),
+      isTrue,
+    );
+
+    final unknownGrouping = resolver.resolve(
+      sourceTableId: '5-23',
+      ambientTemperatureC: 30,
+    );
+    expect(
+      unknownGrouping.requirements
+          .firstWhere((r) => r.dimension == CorrectionDimensionV2.grouping)
+          .state,
+      CorrectionRequirementStateV2.unresolved,
+    );
+
+    final nonReferenceAmbient = resolver.resolve(
+      sourceTableId: '5-23',
+      ambientTemperatureC: 35,
+      groupedCircuitCount: 1,
+    );
+    final temperature = nonReferenceAmbient.requirements.firstWhere(
+      (r) => r.dimension == CorrectionDimensionV2.ambientTemperature,
+    );
+    expect(temperature.state, CorrectionRequirementStateV2.conditional);
+    expect(temperature.correctionTableId, '5-44');
+  });
 }

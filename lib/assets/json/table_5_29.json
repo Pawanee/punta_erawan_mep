@@ -1,0 +1,33 @@
+{
+  "tableId": "5-29",
+  "displayName": "Table 5-29",
+  "title": "Copper XLPE insulated sheathed cable ampacity - underground",
+  "systemVoltageU0U": "0.6/1 kV",
+  "conductorTemperatureC": 90,
+  "ambientTemperatureC": 30,
+  "installationGroupNumbers": [5, 6],
+  "installationCondition": "Underground conduit or direct buried",
+  "cableCodeScope": ["IEC 60502-1"],
+  "sourceReferences": ["Table 5-29"],
+  "correctionTableReferences": ["Table 5-8", "Table 5-44", "Table 5-45", "Table 5-46"],
+  "rows": [
+    {"sizeSqmm":1.5,"group5TwoLoaded":25,"group5ThreeLoaded":22,"group6UpToThreeLoaded":33},
+    {"sizeSqmm":2.5,"group5TwoLoaded":33,"group5ThreeLoaded":29,"group6UpToThreeLoaded":43},
+    {"sizeSqmm":4,"group5TwoLoaded":43,"group5ThreeLoaded":38,"group6UpToThreeLoaded":55},
+    {"sizeSqmm":6,"group5TwoLoaded":54,"group5ThreeLoaded":47,"group6UpToThreeLoaded":70},
+    {"sizeSqmm":10,"group5TwoLoaded":71,"group5ThreeLoaded":63,"group6UpToThreeLoaded":92},
+    {"sizeSqmm":16,"group5TwoLoaded":94,"group5ThreeLoaded":83,"group6UpToThreeLoaded":119},
+    {"sizeSqmm":25,"group5TwoLoaded":124,"group5ThreeLoaded":109,"group6UpToThreeLoaded":152},
+    {"sizeSqmm":35,"group5TwoLoaded":150,"group5ThreeLoaded":132,"group6UpToThreeLoaded":184},
+    {"sizeSqmm":50,"group5TwoLoaded":180,"group5ThreeLoaded":159,"group6UpToThreeLoaded":217},
+    {"sizeSqmm":70,"group5TwoLoaded":223,"group5ThreeLoaded":196,"group6UpToThreeLoaded":266},
+    {"sizeSqmm":95,"group5TwoLoaded":271,"group5ThreeLoaded":238,"group6UpToThreeLoaded":318},
+    {"sizeSqmm":120,"group5TwoLoaded":313,"group5ThreeLoaded":275,"group6UpToThreeLoaded":362},
+    {"sizeSqmm":150,"group5TwoLoaded":355,"group5ThreeLoaded":312,"group6UpToThreeLoaded":406},
+    {"sizeSqmm":185,"group5TwoLoaded":406,"group5ThreeLoaded":356,"group6UpToThreeLoaded":459},
+    {"sizeSqmm":240,"group5TwoLoaded":477,"group5ThreeLoaded":418,"group6UpToThreeLoaded":533},
+    {"sizeSqmm":300,"group5TwoLoaded":543,"group5ThreeLoaded":475,"group6UpToThreeLoaded":601},
+    {"sizeSqmm":400,"group5TwoLoaded":625,"group5ThreeLoaded":545,"group6UpToThreeLoaded":684},
+    {"sizeSqmm":500,"group5TwoLoaded":717,"group5ThreeLoaded":623,"group6UpToThreeLoaded":777}
+  ]
+}
