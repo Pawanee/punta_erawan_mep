@@ -1,4 +1,6 @@
 class PanelCalculatedTotals {
+  static const double aggregateToleranceVa = 1e-6;
+
   PanelCalculatedTotals({
     required this.connectedVaR,
     required this.connectedVaS,
@@ -15,6 +17,17 @@ class PanelCalculatedTotals {
     ];
     if (values.any((value) => value < 0 || !value.isFinite)) {
       throw ArgumentError('Calculated totals must be finite and non-negative.');
+    }
+    final phaseTotal = connectedVaR + connectedVaS + connectedVaT;
+    if ((totalConnectedVa - phaseTotal).abs() > aggregateToleranceVa) {
+      throw ArgumentError(
+        'totalConnectedVa must equal the sum of the R, S, and T totals '
+        'within $aggregateToleranceVa VA.',
+      );
+    }
+    if (demandLoadVa != null &&
+        demandLoadVa! - totalConnectedVa > aggregateToleranceVa) {
+      throw ArgumentError('demandLoadVa cannot exceed totalConnectedVa.');
     }
   }
 

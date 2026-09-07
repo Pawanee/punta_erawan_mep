@@ -347,6 +347,57 @@ void main() {
     expect(json.containsKey('totalConnectedVa'), isFalse);
   });
 
+  test('single-phase panel rejects a three-phase circuit', () {
+    expect(
+      () => PanelDefinition(
+        panelId: 'single-phase-panel',
+        panelNo: 'LP-1PH',
+        electricalSystem: PanelElectricalSystem(
+          phaseSystem: PanelPhaseSystem.singlePhase,
+          lineToNeutralVoltageV: 230,
+          lineToLineVoltageV: 230,
+          frequencyHz: 50,
+        ),
+        circuits: [activeThreePhase],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('panel totals reject a mismatched phase sum', () {
+    expect(
+      () => PanelCalculatedTotals(
+        connectedVaR: 100,
+        connectedVaS: 200,
+        connectedVaT: 300,
+        totalConnectedVa: 601,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      PanelCalculatedTotals(
+        connectedVaR: 0.1,
+        connectedVaS: 0.2,
+        connectedVaT: 0.3,
+        totalConnectedVa: 0.6000000000000001,
+      ).totalConnectedVa,
+      closeTo(0.6, PanelCalculatedTotals.aggregateToleranceVa),
+    );
+  });
+
+  test('panel totals reject demand load above connected load', () {
+    expect(
+      () => PanelCalculatedTotals(
+        connectedVaR: 100,
+        connectedVaS: 200,
+        connectedVaT: 300,
+        totalConnectedVa: 600,
+        demandLoadVa: 601,
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('calculation step has no generic engineering payload', () {
     final step = CalculationStepResult(
       status: CalculationStatus.calculated,

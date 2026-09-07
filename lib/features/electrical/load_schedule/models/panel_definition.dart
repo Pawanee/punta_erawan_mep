@@ -1,3 +1,5 @@
+import '../enums/circuit_phase_configuration.dart';
+import '../enums/panel_phase_system.dart';
 import 'circuit_definition.dart';
 import 'panel_electrical_system.dart';
 
@@ -29,6 +31,16 @@ class PanelDefinition {
     final numbers = circuits.map((circuit) => circuit.circuitNo).toSet();
     if (numbers.length != circuits.length) {
       throw ArgumentError('Circuit numbers must be unique within a panel.');
+    }
+    if (electricalSystem.phaseSystem == PanelPhaseSystem.singlePhase &&
+        circuits.any(
+          (circuit) =>
+              circuit.phaseConfiguration ==
+              CircuitPhaseConfiguration.threePhase,
+        )) {
+      throw ArgumentError(
+        'A single-phase panel cannot contain a three-phase circuit.',
+      );
     }
   }
 
