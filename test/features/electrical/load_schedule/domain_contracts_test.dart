@@ -109,7 +109,7 @@ void main() {
             formulaId: configuration == CircuitPhaseConfiguration.singlePhase
                 ? CurrentFormulaId.directVaSinglePhase
                 : CurrentFormulaId.directVaThreePhase,
-            sourceReferences: const [
+            sourceReferences: [
               CalculationSourceReference(
                 sourceId: 'current-formula',
                 label: 'CP2 current formula',
@@ -423,7 +423,7 @@ void main() {
   test('calculation step has no generic engineering payload', () {
     final step = CalculationStepResult(
       status: CalculationStatus.calculated,
-      sourceReferences: const [
+      sourceReferences: [
         CalculationSourceReference(sourceId: 'engine', label: 'Engine result'),
       ],
     );

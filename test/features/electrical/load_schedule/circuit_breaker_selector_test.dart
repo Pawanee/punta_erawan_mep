@@ -3,50 +3,56 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/load_schedule/load_schedule.dart';
 
+// Frozen approved V1 specification; intentionally independent of production.
+const approvedMcbRatingsGolden = <double>[
+  6,
+  10,
+  16,
+  20,
+  25,
+  32,
+  40,
+  50,
+  63,
+  80,
+  100,
+  125,
+];
+
+// Frozen approved V1 specification; intentionally independent of production.
+const approvedMccbRatingsGolden = <double>[
+  16,
+  20,
+  25,
+  32,
+  40,
+  50,
+  63,
+  80,
+  100,
+  125,
+  160,
+  200,
+  225,
+  250,
+  315,
+  400,
+  500,
+  630,
+  800,
+  1000,
+  1250,
+  1600,
+];
+
 void main() {
   const selector = CircuitBreakerSelector();
 
   group('approved catalogs and automatic boundaries', () {
     test('catalog V1 contains exactly the approved ratings', () {
       expect(CircuitBreakerCatalog.version, 'load-schedule-cb-catalog-v1');
-      expect(CircuitBreakerCatalog.mcbRatingsA, const [
-        6,
-        10,
-        16,
-        20,
-        25,
-        32,
-        40,
-        50,
-        63,
-        80,
-        100,
-        125,
-      ]);
-      expect(CircuitBreakerCatalog.mccbRatingsA, const [
-        16,
-        20,
-        25,
-        32,
-        40,
-        50,
-        63,
-        80,
-        100,
-        125,
-        160,
-        200,
-        225,
-        250,
-        315,
-        400,
-        500,
-        630,
-        800,
-        1000,
-        1250,
-        1600,
-      ]);
+      expect(CircuitBreakerCatalog.mcbRatingsA, approvedMcbRatingsGolden);
+      expect(CircuitBreakerCatalog.mccbRatingsA, approvedMccbRatingsGolden);
     });
 
     for (final type in BreakerType.values) {
@@ -262,7 +268,6 @@ void main() {
           BreakerType.mcb,
           16,
           pole: BreakerPoleConfiguration.twoP,
-          includeReason: false,
         ),
       );
       expect(result.status, CircuitBreakerSelectionStatus.selected);
@@ -284,16 +289,26 @@ void main() {
           BreakerType.mcb,
           15,
           pole: BreakerPoleConfiguration.oneP,
+        ),
+      );
+      final missingReason = selector.select(
+        circuit: spareCircuit(),
+        current: CurrentCalculationResult.notCalculated(),
+        input: manualInput(
+          BreakerType.mcb,
+          16,
+          pole: BreakerPoleConfiguration.oneP,
           includeReason: false,
         ),
       );
       final missingPole = selector.select(
         circuit: spareCircuit(),
         current: CurrentCalculationResult.notCalculated(),
-        input: manualInput(BreakerType.mcb, 16, includeReason: false),
+        input: manualInput(BreakerType.mcb, 16),
       );
       expect(automatic.status, CircuitBreakerSelectionStatus.insufficient);
       expect(invalidManual.status, CircuitBreakerSelectionStatus.invalid);
+      expect(missingReason.status, CircuitBreakerSelectionStatus.insufficient);
       expect(missingPole.status, CircuitBreakerSelectionStatus.insufficient);
     });
 
@@ -401,6 +416,14 @@ void main() {
         ..['catalogVersion'] = 'unknown-catalog';
       final wrongCoordination = Map<String, Object?>.from(valid)
         ..['cableCoordinationStatus'] = null;
+      final automaticWithoutIb = Map<String, Object?>.from(valid)
+        ..remove('designCurrentIbA')
+        ..remove('currentMarginA')
+        ..remove('cableCoordinationStatus');
+      final automaticWithoutMargin = Map<String, Object?>.from(valid)
+        ..remove('currentMarginA');
+      final incompleteManualActive = Map<String, Object?>.from(valid)
+        ..['selectionMode'] = BreakerSelectionMode.manual.name;
       expect(
         () => CircuitBreakerSelectionResult.fromJson(missingSources),
         throwsArgumentError,
@@ -421,6 +444,18 @@ void main() {
         () => CircuitBreakerSelectionResult.fromJson(wrongCoordination),
         throwsArgumentError,
       );
+      expect(
+        () => CircuitBreakerSelectionResult.fromJson(automaticWithoutIb),
+        throwsArgumentError,
+      );
+      expect(
+        () => CircuitBreakerSelectionResult.fromJson(automaticWithoutMargin),
+        throwsArgumentError,
+      );
+      expect(
+        () => CircuitBreakerSelectionResult.fromJson(incompleteManualActive),
+        throwsArgumentError,
+      );
     });
 
     test('ACTIVE result is provisional pending cable selection', () {
@@ -435,8 +470,246 @@ void main() {
       );
       expect(result.currentMarginA, result.ratedCurrentA! - 10);
     });
+
+    test('selected automatic requires Ib and margin', () {
+      expect(
+        () => selectedBreaker(mode: BreakerSelectionMode.automatic),
+        throwsArgumentError,
+      );
+      expect(
+        () => selectedBreaker(mode: BreakerSelectionMode.automatic, ib: 10),
+        throwsArgumentError,
+      );
+      expect(
+        () => selectedBreaker(mode: BreakerSelectionMode.automatic, margin: 6),
+        throwsArgumentError,
+      );
+    });
+
+    test('selected manual ACTIVE requires complete payload and reason', () {
+      expect(
+        () => selectedBreaker(
+          mode: BreakerSelectionMode.manual,
+          ib: 10,
+          margin: 6,
+          includeReason: false,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => selectedBreaker(mode: BreakerSelectionMode.manual, ib: 10),
+        throwsArgumentError,
+      );
+    });
+
+    test('selected manual SPARE requires reason and has no ACTIVE payload', () {
+      expect(
+        () => selectedBreaker(
+          mode: BreakerSelectionMode.manual,
+          includeReason: false,
+        ),
+        throwsArgumentError,
+      );
+      final spare = selectedBreaker(mode: BreakerSelectionMode.manual);
+      expect(spare.designCurrentIbA, isNull);
+      expect(spare.currentMarginA, isNull);
+      expect(spare.cableCoordinationStatus, isNull);
+    });
+
+    test('SourceReference rejects blank required and optional identifiers', () {
+      for (final value in ['', '   ']) {
+        expect(
+          () => CalculationSourceReference(sourceId: value, label: 'label'),
+          throwsArgumentError,
+        );
+        expect(
+          () => CalculationSourceReference(sourceId: 'id', label: value),
+          throwsArgumentError,
+        );
+        expect(
+          () => CalculationSourceReference(
+            sourceId: 'id',
+            label: 'label',
+            sourceVersion: value,
+          ),
+          throwsArgumentError,
+        );
+        expect(
+          () => CalculationSourceReference.fromJson({
+            'sourceId': value,
+            'label': 'label',
+          }),
+          throwsArgumentError,
+        );
+      }
+    });
+  });
+
+  group('CircuitCalculationResult aggregate invariants', () {
+    test('ACTIVE breaker Ib must match current and pole must match phase', () {
+      final current = calculatedCurrent(10);
+      expect(
+        () => aggregateResult(
+          status: CircuitStatus.active,
+          current: current,
+          breaker: selectedBreaker(
+            mode: BreakerSelectionMode.automatic,
+            ib: 9,
+            margin: 7,
+          ),
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => aggregateResult(
+          status: CircuitStatus.active,
+          current: current,
+          breaker: selectedBreaker(
+            mode: BreakerSelectionMode.automatic,
+            ib: 10,
+            margin: 6,
+            pole: BreakerPoleConfiguration.threeP,
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('SPARE rejects automatic or ACTIVE-shaped breaker payload', () {
+      final activeBreaker = selectedBreaker(
+        mode: BreakerSelectionMode.automatic,
+        ib: 10,
+        margin: 6,
+      );
+      expect(
+        () => aggregateResult(
+          status: CircuitStatus.spare,
+          current: CurrentCalculationResult.notCalculated(),
+          breaker: activeBreaker,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('SPACE rejects selected breaker', () {
+      expect(
+        () => aggregateResult(
+          status: CircuitStatus.space,
+          current: CurrentCalculationResult.notCalculated(),
+          breaker: selectedBreaker(
+            mode: BreakerSelectionMode.automatic,
+            ib: 10,
+            margin: 6,
+          ),
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('malformed aggregate JSON cannot bypass breaker invariants', () {
+      final active = aggregateResult(
+        status: CircuitStatus.active,
+        current: calculatedCurrent(10),
+        breaker: selectedBreaker(
+          mode: BreakerSelectionMode.automatic,
+          ib: 10,
+          margin: 6,
+        ),
+      ).toJson();
+      final mismatchedIb = deepJsonCopy(active);
+      (mismatchedIb['circuitBreaker']
+              as Map<String, Object?>)['designCurrentIbA'] =
+          9;
+
+      final incompatiblePole = deepJsonCopy(active);
+      (incompatiblePole['circuitBreaker']
+              as Map<String, Object?>)['poleConfiguration'] =
+          BreakerPoleConfiguration.threeP.name;
+
+      final spare = aggregateResult(
+        status: CircuitStatus.spare,
+        current: CurrentCalculationResult.notCalculated(),
+        breaker: selectedBreaker(mode: BreakerSelectionMode.manual),
+      ).toJson();
+      final spareAutomatic = deepJsonCopy(spare);
+      (spareAutomatic['circuitBreaker']
+              as Map<String, Object?>)['selectionMode'] =
+          BreakerSelectionMode.automatic.name;
+
+      final spareWithActivePayload = deepJsonCopy(spare);
+      final spareBreaker =
+          spareWithActivePayload['circuitBreaker'] as Map<String, Object?>;
+      spareBreaker['designCurrentIbA'] = 10;
+      spareBreaker['currentMarginA'] = 6;
+      spareBreaker['cableCoordinationStatus'] =
+          CableCoordinationStatus.pendingCableSelection.name;
+
+      final space = aggregateResult(
+        status: CircuitStatus.space,
+        current: CurrentCalculationResult.notCalculated(),
+        breaker: CircuitBreakerSelectionResult.notCalculated(),
+      ).toJson();
+      final spaceSelected = deepJsonCopy(space);
+      spaceSelected['circuitBreaker'] = active['circuitBreaker'];
+
+      for (final malformed in [
+        mismatchedIb,
+        incompatiblePole,
+        spareAutomatic,
+        spareWithActivePayload,
+        spaceSelected,
+      ]) {
+        expect(
+          () => CircuitCalculationResult.fromJson(malformed),
+          throwsArgumentError,
+        );
+      }
+    });
   });
 }
+
+CircuitBreakerSelectionResult selectedBreaker({
+  required BreakerSelectionMode mode,
+  double? ib,
+  double? margin,
+  bool includeReason = true,
+  BreakerPoleConfiguration pole = BreakerPoleConfiguration.oneP,
+}) => CircuitBreakerSelectionResult.selected(
+  breakerType: BreakerType.mcb,
+  ratedCurrentA: 16,
+  poleConfiguration: pole,
+  selectionMode: mode,
+  designCurrentIbA: ib,
+  currentMarginA: margin,
+  manualOverrideReason: mode == BreakerSelectionMode.manual && includeReason
+      ? 'Approved manual selection'
+      : null,
+  sourceReferences: [
+    CalculationSourceReference(sourceId: 'cb-catalog', label: 'CB catalog'),
+  ],
+  catalogVersion: CircuitBreakerCatalog.version,
+);
+
+CircuitCalculationResult aggregateResult({
+  required CircuitStatus status,
+  required CurrentCalculationResult current,
+  required CircuitBreakerSelectionResult breaker,
+}) => CircuitCalculationResult(
+  circuitNo: 1,
+  circuitStatus: status,
+  phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+  validationStatus: CircuitValidationStatus.valid,
+  assignedPhase: status == CircuitStatus.space ? null : PhaseAssignment.r,
+  current: current,
+  cable: CalculationStepResult(status: CalculationStatus.notCalculated),
+  voltageDrop: CalculationStepResult(status: CalculationStatus.notCalculated),
+  circuitBreaker: breaker,
+  ground: const PendingEngineeringResult.notCalculated(),
+  conduit: const PendingEngineeringResult.notCalculated(),
+);
+
+Map<String, Object?> deepJsonCopy(Map<String, Object?> value) =>
+    Map<String, Object?>.from(jsonDecode(jsonEncode(value)) as Map);
 
 CircuitBreakerSelectionInput automaticInput(
   BreakerType type, {
@@ -510,7 +783,7 @@ CurrentCalculationResult calculatedCurrent(
     formulaId: threePhase
         ? CurrentFormulaId.directCurrentThreePhase
         : CurrentFormulaId.directCurrentSinglePhase,
-    sourceReferences: const [
+    sourceReferences: [
       CalculationSourceReference(
         sourceId: 'test-current',
         label: 'Calculated current fixture',

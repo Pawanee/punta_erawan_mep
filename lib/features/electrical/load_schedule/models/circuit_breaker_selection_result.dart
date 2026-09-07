@@ -150,12 +150,9 @@ class CircuitBreakerSelectionResult {
       throw ArgumentError('Trip curve/designation cannot be blank.');
     }
     if (selectionMode == BreakerSelectionMode.manual &&
-        designCurrentIbA != null &&
         (manualOverrideReason == null ||
             manualOverrideReason!.trim().isEmpty)) {
-      throw ArgumentError(
-        'ACTIVE manual selection requires a non-empty reason.',
-      );
+      throw ArgumentError('Manual selection requires a non-empty reason.');
     }
     if (selectionMode == BreakerSelectionMode.automatic &&
         manualOverrideReason != null) {
@@ -164,6 +161,11 @@ class CircuitBreakerSelectionResult {
       );
     }
     final hasActivePayload = designCurrentIbA != null || currentMarginA != null;
+    if (selectionMode == BreakerSelectionMode.automatic && !hasActivePayload) {
+      throw ArgumentError(
+        'Automatic selection requires an ACTIVE breaker payload.',
+      );
+    }
     if (hasActivePayload) {
       if (designCurrentIbA == null ||
           currentMarginA == null ||

@@ -50,6 +50,11 @@ class CircuitBreakerSelector {
           reason: 'SPARE circuits require manual circuit breaker details.',
         );
       }
+      if (input.manualOverrideReason == null) {
+        return CircuitBreakerSelectionResult.insufficient(
+          reason: 'SPARE manual selection requires a non-empty reason.',
+        );
+      }
       return _manualResult(input: input, pole: pole);
     }
     if (current.status != CalculationStatus.calculated ||
