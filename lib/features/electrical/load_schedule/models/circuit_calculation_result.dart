@@ -3,6 +3,7 @@ import '../enums/circuit_phase_configuration.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
 import 'calculation_step_result.dart';
+import 'current_calculation_result.dart';
 
 class CircuitCalculationResult {
   CircuitCalculationResult({
@@ -54,7 +55,7 @@ class CircuitCalculationResult {
   final CircuitValidationStatus validationStatus;
   final List<String> validationReasons;
   final PhaseAssignment? assignedPhase;
-  final CalculationStepResult current;
+  final CurrentCalculationResult current;
   final CalculationStepResult cable;
   final CalculationStepResult voltageDrop;
   final PendingEngineeringResult circuitBreaker;
@@ -100,7 +101,7 @@ class CircuitCalculationResult {
         assignedPhase: json['assignedPhase'] == null
             ? null
             : PhaseAssignment.values.byName(json['assignedPhase'] as String),
-        current: CalculationStepResult.fromJson(
+        current: CurrentCalculationResult.fromJson(
           Map<String, Object?>.from(json['current'] as Map),
         ),
         cable: CalculationStepResult.fromJson(

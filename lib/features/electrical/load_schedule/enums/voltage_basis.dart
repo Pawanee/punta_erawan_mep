@@ -1,0 +1,1 @@
+enum VoltageBasis { lineToNeutral, lineToLine }

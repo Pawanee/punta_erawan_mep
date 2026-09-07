@@ -7,21 +7,21 @@ class PanelElectricalSystem {
     required this.lineToLineVoltageV,
     required this.frequencyHz,
   }) {
-    if (lineToNeutralVoltageV <= 0) {
+    if (lineToNeutralVoltageV <= 0 || !lineToNeutralVoltageV.isFinite) {
       throw ArgumentError.value(
         lineToNeutralVoltageV,
         'lineToNeutralVoltageV',
         'Must be positive.',
       );
     }
-    if (lineToLineVoltageV <= 0) {
+    if (lineToLineVoltageV <= 0 || !lineToLineVoltageV.isFinite) {
       throw ArgumentError.value(
         lineToLineVoltageV,
         'lineToLineVoltageV',
         'Must be positive.',
       );
     }
-    if (frequencyHz <= 0) {
+    if (frequencyHz <= 0 || !frequencyHz.isFinite) {
       throw ArgumentError.value(
         frequencyHz,
         'frequencyHz',

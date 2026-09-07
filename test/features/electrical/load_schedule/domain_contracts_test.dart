@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mep_project/features/electrical/load_schedule/load_schedule.dart';
@@ -93,8 +94,29 @@ void main() {
     validationStatus: CircuitValidationStatus.valid,
     assignedPhase: phase,
     current: status == CircuitStatus.active
-        ? CalculationStepResult(status: CalculationStatus.calculated)
-        : unresolved(),
+        ? CurrentCalculationResult.calculated(
+            designCurrentA:
+                configuration == CircuitPhaseConfiguration.singlePhase
+                ? 1200 / 230
+                : 1200 / (math.sqrt(3) * 400),
+            apparentPowerVa: 1200,
+            voltageBasis: configuration == CircuitPhaseConfiguration.singlePhase
+                ? VoltageBasis.lineToNeutral
+                : VoltageBasis.lineToLine,
+            voltageUsedV: configuration == CircuitPhaseConfiguration.singlePhase
+                ? 230
+                : 400,
+            formulaId: configuration == CircuitPhaseConfiguration.singlePhase
+                ? CurrentFormulaId.directVaSinglePhase
+                : CurrentFormulaId.directVaThreePhase,
+            sourceReferences: const [
+              CalculationSourceReference(
+                sourceId: 'current-formula',
+                label: 'CP2 current formula',
+              ),
+            ],
+          )
+        : CurrentCalculationResult.notCalculated(),
     cable: unresolved(),
     voltageDrop: unresolved('Circuit length is not supplied.'),
     circuitBreaker: const PendingEngineeringResult.notCalculated(
@@ -118,7 +140,7 @@ void main() {
     snapshotId: 'snapshot-1-r1',
     panelDefinition: panel,
     revision: 1,
-    schemaVersion: 'load-schedule-v1-cp1',
+    schemaVersion: 'load-schedule-v1-cp2-current-v1',
     engineVersion: 'd24d015',
     calculatedAt: DateTime.utc(2026, 9, 7),
     circuitResults: [
