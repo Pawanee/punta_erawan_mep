@@ -1,8 +1,14 @@
+import 'dart:math' as math;
+
+import '../enums/breaker_pole_configuration.dart';
+import '../enums/breaker_selection_mode.dart';
 import '../enums/calculation_status.dart';
 import '../enums/circuit_phase_configuration.dart';
+import '../enums/circuit_breaker_selection_status.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
 import 'calculation_step_result.dart';
+import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
 
 class CircuitCalculationResult {
@@ -47,6 +53,7 @@ class CircuitCalculationResult {
         'SPARE circuits cannot contain calculated load results.',
       );
     }
+    _validateCircuitBreaker();
   }
 
   final int circuitNo;
@@ -58,15 +65,66 @@ class CircuitCalculationResult {
   final CurrentCalculationResult current;
   final CalculationStepResult cable;
   final CalculationStepResult voltageDrop;
-  final PendingEngineeringResult circuitBreaker;
+  final CircuitBreakerSelectionResult circuitBreaker;
   final PendingEngineeringResult ground;
   final PendingEngineeringResult conduit;
+
+  void _validateCircuitBreaker() {
+    if (circuitBreaker.status != CircuitBreakerSelectionStatus.selected) {
+      return;
+    }
+    final pole = circuitBreaker.poleConfiguration!;
+    final compatiblePole = switch (phaseConfiguration) {
+      CircuitPhaseConfiguration.singlePhase =>
+        pole == BreakerPoleConfiguration.oneP ||
+            pole == BreakerPoleConfiguration.onePPlusN ||
+            pole == BreakerPoleConfiguration.twoP,
+      CircuitPhaseConfiguration.threePhase =>
+        pole == BreakerPoleConfiguration.threeP ||
+            pole == BreakerPoleConfiguration.fourP,
+    };
+    if (!compatiblePole) {
+      throw ArgumentError(
+        'Breaker pole configuration is incompatible with circuit phase.',
+      );
+    }
+    if (circuitStatus == CircuitStatus.active) {
+      if (current.status != CalculationStatus.calculated ||
+          circuitBreaker.designCurrentIbA == null ||
+          circuitBreaker.cableCoordinationStatus !=
+              CableCoordinationStatus.pendingCableSelection) {
+        throw ArgumentError(
+          'ACTIVE selected breaker requires calculated current and pending '
+          'cable coordination.',
+        );
+      }
+      final currentIb = current.designCurrentA!;
+      final breakerIb = circuitBreaker.designCurrentIbA!;
+      final scale = math.max(1.0, math.max(currentIb.abs(), breakerIb.abs()));
+      if ((currentIb - breakerIb).abs() > 1e-9 * scale) {
+        throw ArgumentError(
+          'Breaker design current must match the calculated circuit current.',
+        );
+      }
+    }
+    if (circuitStatus == CircuitStatus.spare &&
+        (circuitBreaker.selectionMode != BreakerSelectionMode.manual ||
+            circuitBreaker.designCurrentIbA != null ||
+            circuitBreaker.currentMarginA != null ||
+            circuitBreaker.cableCoordinationStatus != null ||
+            circuitBreaker.manualOverrideReason == null ||
+            circuitBreaker.manualOverrideReason!.trim().isEmpty)) {
+      throw ArgumentError(
+        'SPARE selected breaker requires a complete manual-only payload.',
+      );
+    }
+  }
 
   bool get _hasCalculatedEquipment =>
       current.status == CalculationStatus.calculated ||
       cable.status == CalculationStatus.calculated ||
       voltageDrop.status == CalculationStatus.calculated ||
-      circuitBreaker.status == PendingEngineeringStatus.insufficient ||
+      circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
       ground.status == PendingEngineeringStatus.insufficient ||
       conduit.status == PendingEngineeringStatus.insufficient;
 
@@ -110,7 +168,7 @@ class CircuitCalculationResult {
         voltageDrop: CalculationStepResult.fromJson(
           Map<String, Object?>.from(json['voltageDrop'] as Map),
         ),
-        circuitBreaker: PendingEngineeringResult.fromJson(
+        circuitBreaker: CircuitBreakerSelectionResult.fromJson(
           Map<String, Object?>.from(json['circuitBreaker'] as Map),
         ),
         ground: PendingEngineeringResult.fromJson(

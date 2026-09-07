@@ -265,7 +265,7 @@ void main() {
         voltageBasis: VoltageBasis.lineToNeutral,
         voltageUsedV: voltage,
         formulaId: formula,
-        sourceReferences: const [
+        sourceReferences: [
           CalculationSourceReference(
             sourceId: 'current-formula',
             label: 'CP2 current formula',
@@ -331,7 +331,7 @@ void main() {
         voltageBasis: VoltageBasis.lineToNeutral,
         voltageUsedV: 230,
         formulaId: CurrentFormulaId.directVaSinglePhase,
-        sourceReferences: const [
+        sourceReferences: [
           CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
         ],
       ),
@@ -349,7 +349,7 @@ void main() {
         voltageBasis: VoltageBasis.lineToNeutral,
         voltageUsedV: 230,
         formulaId: CurrentFormulaId.quantityWattsPfSinglePhase,
-        sourceReferences: const [
+        sourceReferences: [
           CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
         ],
       ),
@@ -367,7 +367,7 @@ void main() {
           voltageBasis: VoltageBasis.lineToNeutral,
           voltageUsedV: 230,
           formulaId: CurrentFormulaId.directCurrentThreePhase,
-          sourceReferences: const [
+          sourceReferences: [
             CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
           ],
         ),

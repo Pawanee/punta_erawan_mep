@@ -1,0 +1,1 @@
+enum BreakerType { mcb, mccb }

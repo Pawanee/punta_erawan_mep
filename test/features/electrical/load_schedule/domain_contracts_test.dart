@@ -109,7 +109,7 @@ void main() {
             formulaId: configuration == CircuitPhaseConfiguration.singlePhase
                 ? CurrentFormulaId.directVaSinglePhase
                 : CurrentFormulaId.directVaThreePhase,
-            sourceReferences: const [
+            sourceReferences: [
               CalculationSourceReference(
                 sourceId: 'current-formula',
                 label: 'CP2 current formula',
@@ -119,8 +119,8 @@ void main() {
         : CurrentCalculationResult.notCalculated(),
     cable: unresolved(),
     voltageDrop: unresolved('Circuit length is not supplied.'),
-    circuitBreaker: const PendingEngineeringResult.notCalculated(
-      reason: 'CB rules are not approved in CP1.',
+    circuitBreaker: CircuitBreakerSelectionResult.notCalculated(
+      reason: 'CB selection has not been requested.',
     ),
     ground: const PendingEngineeringResult.notCalculated(
       reason: 'Ground rules are not approved in CP1.',
@@ -423,7 +423,7 @@ void main() {
   test('calculation step has no generic engineering payload', () {
     final step = CalculationStepResult(
       status: CalculationStatus.calculated,
-      sourceReferences: const [
+      sourceReferences: [
         CalculationSourceReference(sourceId: 'engine', label: 'Engine result'),
       ],
     );

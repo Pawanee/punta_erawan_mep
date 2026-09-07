@@ -1,0 +1,1 @@
+enum BreakerSelectionMode { automatic, manual }
