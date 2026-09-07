@@ -109,6 +109,12 @@ void main() {
             formulaId: configuration == CircuitPhaseConfiguration.singlePhase
                 ? CurrentFormulaId.directVaSinglePhase
                 : CurrentFormulaId.directVaThreePhase,
+            sourceReferences: const [
+              CalculationSourceReference(
+                sourceId: 'current-formula',
+                label: 'CP2 current formula',
+              ),
+            ],
           )
         : CurrentCalculationResult.notCalculated(),
     cable: unresolved(),

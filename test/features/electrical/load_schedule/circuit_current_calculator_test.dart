@@ -265,6 +265,12 @@ void main() {
         voltageBasis: VoltageBasis.lineToNeutral,
         voltageUsedV: voltage,
         formulaId: formula,
+        sourceReferences: const [
+          CalculationSourceReference(
+            sourceId: 'current-formula',
+            label: 'CP2 current formula',
+          ),
+        ],
       );
 
       for (final invalid in [0.0, -1.0, double.nan, double.infinity]) {
@@ -315,6 +321,118 @@ void main() {
     );
     expect(incompatibleResult.status, CalculationStatus.invalid);
     expect(incompatibleResult.designCurrentA, isNull);
+  });
+
+  test('calculated result rejects I, S, and V that contradict formula', () {
+    expect(
+      () => CurrentCalculationResult.calculated(
+        designCurrentA: 999,
+        apparentPowerVa: 2300,
+        voltageBasis: VoltageBasis.lineToNeutral,
+        voltageUsedV: 230,
+        formulaId: CurrentFormulaId.directVaSinglePhase,
+        sourceReferences: const [
+          CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
+        ],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('calculated result rejects P and PF inconsistent with S', () {
+    expect(
+      () => CurrentCalculationResult.calculated(
+        designCurrentA: 1000 / 230,
+        apparentPowerVa: 1000,
+        realPowerW: 900,
+        powerFactorUsed: 0.8,
+        voltageBasis: VoltageBasis.lineToNeutral,
+        voltageUsedV: 230,
+        formulaId: CurrentFormulaId.quantityWattsPfSinglePhase,
+        sourceReferences: const [
+          CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
+        ],
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test(
+    'calculated result rejects formulaId inconsistent with voltageBasis',
+    () {
+      expect(
+        () => CurrentCalculationResult.calculated(
+          designCurrentA: 10,
+          apparentPowerVa: math.sqrt(3) * 2300,
+          voltageBasis: VoltageBasis.lineToNeutral,
+          voltageUsedV: 230,
+          formulaId: CurrentFormulaId.directCurrentThreePhase,
+          sourceReferences: const [
+            CalculationSourceReference(sourceId: 'formula', label: 'Formula'),
+          ],
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
+  test('calculator overflow returns typed invalid without throwing', () {
+    final circuit = active(
+      phaseConfiguration: CircuitPhaseConfiguration.threePhase,
+      load: LoadInput.directCurrentA(double.maxFinite),
+    );
+    final result = calculator.calculate(circuit, system);
+    expect(result.status, CalculationStatus.invalid);
+    expect(result.reason, contains('overflowed'));
+    expect(result.designCurrentA, isNull);
+    expect(result.apparentPowerVa, isNull);
+  });
+
+  test('calculated result requires source references', () {
+    expect(
+      () => CurrentCalculationResult.calculated(
+        designCurrentA: 10,
+        apparentPowerVa: 2300,
+        voltageBasis: VoltageBasis.lineToNeutral,
+        voltageUsedV: 230,
+        formulaId: CurrentFormulaId.directVaSinglePhase,
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('malformed JSON cannot bypass calculated invariants', () {
+    final malformed = <String, Object?>{
+      'status': 'calculated',
+      'designCurrentA': 999,
+      'apparentPowerVa': 2300,
+      'voltageBasis': 'lineToNeutral',
+      'voltageUsedV': 230,
+      'formulaId': 'directVaSinglePhase',
+      'sourceReferences': [
+        {'sourceId': 'formula', 'label': 'Formula'},
+      ],
+    };
+    expect(
+      () => CurrentCalculationResult.fromJson(malformed),
+      throwsArgumentError,
+    );
+    expect(
+      () => CurrentCalculationResult.fromJson({
+        ...malformed,
+        'designCurrentA': 10,
+        'sourceReferences': <Object?>[],
+      }),
+      throwsArgumentError,
+    );
+    expect(
+      () => CurrentCalculationResult.fromJson({
+        'status': 'notCalculated',
+        'designCurrentA': 10,
+        'sourceReferences': <Object?>[],
+      }),
+      throwsArgumentError,
+    );
   });
 
   test(

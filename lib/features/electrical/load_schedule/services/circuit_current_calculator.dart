@@ -45,9 +45,6 @@ class CircuitCurrentCalculator {
     final voltageUsedV = isSinglePhase
         ? electricalSystem.lineToNeutralVoltageV
         : electricalSystem.lineToLineVoltageV;
-    final phaseDivisor = isSinglePhase
-        ? voltageUsedV
-        : math.sqrt(3) * voltageUsedV;
     final references = [
       CalculationSourceReference(
         sourceId: 'load-schedule-current-formula-v1',
@@ -56,17 +53,24 @@ class CircuitCurrentCalculator {
         sourceVersion: 'cp2-v1',
       ),
     ];
+    final phaseDivisor = isSinglePhase
+        ? voltageUsedV
+        : math.sqrt(3) * voltageUsedV;
+    if (!_isFinitePositive(phaseDivisor)) {
+      return _invalidNumericalResult(
+        'Voltage divisor overflowed or is not finite and positive.',
+        references,
+      );
+    }
 
     return switch (load.kind) {
-      LoadInputKind.directVa => CurrentCalculationResult.calculated(
-        designCurrentA: load.apparentPowerVa! / phaseDivisor,
-        apparentPowerVa: load.apparentPowerVa!,
+      LoadInputKind.directVa => _calculateDirectVa(
+        load: load,
+        isSinglePhase: isSinglePhase,
         voltageBasis: voltageBasis,
         voltageUsedV: voltageUsedV,
-        formulaId: isSinglePhase
-            ? CurrentFormulaId.directVaSinglePhase
-            : CurrentFormulaId.directVaThreePhase,
-        sourceReferences: references,
+        phaseDivisor: phaseDivisor,
+        references: references,
       ),
       LoadInputKind.quantityTimesWatts => _calculateQuantityWatts(
         load: load,
@@ -76,17 +80,69 @@ class CircuitCurrentCalculator {
         phaseDivisor: phaseDivisor,
         references: references,
       ),
-      LoadInputKind.directCurrentA => CurrentCalculationResult.calculated(
-        designCurrentA: load.currentA!,
-        apparentPowerVa: load.currentA! * phaseDivisor,
+      LoadInputKind.directCurrentA => _calculateDirectCurrent(
+        load: load,
+        isSinglePhase: isSinglePhase,
         voltageBasis: voltageBasis,
         voltageUsedV: voltageUsedV,
-        formulaId: isSinglePhase
-            ? CurrentFormulaId.directCurrentSinglePhase
-            : CurrentFormulaId.directCurrentThreePhase,
-        sourceReferences: references,
+        phaseDivisor: phaseDivisor,
+        references: references,
       ),
     };
+  }
+
+  CurrentCalculationResult _calculateDirectVa({
+    required LoadInput load,
+    required bool isSinglePhase,
+    required VoltageBasis voltageBasis,
+    required double voltageUsedV,
+    required double phaseDivisor,
+    required List<CalculationSourceReference> references,
+  }) {
+    final designCurrentA = load.apparentPowerVa! / phaseDivisor;
+    if (!_isFinitePositive(designCurrentA)) {
+      return _invalidNumericalResult(
+        'Calculated design current overflowed or is not finite and positive.',
+        references,
+      );
+    }
+    return CurrentCalculationResult.calculated(
+      designCurrentA: designCurrentA,
+      apparentPowerVa: load.apparentPowerVa!,
+      voltageBasis: voltageBasis,
+      voltageUsedV: voltageUsedV,
+      formulaId: isSinglePhase
+          ? CurrentFormulaId.directVaSinglePhase
+          : CurrentFormulaId.directVaThreePhase,
+      sourceReferences: references,
+    );
+  }
+
+  CurrentCalculationResult _calculateDirectCurrent({
+    required LoadInput load,
+    required bool isSinglePhase,
+    required VoltageBasis voltageBasis,
+    required double voltageUsedV,
+    required double phaseDivisor,
+    required List<CalculationSourceReference> references,
+  }) {
+    final apparentPowerVa = load.currentA! * phaseDivisor;
+    if (!_isFinitePositive(apparentPowerVa)) {
+      return _invalidNumericalResult(
+        'Calculated apparent power overflowed or is not finite and positive.',
+        references,
+      );
+    }
+    return CurrentCalculationResult.calculated(
+      designCurrentA: load.currentA!,
+      apparentPowerVa: apparentPowerVa,
+      voltageBasis: voltageBasis,
+      voltageUsedV: voltageUsedV,
+      formulaId: isSinglePhase
+          ? CurrentFormulaId.directCurrentSinglePhase
+          : CurrentFormulaId.directCurrentThreePhase,
+      sourceReferences: references,
+    );
   }
 
   CurrentCalculationResult _calculateQuantityWatts({
@@ -98,9 +154,28 @@ class CircuitCurrentCalculator {
     required List<CalculationSourceReference> references,
   }) {
     final realPowerW = load.quantity! * load.wattsPerUnit!;
+    if (!_isFinitePositive(realPowerW)) {
+      return _invalidNumericalResult(
+        'Calculated real power overflowed or is not finite and positive.',
+        references,
+      );
+    }
     final apparentPowerVa = realPowerW / load.powerFactor!;
+    if (!_isFinitePositive(apparentPowerVa)) {
+      return _invalidNumericalResult(
+        'Calculated apparent power overflowed or is not finite and positive.',
+        references,
+      );
+    }
+    final designCurrentA = apparentPowerVa / phaseDivisor;
+    if (!_isFinitePositive(designCurrentA)) {
+      return _invalidNumericalResult(
+        'Calculated design current overflowed or is not finite and positive.',
+        references,
+      );
+    }
     return CurrentCalculationResult.calculated(
-      designCurrentA: apparentPowerVa / phaseDivisor,
+      designCurrentA: designCurrentA,
       apparentPowerVa: apparentPowerVa,
       realPowerW: realPowerW,
       powerFactorUsed: load.powerFactor,
@@ -112,4 +187,14 @@ class CircuitCurrentCalculator {
       sourceReferences: references,
     );
   }
+
+  bool _isFinitePositive(double value) => value.isFinite && value > 0;
+
+  CurrentCalculationResult _invalidNumericalResult(
+    String reason,
+    List<CalculationSourceReference> references,
+  ) => CurrentCalculationResult.invalid(
+    reason: reason,
+    sourceReferences: references,
+  );
 }
