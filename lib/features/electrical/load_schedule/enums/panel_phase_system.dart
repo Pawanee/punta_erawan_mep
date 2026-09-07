@@ -1,0 +1,1 @@
+enum PanelPhaseSystem { singlePhase, threePhase }
