@@ -1,6 +1,5 @@
-import 'dart:collection';
-
 import 'circuit_calculation_result.dart';
+import 'panel_calculated_totals.dart';
 import 'panel_definition.dart';
 
 class PanelCalculationSnapshot {
@@ -12,9 +11,8 @@ class PanelCalculationSnapshot {
     required this.engineVersion,
     required this.calculatedAt,
     required List<CircuitCalculationResult> circuitResults,
-    required Map<String, double> calculatedTotals,
-  }) : circuitResults = List.unmodifiable(circuitResults),
-       calculatedTotals = UnmodifiableMapView(Map.of(calculatedTotals)) {
+    required this.calculatedTotals,
+  }) : circuitResults = List.unmodifiable(circuitResults) {
     if (snapshotId.trim().isEmpty ||
         schemaVersion.trim().isEmpty ||
         engineVersion.trim().isEmpty) {
@@ -34,6 +32,17 @@ class PanelCalculationSnapshot {
         'Snapshot circuit results must match the panel definition exactly.',
       );
     }
+    for (final definition in panelDefinition.circuits) {
+      final result = circuitResults.singleWhere(
+        (candidate) => candidate.circuitNo == definition.circuitNo,
+      );
+      if (result.circuitStatus != definition.status ||
+          result.phaseConfiguration != definition.phaseConfiguration) {
+        throw ArgumentError(
+          'Snapshot results must preserve circuit status and phase configuration.',
+        );
+      }
+    }
   }
 
   final String snapshotId;
@@ -43,7 +52,7 @@ class PanelCalculationSnapshot {
   final String engineVersion;
   final DateTime calculatedAt;
   final List<CircuitCalculationResult> circuitResults;
-  final Map<String, double> calculatedTotals;
+  final PanelCalculatedTotals calculatedTotals;
 
   Map<String, Object?> toJson() => {
     'snapshotId': snapshotId,
@@ -53,7 +62,7 @@ class PanelCalculationSnapshot {
     'engineVersion': engineVersion,
     'calculatedAt': calculatedAt.toUtc().toIso8601String(),
     'circuitResults': circuitResults.map((result) => result.toJson()).toList(),
-    'calculatedTotals': Map<String, double>.of(calculatedTotals),
+    'calculatedTotals': calculatedTotals.toJson(),
   };
 
   factory PanelCalculationSnapshot.fromJson(Map<String, Object?> json) =>
@@ -73,8 +82,8 @@ class PanelCalculationSnapshot {
               ),
             )
             .toList(),
-        calculatedTotals: (json['calculatedTotals'] as Map).map(
-          (key, value) => MapEntry(key as String, (value as num).toDouble()),
+        calculatedTotals: PanelCalculatedTotals.fromJson(
+          Map<String, Object?>.from(json['calculatedTotals'] as Map),
         ),
       );
 }

@@ -1,0 +1,1 @@
+enum CircuitPhaseConfiguration { singlePhase, threePhase }

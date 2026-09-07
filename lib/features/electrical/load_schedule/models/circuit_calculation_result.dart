@@ -1,4 +1,5 @@
 import '../enums/calculation_status.dart';
+import '../enums/circuit_phase_configuration.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
 import 'calculation_step_result.dart';
@@ -7,6 +8,7 @@ class CircuitCalculationResult {
   CircuitCalculationResult({
     required this.circuitNo,
     required this.circuitStatus,
+    required this.phaseConfiguration,
     required this.validationStatus,
     required this.current,
     required this.cable,
@@ -24,6 +26,14 @@ class CircuitCalculationResult {
         validationReasons.isEmpty) {
       throw ArgumentError('Fail-closed validation requires a reason.');
     }
+    if (phaseConfiguration == CircuitPhaseConfiguration.threePhase &&
+        assignedPhase != PhaseAssignment.rst) {
+      throw ArgumentError('Three-phase results must remain assigned to RST.');
+    }
+    if (phaseConfiguration == CircuitPhaseConfiguration.singlePhase &&
+        assignedPhase == PhaseAssignment.rst) {
+      throw ArgumentError('Single-phase results cannot be assigned to RST.');
+    }
     if (circuitStatus == CircuitStatus.space &&
         (_hasCalculatedEquipment || assignedPhase != null)) {
       throw ArgumentError('SPACE circuits cannot contain equipment results.');
@@ -40,6 +50,7 @@ class CircuitCalculationResult {
 
   final int circuitNo;
   final CircuitStatus circuitStatus;
+  final CircuitPhaseConfiguration phaseConfiguration;
   final CircuitValidationStatus validationStatus;
   final List<String> validationReasons;
   final PhaseAssignment? assignedPhase;
@@ -61,6 +72,7 @@ class CircuitCalculationResult {
   Map<String, Object?> toJson() => {
     'circuitNo': circuitNo,
     'circuitStatus': circuitStatus.name,
+    'phaseConfiguration': phaseConfiguration.name,
     'validationStatus': validationStatus.name,
     'validationReasons': validationReasons,
     if (assignedPhase != null) 'assignedPhase': assignedPhase!.name,
@@ -77,6 +89,9 @@ class CircuitCalculationResult {
         circuitNo: json['circuitNo'] as int,
         circuitStatus: CircuitStatus.values.byName(
           json['circuitStatus'] as String,
+        ),
+        phaseConfiguration: CircuitPhaseConfiguration.values.byName(
+          json['phaseConfiguration'] as String,
         ),
         validationStatus: CircuitValidationStatus.values.byName(
           json['validationStatus'] as String,

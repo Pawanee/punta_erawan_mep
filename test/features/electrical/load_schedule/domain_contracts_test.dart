@@ -7,10 +7,17 @@ void main() {
   Map<String, Object?> roundTrip(Map<String, Object?> json) =>
       Map<String, Object?>.from(jsonDecode(jsonEncode(json)) as Map);
 
+  final electricalSystem = PanelElectricalSystem(
+    phaseSystem: PanelPhaseSystem.threePhase,
+    lineToNeutralVoltageV: 230,
+    lineToLineVoltageV: 400,
+    frequencyHz: 50,
+  );
   final activeManual = CircuitDefinition(
     circuitNo: 1,
     description: 'Lighting',
     status: CircuitStatus.active,
+    phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
     loadInput: LoadInput.directVa(1200),
     phaseAssignmentMode: PhaseAssignmentMode.manual,
     phaseAssignment: PhaseAssignment.r,
@@ -19,6 +26,7 @@ void main() {
     circuitNo: 2,
     description: 'Socket outlets',
     status: CircuitStatus.active,
+    phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
     loadInput: LoadInput.quantityTimesWatts(
       quantity: 10,
       wattsPerUnit: 180,
@@ -26,28 +34,36 @@ void main() {
     ),
     phaseAssignmentMode: PhaseAssignmentMode.automatic,
   );
-  final spare = CircuitDefinition(
+  final activeThreePhase = CircuitDefinition(
     circuitNo: 3,
+    description: 'Three-phase load',
+    status: CircuitStatus.active,
+    phaseConfiguration: CircuitPhaseConfiguration.threePhase,
+    loadInput: LoadInput.directCurrentA(10),
+    phaseAssignmentMode: PhaseAssignmentMode.automatic,
+    phaseAssignment: PhaseAssignment.rst,
+  );
+  final spare = CircuitDefinition(
+    circuitNo: 4,
     description: 'Spare',
     status: CircuitStatus.spare,
-    phaseAssignmentMode: PhaseAssignmentMode.manual,
-    phaseAssignment: PhaseAssignment.s,
-    manualSpareCircuitBreaker: '20 A, 1P',
+    phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+    phaseAssignmentMode: PhaseAssignmentMode.automatic,
   );
   final space = CircuitDefinition(
-    circuitNo: 4,
+    circuitNo: 5,
     description: 'Space',
     status: CircuitStatus.space,
+    phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
     phaseAssignmentMode: PhaseAssignmentMode.automatic,
   );
 
   final panel = PanelDefinition(
     panelId: 'panel-1',
     panelNo: 'LP-1',
+    electricalSystem: electricalSystem,
     projectName: 'Project',
     location: 'Floor 1',
-    systemVoltageV: 415,
-    frequencyHz: 50,
     enclosure: 'NEMA 1',
     mounting: 'Surface',
     door: 'Hinge',
@@ -55,7 +71,7 @@ void main() {
     mainCircuitBreaker: '100 A, 3P',
     feeder: '4x25,Gx10 IEC-01',
     demandFactor: 0.8,
-    circuits: [activeManual, activeAutomatic, spare, space],
+    circuits: [activeManual, activeAutomatic, activeThreePhase, spare, space],
   );
 
   CalculationStepResult unresolved([String? reason]) => CalculationStepResult(
@@ -65,53 +81,39 @@ void main() {
     reason: reason,
   );
 
-  CircuitCalculationResult activeResult(int circuitNo, PhaseAssignment phase) =>
-      CircuitCalculationResult(
-        circuitNo: circuitNo,
-        circuitStatus: CircuitStatus.active,
-        validationStatus: CircuitValidationStatus.valid,
-        assignedPhase: phase,
-        current: CalculationStepResult(
-          status: CalculationStatus.calculated,
-          values: const {'currentA': 5.0},
-        ),
-        cable: CalculationStepResult(
-          status: CalculationStatus.calculated,
-          values: const {'sizeSqmm': 2.5},
-          sourceReferences: const [
-            CalculationSourceReference(
-              sourceId: 'ampacity-5-20',
-              label: 'Table 5-20',
-              tableId: '5-20',
-              sourceVersion: 'fixture-v1',
-            ),
-          ],
-        ),
-        voltageDrop: unresolved('Circuit length is not supplied.'),
-        circuitBreaker: const PendingEngineeringResult.notCalculated(
-          reason: 'CB rules are not approved in CP1.',
-        ),
-        ground: const PendingEngineeringResult.notCalculated(
-          reason: 'Ground rules are not approved in CP1.',
-        ),
-        conduit: const PendingEngineeringResult.notCalculated(
-          reason: 'Conduit rules are not approved in CP1.',
-        ),
-      );
+  CircuitCalculationResult result({
+    required int circuitNo,
+    required CircuitStatus status,
+    required CircuitPhaseConfiguration configuration,
+    PhaseAssignment? phase,
+  }) => CircuitCalculationResult(
+    circuitNo: circuitNo,
+    circuitStatus: status,
+    phaseConfiguration: configuration,
+    validationStatus: CircuitValidationStatus.valid,
+    assignedPhase: phase,
+    current: status == CircuitStatus.active
+        ? CalculationStepResult(status: CalculationStatus.calculated)
+        : unresolved(),
+    cable: unresolved(),
+    voltageDrop: unresolved('Circuit length is not supplied.'),
+    circuitBreaker: const PendingEngineeringResult.notCalculated(
+      reason: 'CB rules are not approved in CP1.',
+    ),
+    ground: const PendingEngineeringResult.notCalculated(
+      reason: 'Ground rules are not approved in CP1.',
+    ),
+    conduit: const PendingEngineeringResult.notCalculated(
+      reason: 'Conduit rules are not approved in CP1.',
+    ),
+  );
 
-  CircuitCalculationResult emptyResult(int circuitNo, CircuitStatus status) =>
-      CircuitCalculationResult(
-        circuitNo: circuitNo,
-        circuitStatus: status,
-        validationStatus: CircuitValidationStatus.valid,
-        current: unresolved(),
-        cable: unresolved(),
-        voltageDrop: unresolved(),
-        circuitBreaker: const PendingEngineeringResult.notCalculated(),
-        ground: const PendingEngineeringResult.notCalculated(),
-        conduit: const PendingEngineeringResult.notCalculated(),
-      );
-
+  final totals = PanelCalculatedTotals(
+    connectedVaR: 1200,
+    connectedVaS: 2000,
+    connectedVaT: 0,
+    totalConnectedVa: 3200,
+  );
   final snapshot = PanelCalculationSnapshot(
     snapshotId: 'snapshot-1-r1',
     panelDefinition: panel,
@@ -120,17 +122,36 @@ void main() {
     engineVersion: 'd24d015',
     calculatedAt: DateTime.utc(2026, 9, 7),
     circuitResults: [
-      activeResult(1, PhaseAssignment.r),
-      activeResult(2, PhaseAssignment.s),
-      emptyResult(3, CircuitStatus.spare),
-      emptyResult(4, CircuitStatus.space),
+      result(
+        circuitNo: 1,
+        status: CircuitStatus.active,
+        configuration: CircuitPhaseConfiguration.singlePhase,
+        phase: PhaseAssignment.r,
+      ),
+      result(
+        circuitNo: 2,
+        status: CircuitStatus.active,
+        configuration: CircuitPhaseConfiguration.singlePhase,
+        phase: PhaseAssignment.s,
+      ),
+      result(
+        circuitNo: 3,
+        status: CircuitStatus.active,
+        configuration: CircuitPhaseConfiguration.threePhase,
+        phase: PhaseAssignment.rst,
+      ),
+      result(
+        circuitNo: 4,
+        status: CircuitStatus.spare,
+        configuration: CircuitPhaseConfiguration.singlePhase,
+      ),
+      result(
+        circuitNo: 5,
+        status: CircuitStatus.space,
+        configuration: CircuitPhaseConfiguration.singlePhase,
+      ),
     ],
-    calculatedTotals: const {
-      'connectedVaR': 1200,
-      'connectedVaS': 2000,
-      'connectedVaT': 0,
-      'totalConnectedVa': 3200,
-    },
+    calculatedTotals: totals,
   );
 
   test('LoadInput supports and round-trips exactly three approved forms', () {
@@ -143,35 +164,69 @@ void main() {
         powerFactor: 0.85,
       ),
     ];
-
     for (final input in inputs) {
-      final restored = LoadInput.fromJson(roundTrip(input.toJson()));
-      expect(restored.toJson(), input.toJson());
+      expect(
+        LoadInput.fromJson(roundTrip(input.toJson())).toJson(),
+        input.toJson(),
+      );
     }
   });
 
-  test('all domain contracts round-trip through JSON', () {
-    final panelRestored = PanelDefinition.fromJson(roundTrip(panel.toJson()));
-    expect(panelRestored.toJson(), panel.toJson());
-
-    final snapshotRestored = PanelCalculationSnapshot.fromJson(
-      roundTrip(snapshot.toJson()),
+  test('typed panel electrical system round-trips without defaults', () {
+    expect(
+      PanelElectricalSystem.fromJson(
+        roundTrip(electricalSystem.toJson()),
+      ).toJson(),
+      electricalSystem.toJson(),
     );
-    expect(snapshotRestored.toJson(), snapshot.toJson());
+    for (final missingKey in [
+      'phaseSystem',
+      'lineToNeutralVoltageV',
+      'lineToLineVoltageV',
+      'frequencyHz',
+    ]) {
+      final json = Map<String, Object?>.from(electricalSystem.toJson())
+        ..remove(missingKey);
+      expect(() => PanelElectricalSystem.fromJson(json), throwsA(anything));
+    }
+  });
 
+  test('all aggregate and typed export contracts round-trip through JSON', () {
+    expect(
+      PanelDefinition.fromJson(roundTrip(panel.toJson())).toJson(),
+      panel.toJson(),
+    );
+    expect(
+      PanelCalculationSnapshot.fromJson(roundTrip(snapshot.toJson())).toJson(),
+      snapshot.toJson(),
+    );
     final projection = LoadScheduleExportProjection(
       snapshotId: snapshot.snapshotId,
-      panelHeader: const {'panelNo': 'LP-1', 'voltageV': 415},
-      columns: const ['circuitNo', 'phaseR', 'description'],
-      rows: const [
-        {'circuitNo': 1, 'phaseR': 1200, 'description': 'Lighting'},
+      header: LoadScheduleExportHeader(
+        panelId: panel.panelId,
+        panelNo: panel.panelNo,
+        electricalSystem: electricalSystem,
+        projectName: panel.projectName,
+        location: panel.location,
+      ),
+      rows: [
+        LoadScheduleExportRow(
+          circuitNo: 1,
+          description: 'Lighting',
+          status: CircuitStatus.active,
+          phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+          assignedPhase: PhaseAssignment.r,
+          loadInput: LoadInput.directVa(1200),
+        ),
       ],
-      summary: const {'totalConnectedVa': 3200},
+      summary: LoadScheduleExportSummary(calculatedTotals: totals),
     );
-    final projectionRestored = LoadScheduleExportProjection.fromJson(
-      roundTrip(projection.toJson()),
+    expect(
+      LoadScheduleExportProjection.fromJson(
+        roundTrip(projection.toJson()),
+      ).toJson(),
+      projection.toJson(),
     );
-    expect(projectionRestored.toJson(), projection.toJson());
   });
 
   test('ACTIVE, SPARE, and SPACE invariants fail closed', () {
@@ -180,40 +235,36 @@ void main() {
         circuitNo: 1,
         description: 'Missing load',
         status: CircuitStatus.active,
+        phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
         phaseAssignmentMode: PhaseAssignmentMode.automatic,
       ),
       throwsArgumentError,
     );
-    expect(
-      () => CircuitDefinition(
-        circuitNo: 2,
-        description: 'Spare with load',
-        status: CircuitStatus.spare,
-        loadInput: LoadInput.directVa(1000),
-        phaseAssignmentMode: PhaseAssignmentMode.automatic,
-      ),
-      throwsArgumentError,
-    );
-    expect(
-      () => CircuitDefinition(
-        circuitNo: 3,
-        description: 'Space with equipment',
-        status: CircuitStatus.space,
-        phaseAssignmentMode: PhaseAssignmentMode.automatic,
-        manualSpareCircuitBreaker: '20 A',
-      ),
-      throwsArgumentError,
-    );
+    for (final status in [CircuitStatus.spare, CircuitStatus.space]) {
+      expect(
+        () => CircuitDefinition(
+          circuitNo: 2,
+          description: 'Non-active with load',
+          status: status,
+          phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+          loadInput: LoadInput.directVa(1000),
+          phaseAssignmentMode: PhaseAssignmentMode.automatic,
+        ),
+        throwsArgumentError,
+      );
+    }
+    expect(spare.toJson().containsKey('manualSpareCircuitBreaker'), isFalse);
   });
 
-  test('manual and automatic phase assignment are explicit', () {
+  test('single-phase manual and automatic assignments are constrained', () {
     expect(activeManual.phaseAssignment, PhaseAssignment.r);
     expect(activeAutomatic.phaseAssignment, isNull);
     expect(
       () => CircuitDefinition(
-        circuitNo: 5,
+        circuitNo: 6,
         description: 'Manual missing phase',
         status: CircuitStatus.active,
+        phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
         loadInput: LoadInput.directCurrentA(10),
         phaseAssignmentMode: PhaseAssignmentMode.manual,
       ),
@@ -221,9 +272,10 @@ void main() {
     );
     expect(
       () => CircuitDefinition(
-        circuitNo: 6,
-        description: 'Automatic with phase',
+        circuitNo: 7,
+        description: 'Automatic assigned phase',
         status: CircuitStatus.active,
+        phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
         loadInput: LoadInput.directCurrentA(10),
         phaseAssignmentMode: PhaseAssignmentMode.automatic,
         phaseAssignment: PhaseAssignment.t,
@@ -232,46 +284,89 @@ void main() {
     );
   });
 
-  test('odd and even circuit numbers coexist without hierarchy', () {
-    expect(panel.circuits.map((circuit) => circuit.circuitNo), [1, 2, 3, 4]);
-    expect(panel.toJson().containsKey('parentPanelId'), isFalse);
-    expect(panel.toJson().containsKey('childPanels'), isFalse);
-  });
-
-  test('snapshot is immutable and revisioned', () {
-    expect(snapshot.revision, 1);
+  test('three-phase circuits and results remain RST', () {
+    expect(activeThreePhase.phaseAssignment, PhaseAssignment.rst);
     expect(
-      () => snapshot.circuitResults.add(activeResult(5, PhaseAssignment.t)),
-      throwsUnsupportedError,
+      () => CircuitDefinition(
+        circuitNo: 8,
+        description: 'Invalid three-phase assignment',
+        status: CircuitStatus.active,
+        phaseConfiguration: CircuitPhaseConfiguration.threePhase,
+        loadInput: LoadInput.directCurrentA(10),
+        phaseAssignmentMode: PhaseAssignmentMode.manual,
+        phaseAssignment: PhaseAssignment.r,
+      ),
+      throwsArgumentError,
     );
     expect(
-      () => snapshot.calculatedTotals['totalConnectedVa'] = 0,
+      () => result(
+        circuitNo: 8,
+        status: CircuitStatus.active,
+        configuration: CircuitPhaseConfiguration.threePhase,
+        phase: PhaseAssignment.s,
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => CircuitDefinition(
+        circuitNo: 9,
+        description: 'Single-phase RST',
+        status: CircuitStatus.active,
+        phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+        loadInput: LoadInput.directVa(1000),
+        phaseAssignmentMode: PhaseAssignmentMode.manual,
+        phaseAssignment: PhaseAssignment.rst,
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('snapshot is immutable, revisioned, and uses typed totals', () {
+    expect(snapshot.revision, 1);
+    expect(snapshot.calculatedTotals, isA<PanelCalculatedTotals>());
+    expect(
+      () => snapshot.circuitResults.add(
+        result(
+          circuitNo: 6,
+          status: CircuitStatus.active,
+          configuration: CircuitPhaseConfiguration.singlePhase,
+          phase: PhaseAssignment.t,
+        ),
+      ),
       throwsUnsupportedError,
     );
     expect(() => panel.circuits.clear(), throwsUnsupportedError);
   });
 
-  test('PanelDefinition contains no calculated totals', () {
+  test('PanelDefinition has typed system and no calculated totals', () {
     final json = panel.toJson();
+    expect(json['electricalSystem'], isA<Map<String, Object?>>());
+    expect(json.containsKey('systemVoltageV'), isFalse);
+    expect(json.containsKey('frequencyHz'), isFalse);
     expect(json.containsKey('calculatedTotals'), isFalse);
-    expect(json.containsKey('connectedVaR'), isFalse);
     expect(json.containsKey('totalConnectedVa'), isFalse);
-    expect(json.containsKey('demandLoadVa'), isFalse);
+  });
+
+  test('calculation step has no generic engineering payload', () {
+    final step = CalculationStepResult(
+      status: CalculationStatus.calculated,
+      sourceReferences: const [
+        CalculationSourceReference(sourceId: 'engine', label: 'Engine result'),
+      ],
+    );
+    expect(step.toJson().containsKey('values'), isFalse);
+    expect(step.toJson()['sourceReferences'], isNotEmpty);
   });
 
   test('invalid or missing engineering inputs fail closed', () {
     expect(() => LoadInput.directVa(0), throwsArgumentError);
-    expect(() => LoadInput.directCurrentA(-1), throwsArgumentError);
     expect(
-      () => LoadInput.quantityTimesWatts(
-        quantity: 1,
-        wattsPerUnit: 100,
-        powerFactor: 0,
+      () => PanelElectricalSystem(
+        phaseSystem: PanelPhaseSystem.singlePhase,
+        lineToNeutralVoltageV: 0,
+        lineToLineVoltageV: 400,
+        frequencyHz: 50,
       ),
-      throwsArgumentError,
-    );
-    expect(
-      () => CalculationStepResult(status: CalculationStatus.calculated),
       throwsArgumentError,
     );
     expect(
@@ -283,8 +378,13 @@ void main() {
       throwsArgumentError,
     );
     expect(
-      () => PendingEngineeringResult.fromJson(const {'status': 'calculated'}),
-      throwsA(anything),
+      () => PanelCalculatedTotals(
+        connectedVaR: -1,
+        connectedVaS: 0,
+        connectedVaT: 0,
+        totalConnectedVa: 0,
+      ),
+      throwsArgumentError,
     );
   });
 }

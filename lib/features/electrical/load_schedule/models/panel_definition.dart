@@ -1,14 +1,14 @@
 import 'circuit_definition.dart';
+import 'panel_electrical_system.dart';
 
 class PanelDefinition {
   PanelDefinition({
     required this.panelId,
     required this.panelNo,
+    required this.electricalSystem,
     required List<CircuitDefinition> circuits,
     this.projectName,
     this.location,
-    this.systemVoltageV,
-    this.frequencyHz,
     this.enclosure,
     this.mounting,
     this.door,
@@ -19,12 +19,6 @@ class PanelDefinition {
   }) : circuits = List.unmodifiable(circuits) {
     if (panelId.trim().isEmpty || panelNo.trim().isEmpty) {
       throw ArgumentError('panelId and panelNo are required.');
-    }
-    if (systemVoltageV != null && systemVoltageV! <= 0) {
-      throw ArgumentError.value(systemVoltageV, 'systemVoltageV');
-    }
-    if (frequencyHz != null && frequencyHz! <= 0) {
-      throw ArgumentError.value(frequencyHz, 'frequencyHz');
     }
     if (circuitCapacity != null && circuitCapacity! <= 0) {
       throw ArgumentError.value(circuitCapacity, 'circuitCapacity');
@@ -40,10 +34,9 @@ class PanelDefinition {
 
   final String panelId;
   final String panelNo;
+  final PanelElectricalSystem electricalSystem;
   final String? projectName;
   final String? location;
-  final double? systemVoltageV;
-  final double? frequencyHz;
   final String? enclosure;
   final String? mounting;
   final String? door;
@@ -58,10 +51,9 @@ class PanelDefinition {
   Map<String, Object?> toJson() => {
     'panelId': panelId,
     'panelNo': panelNo,
+    'electricalSystem': electricalSystem.toJson(),
     if (projectName != null) 'projectName': projectName,
     if (location != null) 'location': location,
-    if (systemVoltageV != null) 'systemVoltageV': systemVoltageV,
-    if (frequencyHz != null) 'frequencyHz': frequencyHz,
     if (enclosure != null) 'enclosure': enclosure,
     if (mounting != null) 'mounting': mounting,
     if (door != null) 'door': door,
@@ -76,10 +68,11 @@ class PanelDefinition {
       PanelDefinition(
         panelId: json['panelId'] as String,
         panelNo: json['panelNo'] as String,
+        electricalSystem: PanelElectricalSystem.fromJson(
+          Map<String, Object?>.from(json['electricalSystem'] as Map),
+        ),
         projectName: json['projectName'] as String?,
         location: json['location'] as String?,
-        systemVoltageV: (json['systemVoltageV'] as num?)?.toDouble(),
-        frequencyHz: (json['frequencyHz'] as num?)?.toDouble(),
         enclosure: json['enclosure'] as String?,
         mounting: json['mounting'] as String?,
         door: json['door'] as String?,
