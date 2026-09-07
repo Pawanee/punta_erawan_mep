@@ -4,6 +4,7 @@ import '../../models/cable_routing_identity.dart';
 import '../../models/cable_table_row.dart';
 import '../../models/table_5_21_data.dart';
 import '../../models/table_5_27_row.dart';
+import '../../models/underground_ampacity_row.dart';
 import '../../../voltage_drop/enums/cable_insulation.dart';
 import '../models/ampacity_candidate_v2.dart';
 
@@ -55,6 +56,30 @@ class AmpacityCandidateV2Adapter {
           conductorTemperatureClass: conductorTemperatureClass,
           applicableCableIdentities: {routingCableIdentity},
           sourceReferences: [Table527Row.reference],
+        ),
+      )
+      .toList(growable: false);
+
+  List<AmpacityCandidateV2> fromUndergroundTable({
+    required List<UndergroundAmpacityRow> rows,
+    required CableInsulation insulation,
+    required ConductorTemperatureClass conductorTemperatureClass,
+    required CableRoutingIdentity routingCableIdentity,
+  }) => rows
+      .map(
+        (row) => AmpacityCandidateV2(
+          sizeSqmm: row.sizeSqmm,
+          baseAmpacity: row.ampacity,
+          sourceTableId: row.tableId,
+          sourceTableDisplayName: 'Table ${row.tableId}',
+          sourceColumnId: null,
+          installationGroupNumber: row.installationGroupNumber,
+          loadedConductors: row.loadedConductors,
+          coreType: row.coreType,
+          insulation: insulation,
+          conductorTemperatureClass: conductorTemperatureClass,
+          applicableCableIdentities: {routingCableIdentity},
+          sourceReferences: [row.sourceReference],
         ),
       )
       .toList(growable: false);

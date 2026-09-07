@@ -3,14 +3,18 @@ import '../../enums/ampacity_table.dart';
 import '../../enums/core_type.dart';
 import '../../enums/cable_shape.dart';
 import '../../enums/conductor_temperature_class.dart';
+import '../../enums/phase_system.dart';
 import '../../models/cable_routing_identity.dart';
 import '../enums/ampacity_routing_status.dart';
 import '../enums/ampacity_selection_status_v2.dart';
+import '../enums/installation_environment.dart';
+import '../enums/routing_electrical_system.dart';
 import '../enums/voltage_drop_verification_status_v2.dart';
 import '../models/ampacity_design_result_v2.dart';
 import '../models/ampacity_candidate_v2.dart';
 import '../models/ampacity_correction_context_v2.dart';
 import '../models/ampacity_selection_request_v2.dart';
+import '../models/ampacity_routing_result.dart';
 import '../models/cable_design_request_v2.dart';
 import '../services/ampacity_candidate_v2_adapter.dart';
 import '../services/ampacity_correction_plan_resolver_v2.dart';
@@ -20,6 +24,9 @@ import '../services/correction_application_resolver_v2.dart';
 import '../services/correction_resolver_v2.dart';
 import '../services/production_routing_request_adapter.dart';
 import '../../repositories/table_5_21_repository.dart';
+import '../../repositories/table_5_23_repository.dart';
+import '../../repositories/table_5_27_repository.dart';
+import '../../repositories/table_5_29_repository.dart';
 import '../../../voltage_drop/enums/cable_insulation.dart';
 
 /// Parallel, fail-closed V2 ampacity boundary. Not used by the active engine.
@@ -28,6 +35,9 @@ class ActiveAmpacityOrchestratorV2 {
     ProductionRoutingRequestAdapter? adapter,
     AmpacityRoutingContextBuilder? routing,
     Table521Repository? table521,
+    Table523Repository? table523,
+    Table527Repository? table527,
+    Table529Repository? table529,
     AmpacityCandidateV2Adapter? candidates,
     AmpacitySelectionCoreV2? selectionCore,
     AmpacityCorrectionPlanResolverV2? correctionPlans,
@@ -36,6 +46,9 @@ class ActiveAmpacityOrchestratorV2 {
   }) : _adapter = adapter ?? ProductionRoutingRequestAdapter(),
        _routing = routing ?? AmpacityRoutingContextBuilder(),
        _table521 = table521 ?? Table521Repository(),
+       _table523 = table523 ?? const Table523Repository(),
+       _table527 = table527 ?? Table527Repository(),
+       _table529 = table529 ?? const Table529Repository(),
        _candidates = candidates ?? const AmpacityCandidateV2Adapter(),
        _selectionCore = selectionCore ?? AmpacitySelectionCoreV2(),
        _correctionPlans =
@@ -46,6 +59,9 @@ class ActiveAmpacityOrchestratorV2 {
   final ProductionRoutingRequestAdapter _adapter;
   final AmpacityRoutingContextBuilder _routing;
   final Table521Repository _table521;
+  final Table523Repository _table523;
+  final Table527Repository _table527;
+  final Table529Repository _table529;
   final AmpacityCandidateV2Adapter _candidates;
   final AmpacitySelectionCoreV2 _selectionCore;
   final AmpacityCorrectionPlanResolverV2 _correctionPlans;
@@ -65,13 +81,18 @@ class ActiveAmpacityOrchestratorV2 {
         '60227 IEC 10 supports only the approved Table 5-21 C6/C7 loaded-conductor scopes.',
       );
     }
-    if (request.identity == CableRoutingIdentity.nyy &&
-        (request.coreType != CoreType.singleCore ||
-            (request.loadedConductors != 2 && request.loadedConductors != 3))) {
-      return _result(
-        AmpacityRoutingStatus.unsupported,
-        'NYY is limited to the approved single-core Table 5-21 C2/C3 scope.',
-      );
+    if (request.identity == CableRoutingIdentity.nyy) {
+      final environments = request.engineeringInstallation?.environments;
+      final isUnderground =
+          environments?.contains(InstallationEnvironment.underground) == true ||
+          environments?.contains(InstallationEnvironment.directBuried) == true;
+      if ((request.coreType != CoreType.singleCore && !isUnderground) ||
+          (request.loadedConductors != 2 && request.loadedConductors != 3)) {
+        return _result(
+          AmpacityRoutingStatus.unsupported,
+          'NYY is outside its approved core or loaded-conductor scope.',
+        );
+      }
     }
     if (request.identity == CableRoutingIdentity.iec605021) {
       if ((request.coreType != CoreType.singleCore &&
@@ -79,7 +100,7 @@ class ActiveAmpacityOrchestratorV2 {
           (request.loadedConductors != 2 && request.loadedConductors != 3)) {
         return _result(
           AmpacityRoutingStatus.unsupported,
-          'IEC 60502-1 is limited to the approved Table 5-21 C4/C5/C8/C9 scope.',
+          'IEC 60502-1 supports only the approved two/three-loaded-conductor scopes.',
         );
       }
       if (request.routingElectricalSystem == null) {
@@ -93,14 +114,24 @@ class ActiveAmpacityOrchestratorV2 {
           properties?.cableShape != null &&
           properties?.insulation != null &&
           properties?.conductorTemperatureClass != null;
+      final environments = request.engineeringInstallation?.environments;
+      final isUnderground =
+          environments?.contains(InstallationEnvironment.underground) == true ||
+          environments?.contains(InstallationEnvironment.directBuried) == true;
+      final hasApprovedTemperaturePair =
+          isUnderground &&
+              properties?.insulation == CableInsulation.pvc &&
+              properties?.conductorTemperatureClass ==
+                  ConductorTemperatureClass.pvc70 ||
+          properties?.insulation == CableInsulation.xlpe &&
+              properties?.conductorTemperatureClass ==
+                  ConductorTemperatureClass.xlpeEpr90;
       if (hasCompleteConstruction &&
           (properties!.cableShape != CableShape.round ||
-              properties.insulation != CableInsulation.xlpe ||
-              properties.conductorTemperatureClass !=
-                  ConductorTemperatureClass.xlpeEpr90)) {
+              !hasApprovedTemperaturePair)) {
         return _result(
           AmpacityRoutingStatus.unsupported,
-          'IEC 60502-1 C4/C5/C8/C9 requires explicit round XLPE 90°C construction facts.',
+          'IEC 60502-1 requires explicit round PVC 70°C or XLPE 90°C construction facts.',
         );
       }
     }
@@ -116,20 +147,27 @@ class ActiveAmpacityOrchestratorV2 {
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
-    if (route.ampacityTable != AmpacityTable.table521 ||
-        route.context?.installationResolution.reference?.group != 3 ||
-        route.sourceColumnId == null)
+    if (route.ampacityTable == null ||
+        route.ampacityTable == AmpacityTable.table520)
       return AmpacityDesignResultV2(
         status: AmpacityRoutingStatus.unsupported,
         selected: null,
-        reason: 'Only resolved Group 3/Table 5-21 routing is supported.',
+        reason: 'The resolved ampacity table is not enabled in Routing v2.',
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
-    final candidates = _candidates.fromTable521(
-      data: await _table521.loadTable(),
-      sourceColumnId: route.sourceColumnId!,
-    );
+    if (route.ampacityTable != AmpacityTable.table521 &&
+        !_supportsPublishedElectricalSystem(request)) {
+      return AmpacityDesignResultV2(
+        status: AmpacityRoutingStatus.noMatch,
+        selected: null,
+        reason:
+            'The loaded-conductor count is incompatible with the supplied electrical system.',
+        voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
+        routingResult: route,
+      );
+    }
+    final candidates = await _sourceCandidates(request, route);
     final selection = await _selectionCore.select(
       AmpacitySelectionRequestV2(
         loadCurrent: request.loadCurrent,
@@ -138,6 +176,8 @@ class ActiveAmpacityOrchestratorV2 {
             _correctionResolver ??
             _PlanCorrectionResolverV2(
               ambientTemperatureC: request.ambientTemperature,
+              groupedCircuitCount:
+                  request.engineeringInstallation?.groupedCircuitCount,
               plans: _correctionPlans,
               applications: _correctionApplications,
             ),
@@ -151,6 +191,67 @@ class ActiveAmpacityOrchestratorV2 {
       routingResult: route,
       candidates: candidates,
     );
+  }
+
+  bool _supportsPublishedElectricalSystem(CableDesignRequestV2 request) {
+    final system =
+        request.routingElectricalSystem ??
+        switch (request.phaseSystem) {
+          PhaseSystem.singlePhase => RoutingElectricalSystem.singlePhaseAc,
+          PhaseSystem.threePhase => RoutingElectricalSystem.threePhaseAc,
+        };
+    return switch (request.loadedConductors) {
+      2 =>
+        system == RoutingElectricalSystem.singlePhaseAc ||
+            system == RoutingElectricalSystem.dc,
+      3 => system == RoutingElectricalSystem.threePhaseAc,
+      _ => false,
+    };
+  }
+
+  Future<List<AmpacityCandidateV2>> _sourceCandidates(
+    CableDesignRequestV2 request,
+    AmpacityRoutingResult route,
+  ) async {
+    final context = route.context!;
+    final all = switch (route.ampacityTable as AmpacityTable) {
+      AmpacityTable.table521 => _candidates.fromTable521(
+        data: await _table521.loadTable(),
+        sourceColumnId: route.sourceColumnId!,
+      ),
+      AmpacityTable.table523 => _candidates.fromUndergroundTable(
+        rows: await _table523.loadTable(),
+        insulation: CableInsulation.pvc,
+        conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+        routingCableIdentity: request.identity!,
+      ),
+      AmpacityTable.table527 => _candidates.fromTable527(
+        rows: await _table527.loadTable(),
+        insulation: CableInsulation.xlpe,
+        conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+        routingCableIdentity: request.identity!,
+      ),
+      AmpacityTable.table529 => _candidates.fromUndergroundTable(
+        rows: await _table529.loadTable(),
+        insulation: CableInsulation.xlpe,
+        conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+        routingCableIdentity: request.identity!,
+      ),
+      AmpacityTable.table520 => const <AmpacityCandidateV2>[],
+    };
+    final group = context.installationResolution.reference!.group;
+    return all
+        .where(
+          (candidate) =>
+              candidate.installationGroupNumber == group &&
+              candidate.loadedConductors == request.loadedConductors &&
+              candidate.coreType == request.coreType &&
+              candidate.insulation == context.insulation &&
+              candidate.conductorTemperatureClass ==
+                  context.conductorTemperatureClass &&
+              candidate.applicableCableIdentities.contains(request.identity),
+        )
+        .toList(growable: false);
   }
 
   AmpacityRoutingStatus _selectionStatus(
@@ -177,11 +278,13 @@ class ActiveAmpacityOrchestratorV2 {
 class _PlanCorrectionResolverV2 implements CorrectionResolverV2 {
   const _PlanCorrectionResolverV2({
     required this.ambientTemperatureC,
+    required this.groupedCircuitCount,
     required this.plans,
     required this.applications,
   });
 
   final double ambientTemperatureC;
+  final int? groupedCircuitCount;
   final AmpacityCorrectionPlanResolverV2 plans;
   final CorrectionApplicationResolverV2 applications;
 
@@ -193,6 +296,7 @@ class _PlanCorrectionResolverV2 implements CorrectionResolverV2 {
     final plan = plans.resolve(
       sourceTableId: candidate.sourceTableId,
       ambientTemperatureC: ambientTemperatureC,
+      groupedCircuitCount: groupedCircuitCount,
     );
     return applications.resolve(
       plan: plan,

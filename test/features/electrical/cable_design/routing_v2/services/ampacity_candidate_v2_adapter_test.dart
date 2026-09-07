@@ -6,6 +6,8 @@ import 'package:mep_project/features/electrical/cable_design/models/cable_routin
 import 'package:mep_project/features/electrical/cable_design/repositories/table_5_20_repository.dart';
 import 'package:mep_project/features/electrical/cable_design/repositories/table_5_21_repository.dart';
 import 'package:mep_project/features/electrical/cable_design/repositories/table_5_27_repository.dart';
+import 'package:mep_project/features/electrical/cable_design/repositories/table_5_23_repository.dart';
+import 'package:mep_project/features/electrical/cable_design/repositories/table_5_29_repository.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/services/ampacity_candidate_v2_adapter.dart';
 import 'package:mep_project/features/electrical/voltage_drop/enums/cable_insulation.dart';
 
@@ -57,6 +59,45 @@ void main() {
       candidate.conductorTemperatureClass,
       ConductorTemperatureClass.xlpeEpr90,
     );
+  });
+
+  test('adapts Table 5-23 with explicit PVC and NYY identity', () async {
+    final candidates = adapter.fromUndergroundTable(
+      rows: await const Table523Repository().loadTable(),
+      insulation: CableInsulation.pvc,
+      conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+      routingCableIdentity: CableRoutingIdentity.nyy,
+    );
+    final candidate = candidates.singleWhere(
+      (candidate) =>
+          candidate.sizeSqmm == 10 &&
+          candidate.installationGroupNumber == 6 &&
+          candidate.loadedConductors == 3 &&
+          candidate.coreType == CoreType.multiCore,
+    );
+    expect(candidate.baseAmpacity, 76);
+    expect(candidate.sourceTableId, '5-23');
+    expect(candidate.insulation, CableInsulation.pvc);
+    expect(candidate.applicableCableIdentities, {CableRoutingIdentity.nyy});
+  });
+
+  test('adapts Table 5-29 with explicit XLPE identity', () async {
+    final candidates = adapter.fromUndergroundTable(
+      rows: await const Table529Repository().loadTable(),
+      insulation: CableInsulation.xlpe,
+      conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
+      routingCableIdentity: CableRoutingIdentity.iec605021,
+    );
+    final candidate = candidates.singleWhere(
+      (candidate) =>
+          candidate.sizeSqmm == 95 &&
+          candidate.installationGroupNumber == 5 &&
+          candidate.loadedConductors == 2 &&
+          candidate.coreType == CoreType.singleCore,
+    );
+    expect(candidate.baseAmpacity, 271);
+    expect(candidate.sourceTableId, '5-29');
+    expect(candidate.sourceReferences, ['Table 5-29']);
   });
 
   test('adapts Table 5-21 C1 faithfully without legacy identities', () async {
