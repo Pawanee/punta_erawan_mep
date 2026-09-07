@@ -56,6 +56,63 @@ void main() {
     conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
   );
 
+  const table523Identities = [
+    CableRoutingIdentity.nyy,
+    CableRoutingIdentity.nyyG,
+    CableRoutingIdentity.vct,
+    CableRoutingIdentity.vctG,
+    CableRoutingIdentity.iec605021,
+  ];
+  const table523Installations = [
+    (
+      group: 5,
+      environment: InstallationEnvironment.underground,
+      support: InstallationSupport.conduit,
+    ),
+    (
+      group: 6,
+      environment: InstallationEnvironment.directBuried,
+      support: InstallationSupport.directBurial,
+    ),
+  ];
+
+  for (final identity in table523Identities) {
+    for (final installationCase in table523Installations) {
+      test('${identity.code} routes to Table 5-23 Group '
+          '${installationCase.group}', () async {
+        final result = await orchestrator.prepare(
+          request(
+            identity: identity,
+            coreType: CoreType.multiCore,
+            loadedConductors: 3,
+            loadCurrent: 10,
+            ambient: 30,
+            electricalSystem: RoutingElectricalSystem.threePhaseAc,
+            installation: EngineeringInstallationInput(
+              environments: {installationCase.environment},
+              supports: {installationCase.support},
+              hasOuterSheath: true,
+              groupedCircuitCount: 1,
+            ),
+            supplemental: pvc,
+          ),
+        );
+
+        expect(result.status, AmpacityRoutingStatus.resolved);
+        expect(result.routingResult!.ampacityTable, AmpacityTable.table523);
+        expect(result.selected!.candidate.sourceTableId, '5-23');
+        expect(
+          result.selected!.candidate.installationGroupNumber,
+          installationCase.group,
+        );
+        expect(
+          result.selected!.candidate.applicableCableIdentities,
+          contains(identity),
+        );
+      });
+    }
+  }
+
   test('NYY in underground conduit selects Table 5-23 Group 5', () async {
     final result = await orchestrator.prepare(
       request(
