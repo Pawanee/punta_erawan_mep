@@ -6,4 +6,4 @@ enum CircuitBreakerSelectionStatus {
   noMatch,
 }
 
-enum CableCoordinationStatus { pendingCableSelection }
+enum CableCoordinationStatus { pendingCableSelection, coordinated }

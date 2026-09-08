@@ -37,6 +37,7 @@ class CircuitBreakerSelectionResult {
     double? breakingCapacityKa,
     String? tripCurveDesignation,
     String? manualOverrideReason,
+    bool cableCoordinated = false,
   }) => CircuitBreakerSelectionResult._(
     status: CircuitBreakerSelectionStatus.selected,
     breakerType: breakerType,
@@ -52,6 +53,8 @@ class CircuitBreakerSelectionResult {
     catalogVersion: catalogVersion,
     cableCoordinationStatus: designCurrentIbA == null
         ? null
+        : cableCoordinated
+        ? CableCoordinationStatus.coordinated
         : CableCoordinationStatus.pendingCableSelection,
   );
 
@@ -94,6 +97,27 @@ class CircuitBreakerSelectionResult {
   final List<CalculationSourceReference> sourceReferences;
   final String? catalogVersion;
   final CableCoordinationStatus? cableCoordinationStatus;
+
+  CircuitBreakerSelectionResult markCableCoordinated() {
+    if (status != CircuitBreakerSelectionStatus.selected ||
+        designCurrentIbA == null) {
+      throw StateError('Only an ACTIVE selected breaker can be coordinated.');
+    }
+    return CircuitBreakerSelectionResult.selected(
+      breakerType: breakerType!,
+      ratedCurrentA: ratedCurrentA!,
+      poleConfiguration: poleConfiguration!,
+      selectionMode: selectionMode!,
+      sourceReferences: sourceReferences,
+      catalogVersion: catalogVersion!,
+      designCurrentIbA: designCurrentIbA,
+      currentMarginA: currentMarginA,
+      breakingCapacityKa: breakingCapacityKa,
+      tripCurveDesignation: tripCurveDesignation,
+      manualOverrideReason: manualOverrideReason,
+      cableCoordinated: true,
+    );
+  }
 
   void _validate() {
     final isSelected = status == CircuitBreakerSelectionStatus.selected;
@@ -169,8 +193,7 @@ class CircuitBreakerSelectionResult {
     if (hasActivePayload) {
       if (designCurrentIbA == null ||
           currentMarginA == null ||
-          cableCoordinationStatus !=
-              CableCoordinationStatus.pendingCableSelection) {
+          cableCoordinationStatus == null) {
         throw ArgumentError('ACTIVE breaker payload is incomplete.');
       }
       final expectedMargin = ratedCurrentA! - designCurrentIbA!;
@@ -256,14 +279,15 @@ class CircuitBreakerSelectionResult {
     }
     final coordinationName = json['cableCoordinationStatus'] as String?;
     final hasActivePayload = json['designCurrentIbA'] != null;
-    if ((hasActivePayload &&
-            coordinationName !=
-                CableCoordinationStatus.pendingCableSelection.name) ||
+    if ((hasActivePayload && coordinationName == null) ||
         (!hasActivePayload && coordinationName != null)) {
       throw ArgumentError(
         'Breaker JSON has inconsistent cable coordination status.',
       );
     }
+    final coordination = coordinationName == null
+        ? null
+        : CableCoordinationStatus.values.byName(coordinationName);
     return CircuitBreakerSelectionResult.selected(
       breakerType: BreakerType.values.byName(json['breakerType'] as String),
       ratedCurrentA: (json['ratedCurrentA'] as num).toDouble(),
@@ -286,6 +310,7 @@ class CircuitBreakerSelectionResult {
           )
           .toList(),
       catalogVersion: json['catalogVersion'] as String,
+      cableCoordinated: coordination == CableCoordinationStatus.coordinated,
     );
   }
 }

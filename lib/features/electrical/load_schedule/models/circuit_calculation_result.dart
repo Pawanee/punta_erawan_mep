@@ -3,11 +3,13 @@ import 'dart:math' as math;
 import '../enums/breaker_pole_configuration.dart';
 import '../enums/breaker_selection_mode.dart';
 import '../enums/calculation_status.dart';
+import '../enums/cable_selection_status.dart';
 import '../enums/circuit_phase_configuration.dart';
 import '../enums/circuit_breaker_selection_status.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
 import 'calculation_step_result.dart';
+import 'cable_coordination_result.dart';
 import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
 
@@ -47,7 +49,7 @@ class CircuitCalculationResult {
     }
     if (circuitStatus == CircuitStatus.spare &&
         (current.status == CalculationStatus.calculated ||
-            cable.status == CalculationStatus.calculated ||
+            cable.status == CableSelectionStatus.coordinated ||
             voltageDrop.status == CalculationStatus.calculated)) {
       throw ArgumentError(
         'SPARE circuits cannot contain calculated load results.',
@@ -63,13 +65,19 @@ class CircuitCalculationResult {
   final List<String> validationReasons;
   final PhaseAssignment? assignedPhase;
   final CurrentCalculationResult current;
-  final CalculationStepResult cable;
+  final CableCoordinationResult cable;
   final CalculationStepResult voltageDrop;
   final CircuitBreakerSelectionResult circuitBreaker;
   final PendingEngineeringResult ground;
   final PendingEngineeringResult conduit;
 
   void _validateCircuitBreaker() {
+    if (cable.status == CableSelectionStatus.coordinated &&
+        circuitBreaker.status != CircuitBreakerSelectionStatus.selected) {
+      throw ArgumentError(
+        'A coordinated cable requires a selected circuit breaker.',
+      );
+    }
     if (circuitBreaker.status != CircuitBreakerSelectionStatus.selected) {
       return;
     }
@@ -91,11 +99,10 @@ class CircuitCalculationResult {
     if (circuitStatus == CircuitStatus.active) {
       if (current.status != CalculationStatus.calculated ||
           circuitBreaker.designCurrentIbA == null ||
-          circuitBreaker.cableCoordinationStatus !=
-              CableCoordinationStatus.pendingCableSelection) {
+          circuitBreaker.cableCoordinationStatus == null) {
         throw ArgumentError(
-          'ACTIVE selected breaker requires calculated current and pending '
-          'cable coordination.',
+          'ACTIVE selected breaker requires calculated current and cable '
+          'coordination status.',
         );
       }
       final currentIb = current.designCurrentA!;
@@ -104,6 +111,38 @@ class CircuitCalculationResult {
       if ((currentIb - breakerIb).abs() > 1e-9 * scale) {
         throw ArgumentError(
           'Breaker design current must match the calculated circuit current.',
+        );
+      }
+      if (cable.status == CableSelectionStatus.coordinated) {
+        if (circuitBreaker.cableCoordinationStatus !=
+                CableCoordinationStatus.coordinated ||
+            cable.designCurrentIbA == null ||
+            cable.breakerRatedCurrentInA == null) {
+          throw ArgumentError(
+            'Coordinated cable requires a coordinated breaker payload.',
+          );
+        }
+        final cableIb = cable.designCurrentIbA!;
+        final cableIn = cable.breakerRatedCurrentInA!;
+        final inA = circuitBreaker.ratedCurrentA!;
+        if (!_close(currentIb, cableIb) || !_close(inA, cableIn)) {
+          throw ArgumentError(
+            'Cable Ib/In must match current and circuit breaker results.',
+          );
+        }
+        final expectedLoadedConductors =
+            phaseConfiguration == CircuitPhaseConfiguration.singlePhase
+            ? 2
+            : 3;
+        if (cable.loadedConductors != expectedLoadedConductors) {
+          throw ArgumentError(
+            'Cable loaded-conductor count is incompatible with circuit phase.',
+          );
+        }
+      } else if (circuitBreaker.cableCoordinationStatus !=
+          CableCoordinationStatus.pendingCableSelection) {
+        throw ArgumentError(
+          'An unresolved cable requires pending breaker coordination.',
         );
       }
     }
@@ -120,9 +159,14 @@ class CircuitCalculationResult {
     }
   }
 
+  bool _close(double left, double right) {
+    final scale = math.max(1.0, math.max(left.abs(), right.abs()));
+    return (left - right).abs() <= 1e-9 * scale;
+  }
+
   bool get _hasCalculatedEquipment =>
       current.status == CalculationStatus.calculated ||
-      cable.status == CalculationStatus.calculated ||
+      cable.status == CableSelectionStatus.coordinated ||
       voltageDrop.status == CalculationStatus.calculated ||
       circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
       ground.status == PendingEngineeringStatus.insufficient ||
@@ -162,7 +206,7 @@ class CircuitCalculationResult {
         current: CurrentCalculationResult.fromJson(
           Map<String, Object?>.from(json['current'] as Map),
         ),
-        cable: CalculationStepResult.fromJson(
+        cable: CableCoordinationResult.fromJson(
           Map<String, Object?>.from(json['cable'] as Map),
         ),
         voltageDrop: CalculationStepResult.fromJson(

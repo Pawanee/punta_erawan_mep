@@ -701,7 +701,7 @@ CircuitCalculationResult aggregateResult({
   validationStatus: CircuitValidationStatus.valid,
   assignedPhase: status == CircuitStatus.space ? null : PhaseAssignment.r,
   current: current,
-  cable: CalculationStepResult(status: CalculationStatus.notCalculated),
+  cable: CableCoordinationResult.notCalculated(),
   voltageDrop: CalculationStepResult(status: CalculationStatus.notCalculated),
   circuitBreaker: breaker,
   ground: const PendingEngineeringResult.notCalculated(),

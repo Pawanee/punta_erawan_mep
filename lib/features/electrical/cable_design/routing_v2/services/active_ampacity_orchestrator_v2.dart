@@ -1,5 +1,6 @@
 import '../../enums/cable_design_routing_mode.dart';
 import '../../enums/ampacity_table.dart';
+import '../../enums/cable_type.dart';
 import '../../enums/core_type.dart';
 import '../../enums/cable_shape.dart';
 import '../../enums/conductor_temperature_class.dart';
@@ -24,16 +25,21 @@ import '../services/correction_application_resolver_v2.dart';
 import '../services/correction_resolver_v2.dart';
 import '../services/production_routing_request_adapter.dart';
 import '../../repositories/table_5_21_repository.dart';
+import '../../repositories/table_5_20_repository.dart';
 import '../../repositories/table_5_23_repository.dart';
 import '../../repositories/table_5_27_repository.dart';
 import '../../repositories/table_5_29_repository.dart';
 import '../../../voltage_drop/enums/cable_insulation.dart';
 
-/// Parallel, fail-closed V2 ampacity boundary. Not used by the active engine.
+/// Fail-closed V2 ampacity boundary.
+///
+/// Legacy Cable Design callers remain unchanged. Load Schedule CP4 invokes
+/// this boundary explicitly with source-complete Routing V2 input.
 class ActiveAmpacityOrchestratorV2 {
   ActiveAmpacityOrchestratorV2({
     ProductionRoutingRequestAdapter? adapter,
     AmpacityRoutingContextBuilder? routing,
+    Table520Repository? table520,
     Table521Repository? table521,
     Table523Repository? table523,
     Table527Repository? table527,
@@ -45,6 +51,7 @@ class ActiveAmpacityOrchestratorV2 {
     CorrectionResolverV2? correctionResolver,
   }) : _adapter = adapter ?? ProductionRoutingRequestAdapter(),
        _routing = routing ?? AmpacityRoutingContextBuilder(),
+       _table520 = table520 ?? Table520Repository(),
        _table521 = table521 ?? Table521Repository(),
        _table523 = table523 ?? const Table523Repository(),
        _table527 = table527 ?? Table527Repository(),
@@ -58,6 +65,7 @@ class ActiveAmpacityOrchestratorV2 {
        _correctionResolver = correctionResolver;
   final ProductionRoutingRequestAdapter _adapter;
   final AmpacityRoutingContextBuilder _routing;
+  final Table520Repository _table520;
   final Table521Repository _table521;
   final Table523Repository _table523;
   final Table527Repository _table527;
@@ -147,12 +155,11 @@ class ActiveAmpacityOrchestratorV2 {
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
-    if (route.ampacityTable == null ||
-        route.ampacityTable == AmpacityTable.table520)
+    if (route.ampacityTable == null)
       return AmpacityDesignResultV2(
         status: AmpacityRoutingStatus.unsupported,
         selected: null,
-        reason: 'The resolved ampacity table is not enabled in Routing v2.',
+        reason: 'No ampacity table is enabled for the resolved route.',
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
@@ -215,6 +222,13 @@ class ActiveAmpacityOrchestratorV2 {
   ) async {
     final context = route.context!;
     final all = switch (route.ampacityTable as AmpacityTable) {
+      AmpacityTable.table520 => _candidates.fromTable520(
+        rows: await _table520.loadTable(
+          cableType: _legacyCableType(request.identity!),
+        ),
+        insulation: CableInsulation.pvc,
+        conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+      ),
       AmpacityTable.table521 => _candidates.fromTable521(
         data: await _table521.loadTable(),
         sourceColumnId: route.sourceColumnId!,
@@ -237,7 +251,6 @@ class ActiveAmpacityOrchestratorV2 {
         conductorTemperatureClass: ConductorTemperatureClass.xlpeEpr90,
         routingCableIdentity: request.identity!,
       ),
-      AmpacityTable.table520 => const <AmpacityCandidateV2>[],
     };
     final group = context.installationResolution.reference!.group;
     return all
@@ -253,6 +266,9 @@ class ActiveAmpacityOrchestratorV2 {
         )
         .toList(growable: false);
   }
+
+  CableType _legacyCableType(CableRoutingIdentity identity) =>
+      CableType.values.singleWhere((type) => type.code == identity.code);
 
   AmpacityRoutingStatus _selectionStatus(
     AmpacitySelectionStatusV2 status,

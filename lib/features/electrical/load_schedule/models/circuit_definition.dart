@@ -3,6 +3,7 @@ import '../enums/circuit_phase_configuration.dart';
 import '../enums/phase_assignment.dart';
 import '../enums/phase_assignment_mode.dart';
 import 'load_input.dart';
+import 'cable_coordination_input.dart';
 
 class CircuitDefinition {
   CircuitDefinition({
@@ -12,6 +13,7 @@ class CircuitDefinition {
     required this.phaseConfiguration,
     required this.phaseAssignmentMode,
     this.loadInput,
+    this.cableCoordinationInput,
     this.phaseAssignment,
   }) {
     if (circuitNo <= 0) {
@@ -23,6 +25,11 @@ class CircuitDefinition {
     if (status != CircuitStatus.active && loadInput != null) {
       throw ArgumentError('SPARE and SPACE circuits cannot contain a load.');
     }
+    if (status != CircuitStatus.active && cableCoordinationInput != null) {
+      throw ArgumentError(
+        'SPARE and SPACE circuits cannot contain cable routing input.',
+      );
+    }
     _validatePhaseAssignment();
   }
 
@@ -31,6 +38,7 @@ class CircuitDefinition {
   final CircuitStatus status;
   final CircuitPhaseConfiguration phaseConfiguration;
   final LoadInput? loadInput;
+  final CableCoordinationInput? cableCoordinationInput;
   final PhaseAssignmentMode phaseAssignmentMode;
   final PhaseAssignment? phaseAssignment;
 
@@ -65,6 +73,8 @@ class CircuitDefinition {
     'phaseConfiguration': phaseConfiguration.name,
     'phaseAssignmentMode': phaseAssignmentMode.name,
     if (loadInput != null) 'loadInput': loadInput!.toJson(),
+    if (cableCoordinationInput != null)
+      'cableCoordinationInput': cableCoordinationInput!.toJson(),
     if (phaseAssignment != null) 'phaseAssignment': phaseAssignment!.name,
   };
 
@@ -80,6 +90,13 @@ class CircuitDefinition {
             ? null
             : LoadInput.fromJson(
                 Map<String, Object?>.from(json['loadInput'] as Map),
+              ),
+        cableCoordinationInput: json['cableCoordinationInput'] == null
+            ? null
+            : CableCoordinationInput.fromJson(
+                Map<String, Object?>.from(
+                  json['cableCoordinationInput'] as Map,
+                ),
               ),
         phaseAssignmentMode: PhaseAssignmentMode.values.byName(
           json['phaseAssignmentMode'] as String,
