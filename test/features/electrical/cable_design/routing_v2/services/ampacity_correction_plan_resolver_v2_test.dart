@@ -34,9 +34,24 @@ void main() {
       );
     }
   });
-  test('unknown table dependencies remain unresolved, not 1.0', () {
+  test('Table 5-20 uses 40C and one-circuit source conditions', () {
     final plan = resolver.resolve(
       sourceTableId: '5-20',
+      ambientTemperatureC: 40,
+      groupedCircuitCount: 1,
+    );
+    expect(
+      plan.requirements.every(
+        (r) => r.state == CorrectionRequirementStateV2.notRequiredBySource,
+      ),
+      isTrue,
+    );
+    expect(plan.sourceReferences, ['Table 5-20']);
+  });
+
+  test('unknown table dependencies remain unresolved, not 1.0', () {
+    final plan = resolver.resolve(
+      sourceTableId: 'unknown',
       ambientTemperatureC: 40,
     );
     expect(

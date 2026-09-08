@@ -11,8 +11,11 @@ class AmpacityCorrectionPlanResolverV2 {
     int? groupedCircuitCount,
   }) {
     if (sourceTableId == '5-21') return _table521(ambientTemperatureC);
+    if (sourceTableId == '5-20') {
+      return _airTable(sourceTableId, ambientTemperatureC, groupedCircuitCount);
+    }
     if (sourceTableId == '5-27') {
-      return _airTable527(ambientTemperatureC, groupedCircuitCount);
+      return _airTable(sourceTableId, ambientTemperatureC, groupedCircuitCount);
     }
     if (sourceTableId == '5-23' || sourceTableId == '5-29') {
       return _underground(
@@ -38,11 +41,12 @@ class AmpacityCorrectionPlanResolverV2 {
     );
   }
 
-  AmpacityCorrectionPlanV2 _airTable527(
+  AmpacityCorrectionPlanV2 _airTable(
+    String sourceTableId,
     double ambient,
     int? groupedCircuitCount,
   ) => AmpacityCorrectionPlanV2(
-    sourceTableId: '5-27',
+    sourceTableId: sourceTableId,
     referenceAmbientTemperatureC: 40,
     requirements: [
       AmpacityCorrectionRequirementV2(
@@ -63,7 +67,7 @@ class AmpacityCorrectionPlanResolverV2 {
         state: CorrectionRequirementStateV2.notRequiredBySource,
       ),
     ],
-    sourceReferences: const ['Table 5-27'],
+    sourceReferences: ['Table $sourceTableId'],
   );
 
   AmpacityCorrectionPlanV2 _underground(

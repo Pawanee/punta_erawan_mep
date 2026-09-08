@@ -117,7 +117,7 @@ void main() {
             ],
           )
         : CurrentCalculationResult.notCalculated(),
-    cable: unresolved(),
+    cable: CableCoordinationResult.notCalculated(),
     voltageDrop: unresolved('Circuit length is not supplied.'),
     circuitBreaker: CircuitBreakerSelectionResult.notCalculated(
       reason: 'CB selection has not been requested.',
