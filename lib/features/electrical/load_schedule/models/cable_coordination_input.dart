@@ -34,7 +34,9 @@ class CableCoordinationInput {
       );
     }
     if (environments.isEmpty || supports.isEmpty) {
-      throw ArgumentError('Installation environments and supports are required.');
+      throw ArgumentError(
+        'Installation environments and supports are required.',
+      );
     }
     if (groupedCircuitCount <= 0) {
       throw ArgumentError.value(
@@ -105,33 +107,33 @@ class CableCoordinationInput {
       'conductorTemperatureClass': conductorTemperatureClass!.name,
   };
 
-  factory CableCoordinationInput.fromJson(Map<String, Object?> json) =>
-      CableCoordinationInput(
-        identity: CableRoutingIdentity.values.byName(json['identity'] as String),
-        coreType: CoreType.values.byName(json['coreType'] as String),
-        ambientTemperatureC: (json['ambientTemperatureC'] as num).toDouble(),
-        environments: (json['environments'] as List)
-            .map((item) => InstallationEnvironment.values.byName(item as String))
-            .toSet(),
-        supports: (json['supports'] as List)
-            .map((item) => InstallationSupport.values.byName(item as String))
-            .toSet(),
-        groupedCircuitCount: json['groupedCircuitCount'] as int,
-        hasOuterSheath: json['hasOuterSheath'] as bool?,
-        spacingAtLeastCableDiameter:
-            json['spacingAtLeastCableDiameter'] as bool?,
-        ventilationOpeningPercent:
-            (json['ventilationOpeningPercent'] as num?)?.toDouble(),
-        cableShape: json['cableShape'] == null
-            ? null
-            : CableShape.values.byName(json['cableShape'] as String),
-        insulation: json['insulation'] == null
-            ? null
-            : CableInsulation.values.byName(json['insulation'] as String),
-        conductorTemperatureClass: json['conductorTemperatureClass'] == null
-            ? null
-            : ConductorTemperatureClass.values.byName(
-                json['conductorTemperatureClass'] as String,
-              ),
-      );
+  factory CableCoordinationInput.fromJson(
+    Map<String, Object?> json,
+  ) => CableCoordinationInput(
+    identity: CableRoutingIdentity.values.byName(json['identity'] as String),
+    coreType: CoreType.values.byName(json['coreType'] as String),
+    ambientTemperatureC: (json['ambientTemperatureC'] as num).toDouble(),
+    environments: (json['environments'] as List)
+        .map((item) => InstallationEnvironment.values.byName(item as String))
+        .toSet(),
+    supports: (json['supports'] as List)
+        .map((item) => InstallationSupport.values.byName(item as String))
+        .toSet(),
+    groupedCircuitCount: json['groupedCircuitCount'] as int,
+    hasOuterSheath: json['hasOuterSheath'] as bool?,
+    spacingAtLeastCableDiameter: json['spacingAtLeastCableDiameter'] as bool?,
+    ventilationOpeningPercent: (json['ventilationOpeningPercent'] as num?)
+        ?.toDouble(),
+    cableShape: json['cableShape'] == null
+        ? null
+        : CableShape.values.byName(json['cableShape'] as String),
+    insulation: json['insulation'] == null
+        ? null
+        : CableInsulation.values.byName(json['insulation'] as String),
+    conductorTemperatureClass: json['conductorTemperatureClass'] == null
+        ? null
+        : ConductorTemperatureClass.values.byName(
+            json['conductorTemperatureClass'] as String,
+          ),
+  );
 }

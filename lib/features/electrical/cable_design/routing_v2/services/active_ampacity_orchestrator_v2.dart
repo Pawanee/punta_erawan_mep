@@ -62,6 +62,8 @@ class ActiveAmpacityOrchestratorV2 {
            correctionPlans ?? const AmpacityCorrectionPlanResolverV2(),
        _correctionApplications =
            correctionApplications ?? CorrectionApplicationResolverV2(),
+       // Keep the public `correctionResolver` injection name stable.
+       // ignore: prefer_initializing_formals
        _correctionResolver = correctionResolver;
   final ProductionRoutingRequestAdapter _adapter;
   final AmpacityRoutingContextBuilder _routing;
@@ -76,11 +78,12 @@ class ActiveAmpacityOrchestratorV2 {
   final CorrectionApplicationResolverV2 _correctionApplications;
   final CorrectionResolverV2? _correctionResolver;
   Future<AmpacityDesignResultV2> prepare(CableDesignRequestV2 request) async {
-    if (request.routingMode != CableDesignRoutingMode.routingV2)
+    if (request.routingMode != CableDesignRoutingMode.routingV2) {
       return _result(
         AmpacityRoutingStatus.unsupported,
         'Request is not eligible for Routing v2.',
       );
+    }
     if (request.identity == CableRoutingIdentity.iec10 &&
         request.loadedConductors != 2 &&
         request.loadedConductors != 3) {
@@ -144,10 +147,11 @@ class ActiveAmpacityOrchestratorV2 {
       }
     }
     final adapted = await _adapter.adapt(request);
-    if (!adapted.isComplete)
+    if (!adapted.isComplete) {
       return _result(adapted.status, 'Production routing input is incomplete.');
+    }
     final route = await _routing.build(adapted.request!);
-    if (route.status != AmpacityRoutingStatus.resolved)
+    if (route.status != AmpacityRoutingStatus.resolved) {
       return AmpacityDesignResultV2(
         status: route.status,
         selected: null,
@@ -155,7 +159,8 @@ class ActiveAmpacityOrchestratorV2 {
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
-    if (route.ampacityTable == null)
+    }
+    if (route.ampacityTable == null) {
       return AmpacityDesignResultV2(
         status: AmpacityRoutingStatus.unsupported,
         selected: null,
@@ -163,6 +168,7 @@ class ActiveAmpacityOrchestratorV2 {
         voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
         routingResult: route,
       );
+    }
     if (route.ampacityTable != AmpacityTable.table521 &&
         !_supportsPublishedElectricalSystem(request)) {
       return AmpacityDesignResultV2(

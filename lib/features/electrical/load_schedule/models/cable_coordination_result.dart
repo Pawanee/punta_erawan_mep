@@ -145,7 +145,9 @@ class CableCoordinationResult {
       ?temperatureFactor,
     ];
     if (values.any((value) => !value.isFinite || value <= 0)) {
-      throw ArgumentError('Cable coordination values must be finite and positive.');
+      throw ArgumentError(
+        'Cable coordination values must be finite and positive.',
+      );
     }
     final engineeringValuesPresent =
         identity != null ||
@@ -193,10 +195,14 @@ class CableCoordinationResult {
         tableId == null ||
         installationGroupNumber == null ||
         sourceReferences.isEmpty) {
-      throw ArgumentError('Coordinated cable requires a complete typed payload.');
+      throw ArgumentError(
+        'Coordinated cable requires a complete typed payload.',
+      );
     }
     if (loadedConductors! <= 0 || runs! <= 0 || installationGroupNumber! <= 0) {
-      throw ArgumentError('Cable counts and installation group must be positive.');
+      throw ArgumentError(
+        'Cable counts and installation group must be positive.',
+      );
     }
     if (!approvedTableIds.contains(tableId)) {
       throw ArgumentError('Cable result uses an unapproved ampacity table.');
@@ -213,7 +219,9 @@ class CableCoordinationResult {
     }
     final expectedTotal = correctedAmpacityPerRunA! * runs!;
     if (!_close(expectedTotal, totalCorrectedCapacityIzA!)) {
-      throw ArgumentError('Total Iz must equal corrected ampacity per run x runs.');
+      throw ArgumentError(
+        'Total Iz must equal corrected ampacity per run x runs.',
+      );
     }
     if (designCurrentIbA! > breakerRatedCurrentInA! &&
         !_close(designCurrentIbA!, breakerRatedCurrentInA!)) {
@@ -285,8 +293,7 @@ class CableCoordinationResult {
     if (loadedConductors != null) 'loadedConductors': loadedConductors,
     if (sizeSqmm != null) 'sizeSqmm': sizeSqmm,
     if (runs != null) 'runs': runs,
-    if (baseAmpacityPerRunA != null)
-      'baseAmpacityPerRunA': baseAmpacityPerRunA,
+    if (baseAmpacityPerRunA != null) 'baseAmpacityPerRunA': baseAmpacityPerRunA,
     if (correctedAmpacityPerRunA != null)
       'correctedAmpacityPerRunA': correctedAmpacityPerRunA,
     if (totalCorrectedCapacityIzA != null)
@@ -307,9 +314,11 @@ class CableCoordinationResult {
     final status = CableSelectionStatus.values.byName(json['status'] as String);
     if (status != CableSelectionStatus.coordinated) {
       final hasEngineeringValues = json.keys.any(
-        (key) => key != 'status' && key != 'reason' && key != 'sourceReferences',
+        (key) =>
+            key != 'status' && key != 'reason' && key != 'sourceReferences',
       );
-      if (hasEngineeringValues || (json['sourceReferences'] as List).isNotEmpty) {
+      if (hasEngineeringValues ||
+          (json['sourceReferences'] as List).isNotEmpty) {
         throw ArgumentError(
           'Unresolved cable JSON cannot contain engineering values.',
         );
@@ -320,14 +329,18 @@ class CableCoordinationResult {
           CableCoordinationResult.notCalculated(reason: reason),
         CableSelectionStatus.insufficient =>
           CableCoordinationResult.insufficient(reason: reason!),
-        CableSelectionStatus.invalid =>
-          CableCoordinationResult.invalid(reason: reason!),
-        CableSelectionStatus.noMatch =>
-          CableCoordinationResult.noMatch(reason: reason!),
-        CableSelectionStatus.unsupported =>
-          CableCoordinationResult.unsupported(reason: reason!),
-        CableSelectionStatus.ambiguous =>
-          CableCoordinationResult.ambiguous(reason: reason!),
+        CableSelectionStatus.invalid => CableCoordinationResult.invalid(
+          reason: reason!,
+        ),
+        CableSelectionStatus.noMatch => CableCoordinationResult.noMatch(
+          reason: reason!,
+        ),
+        CableSelectionStatus.unsupported => CableCoordinationResult.unsupported(
+          reason: reason!,
+        ),
+        CableSelectionStatus.ambiguous => CableCoordinationResult.ambiguous(
+          reason: reason!,
+        ),
         CableSelectionStatus.coordinated => throw StateError('unreachable'),
       };
     }
@@ -342,13 +355,13 @@ class CableCoordinationResult {
       sizeSqmm: (json['sizeSqmm'] as num).toDouble(),
       runs: json['runs'] as int,
       baseAmpacityPerRunA: (json['baseAmpacityPerRunA'] as num).toDouble(),
-      correctedAmpacityPerRunA:
-          (json['correctedAmpacityPerRunA'] as num).toDouble(),
-      totalCorrectedCapacityIzA:
-          (json['totalCorrectedCapacityIzA'] as num).toDouble(),
+      correctedAmpacityPerRunA: (json['correctedAmpacityPerRunA'] as num)
+          .toDouble(),
+      totalCorrectedCapacityIzA: (json['totalCorrectedCapacityIzA'] as num)
+          .toDouble(),
       designCurrentIbA: (json['designCurrentIbA'] as num).toDouble(),
-      breakerRatedCurrentInA:
-          (json['breakerRatedCurrentInA'] as num).toDouble(),
+      breakerRatedCurrentInA: (json['breakerRatedCurrentInA'] as num)
+          .toDouble(),
       tableId: json['tableId'] as String,
       installationGroupNumber: json['installationGroupNumber'] as int,
       sourceColumnId: json['sourceColumnId'] as String?,

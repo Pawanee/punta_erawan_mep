@@ -12,18 +12,10 @@ class AmpacityCorrectionPlanResolverV2 {
   }) {
     if (sourceTableId == '5-21') return _table521(ambientTemperatureC);
     if (sourceTableId == '5-20') {
-      return _airTable(
-        sourceTableId,
-        ambientTemperatureC,
-        groupedCircuitCount,
-      );
+      return _airTable(sourceTableId, ambientTemperatureC, groupedCircuitCount);
     }
     if (sourceTableId == '5-27') {
-      return _airTable(
-        sourceTableId,
-        ambientTemperatureC,
-        groupedCircuitCount,
-      );
+      return _airTable(sourceTableId, ambientTemperatureC, groupedCircuitCount);
     }
     if (sourceTableId == '5-23' || sourceTableId == '5-29') {
       return _underground(

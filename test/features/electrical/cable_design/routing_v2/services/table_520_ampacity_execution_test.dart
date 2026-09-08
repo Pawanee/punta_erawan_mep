@@ -29,9 +29,7 @@ void main() {
         ambientTemperature: 40,
         identity: CableRoutingIdentity.iec01,
         engineeringInstallation: EngineeringInstallationInput(
-          environments: {
-            InstallationEnvironment.surfaceMountedWallOrCeiling,
-          },
+          environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
           supports: {InstallationSupport.wiringEnclosure},
           hasOuterSheath: false,
           groupedCircuitCount: 1,
@@ -50,41 +48,43 @@ void main() {
     expect(result.routingResult!.ampacityTable, AmpacityTable.table520);
     expect(result.selected!.candidate.sourceTableId, '5-20');
     expect(result.selected!.candidate.installationGroupNumber, 2);
-    expect(result.selected!.candidate.applicableCableIdentities,
-        contains(CableRoutingIdentity.iec01));
-  });
-
-  test('Table 5-20 grouping correction remains fail closed when unsupported',
-      () async {
-    final result = await ActiveAmpacityOrchestratorV2().prepare(
-      const CableDesignRequestV2(
-        loadCurrent: 16,
-        phaseSystem: PhaseSystem.singlePhase,
-        routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
-        loadedConductors: 2,
-        coreType: CoreType.singleCore,
-        ambientTemperature: 40,
-        identity: CableRoutingIdentity.iec01,
-        engineeringInstallation: EngineeringInstallationInput(
-          environments: {
-            InstallationEnvironment.surfaceMountedWallOrCeiling,
-          },
-          supports: {InstallationSupport.wiringEnclosure},
-          hasOuterSheath: false,
-          groupedCircuitCount: 2,
-        ),
-        supplementalCableProperties: SupplementalCablePropertiesInput(
-          cableShape: CableShape.round,
-          coreType: CoreType.singleCore,
-          insulation: CableInsulation.pvc,
-          conductorTemperatureClass: ConductorTemperatureClass.pvc70,
-          hasOuterSheath: false,
-        ),
-      ),
+    expect(
+      result.selected!.candidate.applicableCableIdentities,
+      contains(CableRoutingIdentity.iec01),
     );
-
-    expect(result.status, AmpacityRoutingStatus.insufficient);
-    expect(result.selected, isNull);
-    expect(result.reason, contains('correction context'));
   });
+
+  test(
+    'Table 5-20 grouping correction remains fail closed when unsupported',
+    () async {
+      final result = await ActiveAmpacityOrchestratorV2().prepare(
+        const CableDesignRequestV2(
+          loadCurrent: 16,
+          phaseSystem: PhaseSystem.singlePhase,
+          routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
+          loadedConductors: 2,
+          coreType: CoreType.singleCore,
+          ambientTemperature: 40,
+          identity: CableRoutingIdentity.iec01,
+          engineeringInstallation: EngineeringInstallationInput(
+            environments: {InstallationEnvironment.surfaceMountedWallOrCeiling},
+            supports: {InstallationSupport.wiringEnclosure},
+            hasOuterSheath: false,
+            groupedCircuitCount: 2,
+          ),
+          supplementalCableProperties: SupplementalCablePropertiesInput(
+            cableShape: CableShape.round,
+            coreType: CoreType.singleCore,
+            insulation: CableInsulation.pvc,
+            conductorTemperatureClass: ConductorTemperatureClass.pvc70,
+            hasOuterSheath: false,
+          ),
+        ),
+      );
+
+      expect(result.status, AmpacityRoutingStatus.insufficient);
+      expect(result.selected, isNull);
+      expect(result.reason, contains('correction context'));
+    },
+  );
 }

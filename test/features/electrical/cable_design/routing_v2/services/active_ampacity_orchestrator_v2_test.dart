@@ -1110,18 +1110,21 @@ void main() {
   });
 
   test(
-    'a resolved non-Table-5-21 route is unsupported without fallback',
+    'IEC 01 resolves and selects the minimum supported Table 5-20 candidate',
     () async {
+      const requestedCurrentA = 10.0;
       final result = await orchestrator.prepare(
         request(
           routingMode: CableDesignRoutingMode.routingV2,
           identity: CableRoutingIdentity.iec01,
           coreType: CoreType.singleCore,
+          loadCurrent: requestedCurrentA,
           routingElectricalSystem: RoutingElectricalSystem.singlePhaseAc,
           installation: const EngineeringInstallationInput(
             environments: {InstallationEnvironment.thermallyInsulatedCeiling},
             supports: {InstallationSupport.wiringEnclosure},
             hasOuterSheath: false,
+            groupedCircuitCount: 1,
           ),
           supplemental: const SupplementalCablePropertiesInput(
             insulation: CableInsulation.pvc,
@@ -1130,9 +1133,36 @@ void main() {
         ),
       );
 
-      expectNotPrepared(result, AmpacityRoutingStatus.unsupported);
+      expect(result.status, AmpacityRoutingStatus.resolved);
       expect(result.routingResult, isNotNull);
+      expect(result.routingResult!.status, AmpacityRoutingStatus.resolved);
       expect(result.routingResult!.ampacityTable, AmpacityTable.table520);
+      expect(result.selected, isNotNull);
+      expect(result.selected!.candidate.sourceTableId, '5-20');
+      expect(
+        result.selected!.totalCorrectedCapacity,
+        greaterThanOrEqualTo(requestedCurrentA),
+      );
+
+      final groupingFactor = result.selected!.groupingFactor ?? 1.0;
+      final temperatureFactor = result.selected!.temperatureFactor ?? 1.0;
+      final smallerCandidates = result.candidates.where(
+        (candidate) =>
+            candidate.sourceTableId == '5-20' &&
+            candidate.sizeSqmm < result.selected!.candidate.sizeSqmm,
+      );
+      expect(
+        smallerCandidates.every(
+          (candidate) =>
+              candidate.baseAmpacity *
+                  groupingFactor *
+                  temperatureFactor *
+                  result.selected!.runs <
+              requestedCurrentA,
+        ),
+        isTrue,
+      );
+      expect(result.selected!.candidate.sizeSqmm, 1.0);
     },
   );
 

@@ -31,7 +31,8 @@ class LoadScheduleCableCoordinator {
     if (circuit.status != CircuitStatus.active) {
       return CableCoordinationOutcome(
         cable: CableCoordinationResult.notCalculated(
-          reason: '${circuit.status.name.toUpperCase()} circuits do not have a load cable selection.',
+          reason:
+              '${circuit.status.name.toUpperCase()} circuits do not have a load cable selection.',
         ),
         circuitBreaker: circuitBreaker,
       );
@@ -186,14 +187,17 @@ class LoadScheduleCableCoordinator {
     return switch (status) {
       AmpacityRoutingStatus.insufficient =>
         CableCoordinationResult.insufficient(reason: message),
-      AmpacityRoutingStatus.ambiguous =>
-        CableCoordinationResult.ambiguous(reason: message),
-      AmpacityRoutingStatus.unsupported =>
-        CableCoordinationResult.unsupported(reason: message),
+      AmpacityRoutingStatus.ambiguous => CableCoordinationResult.ambiguous(
+        reason: message,
+      ),
+      AmpacityRoutingStatus.unsupported => CableCoordinationResult.unsupported(
+        reason: message,
+      ),
       AmpacityRoutingStatus.noMatch || AmpacityRoutingStatus.noCandidate =>
         CableCoordinationResult.noMatch(reason: message),
-      AmpacityRoutingStatus.resolved =>
-        CableCoordinationResult.invalid(reason: message),
+      AmpacityRoutingStatus.resolved => CableCoordinationResult.invalid(
+        reason: message,
+      ),
     };
   }
 

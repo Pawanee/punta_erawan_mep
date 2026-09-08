@@ -9,7 +9,6 @@ import 'package:mep_project/features/electrical/cable_design/models/cable_routin
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/ampacity_routing_status.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_environment.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/installation_support.dart';
-import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/resolved_correction_state_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/enums/voltage_drop_verification_status_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_candidate_v2.dart';
 import 'package:mep_project/features/electrical/cable_design/routing_v2/models/ampacity_design_result_v2.dart';
@@ -33,32 +32,34 @@ void main() {
     expect(copy.coreType, CoreType.singleCore);
     expect(copy.ambientTemperatureC, 40);
     expect(copy.groupedCircuitCount, 1);
-    expect(
-      copy.environments,
-      {InstallationEnvironment.surfaceMountedWallOrCeiling},
-    );
+    expect(copy.environments, {
+      InstallationEnvironment.surfaceMountedWallOrCeiling,
+    });
   });
 
-  test('uses breaker In as selection threshold and coordinates Ib <= In <= Iz',
-      () async {
-    final stub = _AmpacityStub(resolvedDesign());
-    final outcome = await LoadScheduleCableCoordinator(ampacity: stub).coordinate(
-      circuit: activeCircuit(),
-      current: calculatedCurrent(),
-      circuitBreaker: selectedBreaker(),
-    );
+  test(
+    'uses breaker In as selection threshold and coordinates Ib <= In <= Iz',
+    () async {
+      final stub = _AmpacityStub(resolvedDesign());
+      final outcome = await LoadScheduleCableCoordinator(ampacity: stub)
+          .coordinate(
+            circuit: activeCircuit(),
+            current: calculatedCurrent(),
+            circuitBreaker: selectedBreaker(),
+          );
 
-    expect(stub.lastRequest!.loadCurrent, 16);
-    expect(stub.lastRequest!.routingMode, CableDesignRoutingMode.routingV2);
-    expect(outcome.cable.status, CableSelectionStatus.coordinated);
-    expect(outcome.cable.designCurrentIbA, 10);
-    expect(outcome.cable.breakerRatedCurrentInA, 16);
-    expect(outcome.cable.totalCorrectedCapacityIzA, 20);
-    expect(
-      outcome.circuitBreaker.cableCoordinationStatus,
-      CableCoordinationStatus.coordinated,
-    );
-  });
+      expect(stub.lastRequest!.loadCurrent, 16);
+      expect(stub.lastRequest!.routingMode, CableDesignRoutingMode.routingV2);
+      expect(outcome.cable.status, CableSelectionStatus.coordinated);
+      expect(outcome.cable.designCurrentIbA, 10);
+      expect(outcome.cable.breakerRatedCurrentInA, 16);
+      expect(outcome.cable.totalCorrectedCapacityIzA, 20);
+      expect(
+        outcome.circuitBreaker.cableCoordinationStatus,
+        CableCoordinationStatus.coordinated,
+      );
+    },
+  );
 
   test('coordinated result JSON round-trips and enforces total Iz', () {
     final result = coordinatedCable();
@@ -80,10 +81,7 @@ void main() {
     final copy = CircuitBreakerSelectionResult.fromJson(
       deepJson(result.toJson()),
     );
-    expect(
-      copy.cableCoordinationStatus,
-      CableCoordinationStatus.coordinated,
-    );
+    expect(copy.cableCoordinationStatus, CableCoordinationStatus.coordinated);
   });
 
   test('coordinated result rejects In greater than Iz', () {
@@ -112,10 +110,7 @@ void main() {
   test('unapproved table is rejected at result boundary', () {
     final json = deepJson(coordinatedCable().toJson());
     json['tableId'] = '5-21';
-    expect(
-      () => CableCoordinationResult.fromJson(json),
-      throwsArgumentError,
-    );
+    expect(() => CableCoordinationResult.fromJson(json), throwsArgumentError);
   });
 
   test('table identity, insulation and installation group cannot conflict', () {
@@ -126,38 +121,36 @@ void main() {
     ]) {
       final json = deepJson(coordinatedCable().toJson());
       mutation(json);
-      expect(
-        () => CableCoordinationResult.fromJson(json),
-        throwsArgumentError,
-      );
+      expect(() => CableCoordinationResult.fromJson(json), throwsArgumentError);
     }
   });
 
   test('recorded correction factors must reproduce corrected ampacity', () {
     final json = deepJson(coordinatedCable().toJson());
     json['temperatureFactor'] = 0.8;
-    expect(
-      () => CableCoordinationResult.fromJson(json),
-      throwsArgumentError,
-    );
+    expect(() => CableCoordinationResult.fromJson(json), throwsArgumentError);
   });
 
-  test('missing routing input fails closed and leaves breaker pending', () async {
-    final breaker = selectedBreaker();
-    final outcome = await LoadScheduleCableCoordinator(
-      ampacity: _AmpacityStub(resolvedDesign()),
-    ).coordinate(
-      circuit: activeCircuit(includeCableInput: false),
-      current: calculatedCurrent(),
-      circuitBreaker: breaker,
-    );
+  test(
+    'missing routing input fails closed and leaves breaker pending',
+    () async {
+      final breaker = selectedBreaker();
+      final outcome =
+          await LoadScheduleCableCoordinator(
+            ampacity: _AmpacityStub(resolvedDesign()),
+          ).coordinate(
+            circuit: activeCircuit(includeCableInput: false),
+            current: calculatedCurrent(),
+            circuitBreaker: breaker,
+          );
 
-    expect(outcome.cable.status, CableSelectionStatus.insufficient);
-    expect(
-      outcome.circuitBreaker.cableCoordinationStatus,
-      CableCoordinationStatus.pendingCableSelection,
-    );
-  });
+      expect(outcome.cable.status, CableSelectionStatus.insufficient);
+      expect(
+        outcome.circuitBreaker.cableCoordinationStatus,
+        CableCoordinationStatus.pendingCableSelection,
+      );
+    },
+  );
 
   test('breaker Ib mismatch fails before ampacity routing', () async {
     final stub = _AmpacityStub(resolvedDesign());
@@ -171,11 +164,12 @@ void main() {
       designCurrentIbA: 9,
       currentMarginA: 7,
     );
-    final outcome = await LoadScheduleCableCoordinator(ampacity: stub).coordinate(
-      circuit: activeCircuit(),
-      current: calculatedCurrent(),
-      circuitBreaker: mismatchedBreaker,
-    );
+    final outcome = await LoadScheduleCableCoordinator(ampacity: stub)
+        .coordinate(
+          circuit: activeCircuit(),
+          current: calculatedCurrent(),
+          circuitBreaker: mismatchedBreaker,
+        );
     expect(outcome.cable.status, CableSelectionStatus.invalid);
     expect(stub.lastRequest, isNull);
   });
@@ -192,30 +186,32 @@ void main() {
       designCurrentIbA: 10,
       currentMarginA: 6,
     );
-    final outcome = await LoadScheduleCableCoordinator(ampacity: stub).coordinate(
-      circuit: activeCircuit(),
-      current: calculatedCurrent(),
-      circuitBreaker: wrongPole,
-    );
+    final outcome = await LoadScheduleCableCoordinator(ampacity: stub)
+        .coordinate(
+          circuit: activeCircuit(),
+          current: calculatedCurrent(),
+          circuitBreaker: wrongPole,
+        );
     expect(outcome.cable.status, CableSelectionStatus.invalid);
     expect(stub.lastRequest, isNull);
   });
 
   test('routing correction failure remains typed and fail closed', () async {
-    final outcome = await LoadScheduleCableCoordinator(
-      ampacity: _AmpacityStub(
-        const AmpacityDesignResultV2(
-          status: AmpacityRoutingStatus.insufficient,
-          selected: null,
-          reason: 'Required correction context is unresolved.',
-          voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
-        ),
-      ),
-    ).coordinate(
-      circuit: activeCircuit(),
-      current: calculatedCurrent(),
-      circuitBreaker: selectedBreaker(),
-    );
+    final outcome =
+        await LoadScheduleCableCoordinator(
+          ampacity: _AmpacityStub(
+            const AmpacityDesignResultV2(
+              status: AmpacityRoutingStatus.insufficient,
+              selected: null,
+              reason: 'Required correction context is unresolved.',
+              voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
+            ),
+          ),
+        ).coordinate(
+          circuit: activeCircuit(),
+          current: calculatedCurrent(),
+          circuitBreaker: selectedBreaker(),
+        );
 
     expect(outcome.cable.status, CableSelectionStatus.insufficient);
     expect(outcome.cable.reason, contains('correction context'));
@@ -223,11 +219,12 @@ void main() {
 
   test('SPARE does not invoke ampacity routing', () async {
     final stub = _AmpacityStub(resolvedDesign());
-    final outcome = await LoadScheduleCableCoordinator(ampacity: stub).coordinate(
-      circuit: spareCircuit(),
-      current: CurrentCalculationResult.notCalculated(),
-      circuitBreaker: spareBreaker(),
-    );
+    final outcome = await LoadScheduleCableCoordinator(ampacity: stub)
+        .coordinate(
+          circuit: spareCircuit(),
+          current: CurrentCalculationResult.notCalculated(),
+          circuitBreaker: spareBreaker(),
+        );
     expect(outcome.cable.status, CableSelectionStatus.notCalculated);
     expect(stub.lastRequest, isNull);
   });
@@ -251,6 +248,69 @@ void main() {
       ),
       throwsArgumentError,
     );
+  });
+
+  test('SPARE and SPACE require cable status notCalculated', () {
+    for (final invalid in <(CircuitStatus, CableCoordinationResult)>[
+      (
+        CircuitStatus.spare,
+        CableCoordinationResult.insufficient(reason: 'Missing routing input.'),
+      ),
+      (
+        CircuitStatus.space,
+        CableCoordinationResult.invalid(reason: 'Invalid routing input.'),
+      ),
+      (CircuitStatus.spare, coordinatedCable()),
+      (CircuitStatus.space, coordinatedCable()),
+    ]) {
+      expect(
+        () => nonActiveCalculationResult(status: invalid.$1, cable: invalid.$2),
+        throwsArgumentError,
+      );
+    }
+  });
+
+  test('SPARE and SPACE notCalculated cable results round-trip', () {
+    for (final status in [CircuitStatus.spare, CircuitStatus.space]) {
+      final result = nonActiveCalculationResult(
+        status: status,
+        cable: CableCoordinationResult.notCalculated(
+          reason: '${status.name.toUpperCase()} has no load cable.',
+        ),
+      );
+      final copy = CircuitCalculationResult.fromJson(deepJson(result.toJson()));
+
+      expect(copy.circuitStatus, status);
+      expect(copy.cable.status, CableSelectionStatus.notCalculated);
+    }
+  });
+
+  test('aggregate JSON rejects non-active contradictory cable status', () {
+    for (final invalid in <(CircuitStatus, CableCoordinationResult)>[
+      (
+        CircuitStatus.spare,
+        CableCoordinationResult.insufficient(reason: 'Missing routing input.'),
+      ),
+      (
+        CircuitStatus.space,
+        CableCoordinationResult.invalid(reason: 'Invalid routing input.'),
+      ),
+      (CircuitStatus.spare, coordinatedCable()),
+      (CircuitStatus.space, coordinatedCable()),
+    ]) {
+      final json = deepJson(
+        nonActiveCalculationResult(
+          status: invalid.$1,
+          cable: CableCoordinationResult.notCalculated(),
+        ).toJson(),
+      );
+      json['cable'] = invalid.$2.toJson();
+
+      expect(
+        () => CircuitCalculationResult.fromJson(json),
+        throwsArgumentError,
+      );
+    }
   });
 }
 
@@ -295,11 +355,10 @@ AmpacityDesignResultV2 resolvedDesign() {
         'One circuit.',
         'Table 5-20',
       ),
-      temperatureApplication:
-          const ResolvedCorrectionApplicationV2.notRequired(
-            'Reference ambient.',
-            'Table 5-20',
-          ),
+      temperatureApplication: const ResolvedCorrectionApplicationV2.notRequired(
+        'Reference ambient.',
+        'Table 5-20',
+      ),
     ),
     reason: 'Ampacity resolved; voltage drop not verified.',
     voltageDropStatus: VoltageDropVerificationStatusV2.notVerified,
@@ -320,16 +379,17 @@ CableCoordinationInput cableInput() => CableCoordinationInput(
   conductorTemperatureClass: ConductorTemperatureClass.pvc70,
 );
 
-CircuitDefinition activeCircuit({bool includeCableInput = true}) => CircuitDefinition(
-  circuitNo: 1,
-  description: 'Lighting',
-  status: CircuitStatus.active,
-  phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
-  phaseAssignmentMode: PhaseAssignmentMode.manual,
-  phaseAssignment: PhaseAssignment.r,
-  loadInput: LoadInput.directCurrentA(10),
-  cableCoordinationInput: includeCableInput ? cableInput() : null,
-);
+CircuitDefinition activeCircuit({bool includeCableInput = true}) =>
+    CircuitDefinition(
+      circuitNo: 1,
+      description: 'Lighting',
+      status: CircuitStatus.active,
+      phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+      phaseAssignmentMode: PhaseAssignmentMode.manual,
+      phaseAssignment: PhaseAssignment.r,
+      loadInput: LoadInput.directCurrentA(10),
+      cableCoordinationInput: includeCableInput ? cableInput() : null,
+    );
 
 CircuitDefinition spareCircuit() => CircuitDefinition(
   circuitNo: 2,
@@ -373,6 +433,25 @@ CircuitBreakerSelectionResult spareBreaker() =>
       manualOverrideReason: 'Reserved circuit',
     );
 
+CircuitCalculationResult nonActiveCalculationResult({
+  required CircuitStatus status,
+  required CableCoordinationResult cable,
+}) => CircuitCalculationResult(
+  circuitNo: status == CircuitStatus.spare ? 2 : 3,
+  circuitStatus: status,
+  phaseConfiguration: CircuitPhaseConfiguration.singlePhase,
+  validationStatus: CircuitValidationStatus.valid,
+  assignedPhase: status == CircuitStatus.spare ? PhaseAssignment.r : null,
+  current: CurrentCalculationResult.notCalculated(),
+  cable: cable,
+  voltageDrop: CalculationStepResult(status: CalculationStatus.notCalculated),
+  circuitBreaker: status == CircuitStatus.spare
+      ? spareBreaker()
+      : CircuitBreakerSelectionResult.notCalculated(),
+  ground: const PendingEngineeringResult.notCalculated(),
+  conduit: const PendingEngineeringResult.notCalculated(),
+);
+
 CableCoordinationResult coordinatedCable() =>
     CableCoordinationResult.coordinated(
       identity: CableRoutingIdentity.iec01,
@@ -392,10 +471,8 @@ CableCoordinationResult coordinatedCable() =>
       sourceReferences: [source()],
     );
 
-CalculationSourceReference source() => CalculationSourceReference(
-  sourceId: 'test-source',
-  label: 'Test source',
-);
+CalculationSourceReference source() =>
+    CalculationSourceReference(sourceId: 'test-source', label: 'Test source');
 
 Map<String, Object?> deepJson(Map<String, Object?> value) =>
     Map<String, Object?>.from(jsonDecode(jsonEncode(value)) as Map);

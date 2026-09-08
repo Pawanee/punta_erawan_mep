@@ -43,6 +43,13 @@ class CircuitCalculationResult {
         assignedPhase == PhaseAssignment.rst) {
       throw ArgumentError('Single-phase results cannot be assigned to RST.');
     }
+    if ((circuitStatus == CircuitStatus.spare ||
+            circuitStatus == CircuitStatus.space) &&
+        cable.status != CableSelectionStatus.notCalculated) {
+      throw ArgumentError(
+        'SPARE and SPACE circuits require cable status notCalculated.',
+      );
+    }
     if (circuitStatus == CircuitStatus.space &&
         (_hasCalculatedEquipment || assignedPhase != null)) {
       throw ArgumentError('SPACE circuits cannot contain equipment results.');
@@ -131,9 +138,7 @@ class CircuitCalculationResult {
           );
         }
         final expectedLoadedConductors =
-            phaseConfiguration == CircuitPhaseConfiguration.singlePhase
-            ? 2
-            : 3;
+            phaseConfiguration == CircuitPhaseConfiguration.singlePhase ? 2 : 3;
         if (cable.loadedConductors != expectedLoadedConductors) {
           throw ArgumentError(
             'Cable loaded-conductor count is incompatible with circuit phase.',
