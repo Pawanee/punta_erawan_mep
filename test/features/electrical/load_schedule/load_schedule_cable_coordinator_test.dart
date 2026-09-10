@@ -239,9 +239,7 @@ void main() {
         assignedPhase: PhaseAssignment.r,
         current: calculatedCurrent(),
         cable: coordinatedCable(),
-        voltageDrop: CalculationStepResult(
-          status: CalculationStatus.notCalculated,
-        ),
+        voltageDrop: VoltageDropCalculationResult.notCalculated(),
         circuitBreaker: selectedBreaker(),
         ground: const PendingEngineeringResult.notCalculated(),
         conduit: const PendingEngineeringResult.notCalculated(),
@@ -444,7 +442,7 @@ CircuitCalculationResult nonActiveCalculationResult({
   assignedPhase: status == CircuitStatus.spare ? PhaseAssignment.r : null,
   current: CurrentCalculationResult.notCalculated(),
   cable: cable,
-  voltageDrop: CalculationStepResult(status: CalculationStatus.notCalculated),
+  voltageDrop: VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: status == CircuitStatus.spare
       ? spareBreaker()
       : CircuitBreakerSelectionResult.notCalculated(),
