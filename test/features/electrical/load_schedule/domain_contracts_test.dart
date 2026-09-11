@@ -75,12 +75,8 @@ void main() {
     circuits: [activeManual, activeAutomatic, activeThreePhase, spare, space],
   );
 
-  CalculationStepResult unresolved([String? reason]) => CalculationStepResult(
-    status: reason == null
-        ? CalculationStatus.notCalculated
-        : CalculationStatus.insufficient,
-    reason: reason,
-  );
+  VoltageDropCalculationResult unresolved([String? reason]) =>
+      VoltageDropCalculationResult.notCalculated(reason: reason);
 
   CircuitCalculationResult result({
     required int circuitNo,

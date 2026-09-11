@@ -8,10 +8,13 @@ import '../enums/circuit_phase_configuration.dart';
 import '../enums/circuit_breaker_selection_status.dart';
 import '../enums/circuit_status.dart';
 import '../enums/phase_assignment.dart';
+import '../enums/voltage_basis.dart';
+import '../enums/voltage_drop_calculation_status.dart';
 import 'calculation_step_result.dart';
 import 'cable_coordination_result.dart';
 import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
+import 'voltage_drop_calculation_result.dart';
 
 class CircuitCalculationResult {
   CircuitCalculationResult({
@@ -45,9 +48,11 @@ class CircuitCalculationResult {
     }
     if ((circuitStatus == CircuitStatus.spare ||
             circuitStatus == CircuitStatus.space) &&
-        cable.status != CableSelectionStatus.notCalculated) {
+        (cable.status != CableSelectionStatus.notCalculated ||
+            voltageDrop.status != VoltageDropCalculationStatus.notCalculated)) {
       throw ArgumentError(
-        'SPARE and SPACE circuits require cable status notCalculated.',
+        'SPARE and SPACE circuits require cable and voltage drop '
+        'status notCalculated.',
       );
     }
     if (circuitStatus == CircuitStatus.space &&
@@ -57,7 +62,7 @@ class CircuitCalculationResult {
     if (circuitStatus == CircuitStatus.spare &&
         (current.status == CalculationStatus.calculated ||
             cable.status == CableSelectionStatus.coordinated ||
-            voltageDrop.status == CalculationStatus.calculated)) {
+            voltageDrop.status == VoltageDropCalculationStatus.calculated)) {
       throw ArgumentError(
         'SPARE circuits cannot contain calculated load results.',
       );
@@ -73,7 +78,7 @@ class CircuitCalculationResult {
   final PhaseAssignment? assignedPhase;
   final CurrentCalculationResult current;
   final CableCoordinationResult cable;
-  final CalculationStepResult voltageDrop;
+  final VoltageDropCalculationResult voltageDrop;
   final CircuitBreakerSelectionResult circuitBreaker;
   final PendingEngineeringResult ground;
   final PendingEngineeringResult conduit;
@@ -162,6 +167,41 @@ class CircuitCalculationResult {
         'SPARE selected breaker requires a complete manual-only payload.',
       );
     }
+    _validateVoltageDrop();
+  }
+
+  void _validateVoltageDrop() {
+    if (voltageDrop.status != VoltageDropCalculationStatus.calculated) {
+      return;
+    }
+    if (circuitStatus != CircuitStatus.active ||
+        current.status != CalculationStatus.calculated ||
+        cable.status != CableSelectionStatus.coordinated) {
+      throw ArgumentError(
+        'Calculated voltage drop requires an ACTIVE circuit with calculated '
+        'current and coordinated cable.',
+      );
+    }
+    if (!_close(voltageDrop.designCurrentIbA!, current.designCurrentA!) ||
+        !_close(voltageDrop.designCurrentIbA!, cable.designCurrentIbA!) ||
+        !_close(voltageDrop.sizeSqmm!, cable.sizeSqmm!) ||
+        voltageDrop.runs != cable.runs ||
+        voltageDrop.identity != cable.identity ||
+        voltageDrop.insulation != cable.insulation ||
+        voltageDrop.coreType!.name != cable.coreType!.name) {
+      throw ArgumentError(
+        'Voltage-drop cable/current facts must match CP2 and CP4 results.',
+      );
+    }
+    final singlePhase =
+        phaseConfiguration == CircuitPhaseConfiguration.singlePhase;
+    if (singlePhase !=
+            (voltageDrop.voltageBasis == VoltageBasis.lineToNeutral) ||
+        singlePhase != (voltageDrop.phase!.name == 'singlePhase')) {
+      throw ArgumentError(
+        'Voltage-drop phase and voltage basis must match the circuit.',
+      );
+    }
   }
 
   bool _close(double left, double right) {
@@ -172,7 +212,7 @@ class CircuitCalculationResult {
   bool get _hasCalculatedEquipment =>
       current.status == CalculationStatus.calculated ||
       cable.status == CableSelectionStatus.coordinated ||
-      voltageDrop.status == CalculationStatus.calculated ||
+      voltageDrop.status == VoltageDropCalculationStatus.calculated ||
       circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
       ground.status == PendingEngineeringStatus.insufficient ||
       conduit.status == PendingEngineeringStatus.insufficient;
@@ -214,7 +254,7 @@ class CircuitCalculationResult {
         cable: CableCoordinationResult.fromJson(
           Map<String, Object?>.from(json['cable'] as Map),
         ),
-        voltageDrop: CalculationStepResult.fromJson(
+        voltageDrop: VoltageDropCalculationResult.fromJson(
           Map<String, Object?>.from(json['voltageDrop'] as Map),
         ),
         circuitBreaker: CircuitBreakerSelectionResult.fromJson(
