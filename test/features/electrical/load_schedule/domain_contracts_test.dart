@@ -118,7 +118,7 @@ void main() {
     circuitBreaker: CircuitBreakerSelectionResult.notCalculated(
       reason: 'CB selection has not been requested.',
     ),
-    ground: const PendingEngineeringResult.notCalculated(
+    ground: GroundingConductorSelectionResult.notCalculated(
       reason: 'Ground rules are not approved in CP1.',
     ),
     conduit: const PendingEngineeringResult.notCalculated(

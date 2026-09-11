@@ -7,6 +7,7 @@ import '../enums/cable_selection_status.dart';
 import '../enums/circuit_phase_configuration.dart';
 import '../enums/circuit_breaker_selection_status.dart';
 import '../enums/circuit_status.dart';
+import '../enums/grounding_conductor_selection_status.dart';
 import '../enums/phase_assignment.dart';
 import '../enums/voltage_basis.dart';
 import '../enums/voltage_drop_calculation_status.dart';
@@ -14,6 +15,7 @@ import 'calculation_step_result.dart';
 import 'cable_coordination_result.dart';
 import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
+import 'grounding_conductor_selection_result.dart';
 import 'voltage_drop_calculation_result.dart';
 
 class CircuitCalculationResult {
@@ -68,6 +70,7 @@ class CircuitCalculationResult {
       );
     }
     _validateCircuitBreaker();
+    _validateGrounding();
   }
 
   final int circuitNo;
@@ -80,7 +83,7 @@ class CircuitCalculationResult {
   final CableCoordinationResult cable;
   final VoltageDropCalculationResult voltageDrop;
   final CircuitBreakerSelectionResult circuitBreaker;
-  final PendingEngineeringResult ground;
+  final GroundingConductorSelectionResult ground;
   final PendingEngineeringResult conduit;
 
   void _validateCircuitBreaker() {
@@ -204,6 +207,35 @@ class CircuitCalculationResult {
     }
   }
 
+  void _validateGrounding() {
+    if (circuitStatus != CircuitStatus.active) {
+      if (ground.status != GroundingConductorSelectionStatus.notCalculated) {
+        throw ArgumentError(
+          'SPARE and SPACE circuits require grounding status notCalculated.',
+        );
+      }
+      return;
+    }
+    if (ground.status != GroundingConductorSelectionStatus.selected) {
+      return;
+    }
+    if (circuitBreaker.status != CircuitBreakerSelectionStatus.selected ||
+        circuitBreaker.ratedCurrentA == null ||
+        !_close(ground.ratedCurrentA!, circuitBreaker.ratedCurrentA!)) {
+      throw ArgumentError(
+        'Selected grounding conductor must match the selected breaker.',
+      );
+    }
+    if (ground.phaseConductorSizeSqmm != null) {
+      if (cable.status != CableSelectionStatus.coordinated ||
+          !_close(ground.phaseConductorSizeSqmm!, cable.sizeSqmm!)) {
+        throw ArgumentError(
+          'Grounding phase-conductor snapshot must match the CP4 cable.',
+        );
+      }
+    }
+  }
+
   bool _close(double left, double right) {
     final scale = math.max(1.0, math.max(left.abs(), right.abs()));
     return (left - right).abs() <= 1e-9 * scale;
@@ -214,7 +246,7 @@ class CircuitCalculationResult {
       cable.status == CableSelectionStatus.coordinated ||
       voltageDrop.status == VoltageDropCalculationStatus.calculated ||
       circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
-      ground.status == PendingEngineeringStatus.insufficient ||
+      ground.status != GroundingConductorSelectionStatus.notCalculated ||
       conduit.status == PendingEngineeringStatus.insufficient;
 
   Map<String, Object?> toJson() => {
@@ -260,7 +292,7 @@ class CircuitCalculationResult {
         circuitBreaker: CircuitBreakerSelectionResult.fromJson(
           Map<String, Object?>.from(json['circuitBreaker'] as Map),
         ),
-        ground: PendingEngineeringResult.fromJson(
+        ground: GroundingConductorSelectionResult.fromJson(
           Map<String, Object?>.from(json['ground'] as Map),
         ),
         conduit: PendingEngineeringResult.fromJson(

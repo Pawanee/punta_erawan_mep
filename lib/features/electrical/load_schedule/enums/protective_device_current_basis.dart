@@ -1,0 +1,1 @@
+enum ProtectiveDeviceCurrentBasis { ratedCurrent, adjustableTripSetting }
