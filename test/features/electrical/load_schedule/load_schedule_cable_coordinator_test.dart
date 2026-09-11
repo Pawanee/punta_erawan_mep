@@ -241,7 +241,7 @@ void main() {
         cable: coordinatedCable(),
         voltageDrop: VoltageDropCalculationResult.notCalculated(),
         circuitBreaker: selectedBreaker(),
-        ground: const PendingEngineeringResult.notCalculated(),
+        ground: GroundingConductorSelectionResult.notCalculated(),
         conduit: const PendingEngineeringResult.notCalculated(),
       ),
       throwsArgumentError,
@@ -446,7 +446,7 @@ CircuitCalculationResult nonActiveCalculationResult({
   circuitBreaker: status == CircuitStatus.spare
       ? spareBreaker()
       : CircuitBreakerSelectionResult.notCalculated(),
-  ground: const PendingEngineeringResult.notCalculated(),
+  ground: GroundingConductorSelectionResult.notCalculated(),
   conduit: const PendingEngineeringResult.notCalculated(),
 );
 

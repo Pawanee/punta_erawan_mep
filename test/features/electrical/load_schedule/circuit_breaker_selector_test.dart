@@ -704,7 +704,7 @@ CircuitCalculationResult aggregateResult({
   cable: CableCoordinationResult.notCalculated(),
   voltageDrop: VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: breaker,
-  ground: const PendingEngineeringResult.notCalculated(),
+  ground: GroundingConductorSelectionResult.notCalculated(),
   conduit: const PendingEngineeringResult.notCalculated(),
 );
 
