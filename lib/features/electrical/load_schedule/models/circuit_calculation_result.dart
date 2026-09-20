@@ -11,7 +11,7 @@ import '../enums/grounding_conductor_selection_status.dart';
 import '../enums/phase_assignment.dart';
 import '../enums/voltage_basis.dart';
 import '../enums/voltage_drop_calculation_status.dart';
-import 'calculation_step_result.dart';
+import 'conduit_selection_result.dart';
 import 'cable_coordination_result.dart';
 import 'circuit_breaker_selection_result.dart';
 import 'current_calculation_result.dart';
@@ -71,6 +71,7 @@ class CircuitCalculationResult {
     }
     _validateCircuitBreaker();
     _validateGrounding();
+    _validateConduit();
   }
 
   final int circuitNo;
@@ -84,7 +85,24 @@ class CircuitCalculationResult {
   final VoltageDropCalculationResult voltageDrop;
   final CircuitBreakerSelectionResult circuitBreaker;
   final GroundingConductorSelectionResult ground;
-  final PendingEngineeringResult conduit;
+  final ConduitSelectionResult conduit;
+
+  void _validateConduit() {
+    if (circuitStatus != CircuitStatus.active) {
+      if (conduit.status != ConduitSelectionStatus.notCalculated) {
+        throw ArgumentError('SPARE/SPACE require conduit notCalculated.');
+      }
+      return;
+    }
+    if (conduit.status != ConduitSelectionStatus.selected) return;
+    if (conduit.input!.phaseConfiguration != phaseConfiguration ||
+        !conduitJsonEqual(conduit.cableSnapshot!.toJson(), cable.toJson()) ||
+        !conduitJsonEqual(conduit.groundSnapshot!.toJson(), ground.toJson())) {
+      throw ArgumentError(
+        'Conduit must match circuit phase and CP4/CP6 snapshots.',
+      );
+    }
+  }
 
   void _validateCircuitBreaker() {
     if (cable.status == CableSelectionStatus.coordinated &&
@@ -247,7 +265,7 @@ class CircuitCalculationResult {
       voltageDrop.status == VoltageDropCalculationStatus.calculated ||
       circuitBreaker.status != CircuitBreakerSelectionStatus.notCalculated ||
       ground.status != GroundingConductorSelectionStatus.notCalculated ||
-      conduit.status == PendingEngineeringStatus.insufficient;
+      conduit.status != ConduitSelectionStatus.notCalculated;
 
   Map<String, Object?> toJson() => {
     'circuitNo': circuitNo,
@@ -295,7 +313,7 @@ class CircuitCalculationResult {
         ground: GroundingConductorSelectionResult.fromJson(
           Map<String, Object?>.from(json['ground'] as Map),
         ),
-        conduit: PendingEngineeringResult.fromJson(
+        conduit: ConduitSelectionResult.fromJson(
           Map<String, Object?>.from(json['conduit'] as Map),
         ),
       );

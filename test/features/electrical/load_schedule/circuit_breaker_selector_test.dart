@@ -705,7 +705,7 @@ CircuitCalculationResult aggregateResult({
   voltageDrop: VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: breaker,
   ground: GroundingConductorSelectionResult.notCalculated(),
-  conduit: const PendingEngineeringResult.notCalculated(),
+  conduit: ConduitSelectionResult.notCalculated(),
 );
 
 Map<String, Object?> deepJsonCopy(Map<String, Object?> value) =>

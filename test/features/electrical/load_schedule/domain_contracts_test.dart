@@ -121,7 +121,7 @@ void main() {
     ground: GroundingConductorSelectionResult.notCalculated(
       reason: 'Ground rules are not approved in CP1.',
     ),
-    conduit: const PendingEngineeringResult.notCalculated(
+    conduit: ConduitSelectionResult.notCalculated(
       reason: 'Conduit rules are not approved in CP1.',
     ),
   );
