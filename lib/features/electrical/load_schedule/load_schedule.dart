@@ -42,3 +42,7 @@ export 'services/circuit_breaker_selector.dart';
 export 'services/load_schedule_cable_coordinator.dart';
 export 'services/load_schedule_voltage_drop_calculator.dart';
 export 'services/grounding_conductor_selector.dart';
+export 'repositories/table_c1_repository.dart';
+export 'models/conduit_selection_input.dart';
+export 'models/conduit_selection_result.dart';
+export 'services/conduit_selector.dart';

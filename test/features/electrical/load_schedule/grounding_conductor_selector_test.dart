@@ -514,7 +514,7 @@ CircuitCalculationResult activeAggregate({
   voltageDrop: VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: activeBreaker(20),
   ground: ground,
-  conduit: const PendingEngineeringResult.notCalculated(),
+  conduit: ConduitSelectionResult.notCalculated(),
 );
 
 CircuitCalculationResult nonActiveAggregate({
@@ -531,5 +531,5 @@ CircuitCalculationResult nonActiveAggregate({
   voltageDrop: VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: CircuitBreakerSelectionResult.notCalculated(),
   ground: ground,
-  conduit: const PendingEngineeringResult.notCalculated(),
+  conduit: ConduitSelectionResult.notCalculated(),
 );

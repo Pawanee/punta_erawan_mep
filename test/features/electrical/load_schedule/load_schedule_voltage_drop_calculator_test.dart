@@ -431,7 +431,7 @@ CircuitCalculationResult activeCalculation({
     cableCoordinated: coordinated,
   ),
   ground: GroundingConductorSelectionResult.notCalculated(),
-  conduit: const PendingEngineeringResult.notCalculated(),
+  conduit: ConduitSelectionResult.notCalculated(),
 );
 
 CircuitCalculationResult nonActiveCalculation(
@@ -447,7 +447,7 @@ CircuitCalculationResult nonActiveCalculation(
   voltageDrop: voltageDrop ?? VoltageDropCalculationResult.notCalculated(),
   circuitBreaker: CircuitBreakerSelectionResult.notCalculated(),
   ground: GroundingConductorSelectionResult.notCalculated(),
-  conduit: const PendingEngineeringResult.notCalculated(),
+  conduit: ConduitSelectionResult.notCalculated(),
 );
 
 VoltageDropCalculationResult calculatedVoltageDrop({
