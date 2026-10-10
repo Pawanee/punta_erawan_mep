@@ -46,3 +46,5 @@ export 'repositories/table_c1_repository.dart';
 export 'models/conduit_selection_input.dart';
 export 'models/conduit_selection_result.dart';
 export 'services/conduit_selector.dart';
+export 'models/manual_conduit_selection_input.dart';
+export 'services/manual_conduit_selector.dart';

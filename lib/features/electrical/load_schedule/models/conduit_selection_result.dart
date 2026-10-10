@@ -4,14 +4,18 @@ import '../repositories/table_c1_repository.dart';
 import 'cable_coordination_result.dart';
 import 'conduit_selection_input.dart';
 import 'grounding_conductor_selection_result.dart';
+import 'manual_conduit_selection_input.dart';
 
 enum ConduitSelectionStatus {
   notCalculated,
   selected,
+  manualSelected,
   insufficient,
   invalid,
   unsupported,
 }
+
+enum ConduitSelectionMethod { automaticTableC1, manualEngineeringSelection }
 
 bool conduitJsonEqual(Object? left, Object? right) {
   if (left is Map && right is Map) {
@@ -61,9 +65,11 @@ class ConduitSelectionResult {
     this.input,
     this.cableSnapshot,
     this.groundSnapshot,
-    List<ConduitRunSelection> selections,
-  ) : selections = List.unmodifiable(selections) {
+    List<ConduitRunSelection> selections, {
+    this.manualInput,
+  }) : selections = List.unmodifiable(selections) {
     if (status != ConduitSelectionStatus.selected &&
+        status != ConduitSelectionStatus.manualSelected &&
         status != ConduitSelectionStatus.notCalculated &&
         (reason == null || reason!.trim().isEmpty)) {
       throw ArgumentError('Unresolved conduit selection requires a reason.');
@@ -105,6 +111,25 @@ class ConduitSelectionResult {
         null,
         [],
       );
+
+  /// Explicit engineering action only; automatic selection never calls this.
+  factory ConduitSelectionResult.manualSelected({
+    required ManualConduitSelectionInput input,
+    required CableCoordinationResult cable,
+    required GroundingConductorSelectionResult ground,
+  }) {
+    final mismatch = input.snapshotIssue(cable, ground);
+    if (mismatch != null) throw ArgumentError(mismatch);
+    return ConduitSelectionResult._(
+      ConduitSelectionStatus.manualSelected,
+      null,
+      null,
+      cable,
+      ground,
+      [],
+      manualInput: input,
+    );
+  }
 
   /// Derives every published fact rather than accepting caller-authored cells.
   factory ConduitSelectionResult.selected({
@@ -180,11 +205,29 @@ class ConduitSelectionResult {
   final CableCoordinationResult? cableSnapshot;
   final GroundingConductorSelectionResult? groundSnapshot;
   final List<ConduitRunSelection> selections;
-  int get conduitCount => selections.length;
+  final ManualConduitSelectionInput? manualInput;
+  int get conduitCount => manualInput?.conduits.length ?? selections.length;
+  ConduitSelectionMethod? get selectionMethod => switch (status) {
+    ConduitSelectionStatus.selected => ConduitSelectionMethod.automaticTableC1,
+    ConduitSelectionStatus.manualSelected =>
+      ConduitSelectionMethod.manualEngineeringSelection,
+    _ => null,
+  };
+  static const manualVerificationScope =
+      'User-supplied engineering selection; conduit fill and standards compliance are not verified.';
 
   Map<String, Object?> toJson() => {
     'status': status.name,
     if (reason != null) 'reason': reason,
+    if (selectionMethod != null) 'selectionMethod': selectionMethod!.name,
+    if (status == ConduitSelectionStatus.manualSelected) ...{
+      'label': 'Manual engineering conduit selection',
+      'verificationScope': manualVerificationScope,
+      'manualInput': manualInput!.toJson(),
+      'cableSnapshot': cableSnapshot!.toJson(),
+      'groundSnapshot': groundSnapshot!.toJson(),
+      'conduitCount': conduitCount,
+    },
     if (status == ConduitSelectionStatus.selected) ...{
       'label': TableC1Repository.resultLabel,
       'materialScope': TableC1Repository.materialScope,
@@ -213,6 +256,18 @@ class ConduitSelectionResult {
           Map<String, Object?>.from(json['groundSnapshot'] as Map),
         ),
       );
+    } else if (status == ConduitSelectionStatus.manualSelected) {
+      result = ConduitSelectionResult.manualSelected(
+        input: ManualConduitSelectionInput.fromJson(
+          Map<String, Object?>.from(json['manualInput'] as Map),
+        ),
+        cable: CableCoordinationResult.fromJson(
+          Map<String, Object?>.from(json['cableSnapshot'] as Map),
+        ),
+        ground: GroundingConductorSelectionResult.fromJson(
+          Map<String, Object?>.from(json['groundSnapshot'] as Map),
+        ),
+      );
     } else {
       final reason = json['reason'] as String?;
       result = switch (status) {
@@ -226,9 +281,19 @@ class ConduitSelectionResult {
         ConduitSelectionStatus.unsupported =>
           ConduitSelectionResult.unsupported(reason: reason!),
         ConduitSelectionStatus.selected => throw StateError('unreachable'),
+        ConduitSelectionStatus.manualSelected => throw StateError(
+          'unreachable',
+        ),
       };
     }
-    if (!conduitJsonEqual(json, result.toJson())) {
+    final canonical = result.toJson();
+    // CP7A persisted payloads predate the method discriminator. Only that
+    // known automatic legacy shape is accepted; manual payloads require it.
+    if (status == ConduitSelectionStatus.selected &&
+        !json.containsKey('selectionMethod')) {
+      canonical.remove('selectionMethod');
+    }
+    if (!conduitJsonEqual(json, canonical)) {
       throw ArgumentError('Contradictory or unknown conduit JSON payload.');
     }
     return result;
