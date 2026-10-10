@@ -94,8 +94,14 @@ class CircuitCalculationResult {
       }
       return;
     }
-    if (conduit.status != ConduitSelectionStatus.selected) return;
-    if (conduit.input!.phaseConfiguration != phaseConfiguration ||
+    if (conduit.status != ConduitSelectionStatus.selected &&
+        conduit.status != ConduitSelectionStatus.manualSelected) {
+      return;
+    }
+    final conduitPhase = conduit.status == ConduitSelectionStatus.manualSelected
+        ? conduit.manualInput!.phaseConfiguration
+        : conduit.input!.phaseConfiguration;
+    if (conduitPhase != phaseConfiguration ||
         !conduitJsonEqual(conduit.cableSnapshot!.toJson(), cable.toJson()) ||
         !conduitJsonEqual(conduit.groundSnapshot!.toJson(), ground.toJson())) {
       throw ArgumentError(
